@@ -3,3 +3,4 @@ uvicorn[standard]
 transformers
 torch
 accelerate
+pydantic
