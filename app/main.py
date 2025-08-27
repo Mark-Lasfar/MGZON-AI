@@ -4,8 +4,10 @@ import gradio as gr
 from openai import OpenAI
 from pydoc import html
 
-# تعريف LATEX_DELIMS (دمج من utils.py)
+# تعريف LATEX_DELIMS (محدّث)
 LATEX_DELIMS = [
+    {"left": "$$",  "right": "$$",  "display": True},
+    {"left": "$",   "right": "$",   "display": False},
     {"left": "\\[", "right": "\\]", "display": True},
     {"left": "\\(", "right": "\\)", "display": False},
 ]
@@ -19,7 +21,7 @@ logger.info("Files in /app/: %s", os.listdir("/app"))
 
 # إعداد العميل لـ Hugging Face Inference API
 HF_TOKEN = os.getenv("HF_TOKEN")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
 if not HF_TOKEN:
     logger.error("HF_TOKEN is not set in environment variables.")
@@ -50,11 +52,14 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
         yield "Please enter a prompt."
         return
 
-    # Flatten gradio history
+    # Flatten gradio history وتنظيف metadata
     msgs = [{"role": "system", "content": system_prompt}]
     for h in history:
         if isinstance(h, dict):
-            msgs.append(h)
+            # إزالة metadata لو موجود
+            clean_msg = {"role": h.get("role"), "content": h.get("content")}
+            if clean_msg["content"]:  # فقط إذا كان فيه محتوى
+                msgs.append(clean_msg)
         elif isinstance(h, (list, tuple)) and len(h) == 2:
             u, a = h
             if u: msgs.append({"role": "user", "content": u})
@@ -62,16 +67,21 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
     msgs.append({"role": "user", "content": message})
 
     # إعداد الأدوات إذا تم تفعيل البحث على الويب
-    tools = [{"type": "function", "function": {
-        "name": "web_search_preview",
-        "description": "Simulate web search for additional context",
-        "parameters": {
-            "type": "object",
-            "properties": {"query": {"type": "string", "description": "Search query"}},
-            "required": ["query"]
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "web_search_preview",
+                "description": "Simulate web search for additional context",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"query": {"type": "string", "description": "Search query"}},
+                    "required": ["query"],
+                },
+            },
         }
-    }}] if enable_browsing else None
-    tool_choice = "auto" if enable_browsing else None
+    ] if enable_browsing else []
+    tool_choice = "auto" if enable_browsing else "none"
 
     in_analysis = False
     in_visible = False
@@ -98,9 +108,8 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
             temperature=temperature,
             max_tokens=max_new_tokens,
             stream=True,
-            extra_body={"reasoning": {"effort": reasoning_effort}},
             tools=tools,
-            tool_choice=tool_choice
+            tool_choice=tool_choice,
         )
 
         for chunk in stream:
@@ -169,6 +178,7 @@ chatbot_ui = gr.ChatInterface(
     ],
     title="GPT-OSS-120B Chatbot on Hugging Face",
     description="This Space demonstrates the OpenAI GPT-OSS-120B model running via Hugging Face Inference API. Includes analysis for chain of thought insights. Licensed under Apache 2.0. ***DISCLAIMER:*** Analysis may contain internal thoughts not suitable for final response.",
+    theme="gradio/soft",  # إضافة theme لتحسين التصميم
 )
 
 # دمج FastAPI مع Gradio
