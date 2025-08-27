@@ -9,6 +9,9 @@ from utils import LATEX_DELIMS  # استيراد من نفس المجلد (/app/
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# تحقق من الملفات في /app/
+logger.info("Files in /app/: %s", os.listdir("/app"))  # هيطبع الملفات الموجودة
+
 # إعداد العميل لـ Hugging Face Inference API
 HF_TOKEN = os.getenv("HF_TOKEN")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
