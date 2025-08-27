@@ -24,7 +24,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
 if not HF_TOKEN:
     logger.error("HF_TOKEN is not set in environment variables.")
     raise ValueError("HF_TOKEN is required for Inference API.")
-client = OpenAI(api_key=HF_TOKEN, base_url=API_ENDPOINT, http_client=None)
+client = OpenAI(api_key=HF_TOKEN, base_url=API_ENDPOINT)
 
 # إعدادات الـ queue
 QUEUE_SIZE = int(os.getenv("QUEUE_SIZE", 80))
@@ -100,8 +100,7 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
             stream=True,
             extra_body={"reasoning": {"effort": reasoning_effort}},
             tools=tools,
-            tool_choice=tool_choice,
-            http_client=None
+            tool_choice=tool_choice
         )
 
         for chunk in stream:
@@ -159,7 +158,7 @@ chatbot_ui = gr.ChatInterface(
         gr.Checkbox(label="Enable web browsing (simulated)", value=False),
         gr.Slider(label="Max New Tokens", minimum=50, maximum=1024, step=50, value=200),
     ],
-    stop_btn="Stop",  # تعديل من True إلى "Stop"
+    stop_btn="Stop",
     examples=[
         ["Explain the difference between supervised and unsupervised learning."],
         ["Summarize the plot of Inception in two sentences."],
