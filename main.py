@@ -8,6 +8,7 @@ from typing import List, Generator, Optional
 import requests
 from bs4 import BeautifulSoup
 import re
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 # تعريف LATEX_DELIMS
 LATEX_DELIMS = [
@@ -29,7 +30,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 FALLBACK_API_ENDPOINT = "https://api-inference.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-20b:fireworks-ai")
-SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "MGZON/mgzon-flan-t5-base")
+SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
 if not HF_TOKEN:
     logger.error("HF_TOKEN is not set in environment variables.")
     raise ValueError("HF_TOKEN is required for Inference API.")
@@ -37,23 +38,6 @@ if not HF_TOKEN:
 # إعدادات الـ queue
 QUEUE_SIZE = int(os.getenv("QUEUE_SIZE", 80))
 CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
-
-# كلمات مفتاحية لتحديد إذا كان السؤال متعلق بـ MGZon
-MGZON_KEYWORDS = [
-    "mgzon", "mgzon products", "mgzon services", "mgzon data", "mgzon platform",
-    "mgzon features", "mgzon mission", "mgzon technology", "mgzon solutions"
-]
-
-# دالة لاختيار النموذج تلقائيًا
-def select_model(query: str) -> tuple[str, str]:
-    """Selects the appropriate model and endpoint based on the query content."""
-    query_lower = query.lower()
-    for keyword in MGZON_KEYWORDS:
-        if keyword in query_lower:
-            logger.info(f"Selected {SECONDARY_MODEL_NAME} with endpoint {FALLBACK_API_ENDPOINT} for MGZon-related query: {query}")
-            return SECONDARY_MODEL_NAME, FALLBACK_API_ENDPOINT
-    logger.info(f"Selected {MODEL_NAME} with endpoint {API_ENDPOINT} for general query: {query}")
-    return MODEL_NAME, API_ENDPOINT
 
 # دالة بحث ويب محسنة
 def web_search(query: str) -> str:
@@ -70,13 +54,11 @@ def web_search(query: str) -> str:
         if not results:
             return "No web results found."
 
-        # جمع النتايج
         search_results = []
-        for i, item in enumerate(results[:3]):  # نأخذ أول 3 نتايج
+        for i, item in enumerate(results[:3]):
             title = item.get("title", "")
             snippet = item.get("snippet", "")
             link = item.get("link", "")
-            # محاولة استخراج محتوى الصفحة
             try:
                 page_response = requests.get(link, timeout=5)
                 page_response.raise_for_status()
@@ -93,7 +75,8 @@ def web_search(query: str) -> str:
         logger.exception("Web search failed")
         return f"Web search error: {e}"
 
-# دالة request_generation
+# دالة request_generation مع retry
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def request_generation(
     api_key: str,
     api_base: str,
@@ -102,7 +85,7 @@ def request_generation(
     model_name: str,
     chat_history: Optional[List[dict]] = None,
     temperature: float = 0.9,
-    max_new_tokens: int = 2048,
+    max_new_tokens: int = 4096,  # زيادة لحد 4096
     reasoning_effort: str = "off",
     tools: Optional[List[dict]] = None,
     tool_choice: Optional[str] = None,
@@ -111,7 +94,6 @@ def request_generation(
     """Streams Responses API events."""
     client = OpenAI(api_key=api_key, base_url=api_base)
 
-    # تحديد نوع المهمة بناءً على السؤال
     task_type = "general"
     if "code" in message.lower() or "programming" in message.lower() or any(ext in message.lower() for ext in ["python", "javascript", "react", "django", "flask"]):
         task_type = "code"
@@ -130,7 +112,6 @@ def request_generation(
 
     logger.info(f"Task type detected: {task_type}")
 
-    # تنظيف الـ messages من metadata
     input_messages: List[dict] = [{"role": "system", "content": enhanced_system_prompt}]
     if chat_history:
         for msg in chat_history:
@@ -138,14 +119,12 @@ def request_generation(
             if clean_msg["content"]:
                 input_messages.append(clean_msg)
     
-    # إذا كان DeepSearch مفعّل أو النموذج عام، أضف نتائج البحث
-    if deep_search or model_name == MODEL_NAME:
+    if deep_search:
         search_result = web_search(message)
         input_messages.append({"role": "user", "content": f"User query: {message}\nWeb search context: {search_result}"})
     else:
         input_messages.append({"role": "user", "content": message})
 
-    # إعداد tools و tool_choice
     tools = tools if tools and "gpt-oss" in model_name else []
     tool_choice = tool_choice if tool_choice in ["auto", "none", "any", "required"] and "gpt-oss" in model_name else "none"
 
@@ -184,7 +163,7 @@ def request_generation(
                 saw_visible_output = True
                 buffer += content
 
-                if "\n" in buffer or len(buffer) > 150:
+                if "\n" in buffer or len(buffer) > 500:  # زيادة الـ buffer لحد 500
                     yield buffer
                     buffer = ""
                 continue
@@ -227,7 +206,6 @@ def request_generation(
 
     except Exception as e:
         logger.exception(f"[Gateway] Streaming failed for model {model_name}: {e}")
-        # إذا كان النموذج الرئيسي فشل، جرب النموذج الثانوي مع الـ fallback endpoint
         if model_name == MODEL_NAME:
             fallback_model = SECONDARY_MODEL_NAME
             fallback_endpoint = FALLBACK_API_ENDPOINT
@@ -260,7 +238,7 @@ def request_generation(
                         saw_visible_output = True
                         buffer += content
 
-                        if "\n" in buffer or len(buffer) > 150:
+                        if "\n" in buffer or len(buffer) > 500:
                             yield buffer
                             buffer = ""
                         continue
@@ -309,9 +287,6 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
         yield "Please enter a prompt."
         return
 
-    # اختيار النموذج تلقائيًا
-    model_name, api_endpoint = select_model(message)
-
     # Flatten gradio history وتنظيف metadata
     chat_history = []
     for h in history:
@@ -354,8 +329,8 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
                 },
             },
         }
-    ] if "gpt-oss" in model_name else []
-    tool_choice = "auto" if "gpt-oss" in model_name else "none"
+    ] if "gpt-oss" in MODEL_NAME else []
+    tool_choice = "auto" if "gpt-oss" in MODEL_NAME else "none"
 
     in_analysis = False
     in_visible = False
@@ -375,19 +350,18 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
         )
 
     try:
-        # استدعاء request_generation
         stream = request_generation(
             api_key=HF_TOKEN,
-            api_base=api_endpoint,
+            api_base=API_ENDPOINT,
             message=message,
             system_prompt=system_prompt,
-            model_name=model_name,
+            model_name=MODEL_NAME,
             chat_history=chat_history,
             temperature=temperature,
             max_new_tokens=max_new_tokens,
             tools=tools,
             tool_choice=tool_choice,
-            deep_search=enable_browsing or model_name == MODEL_NAME,
+            deep_search=enable_browsing,
         )
 
         for chunk in stream:
@@ -448,7 +422,7 @@ chatbot_ui = gr.ChatInterface(
         gr.Slider(label="Temperature", minimum=0.0, maximum=1.0, step=0.1, value=0.9),
         gr.Radio(label="Reasoning Effort", choices=["low", "medium", "high"], value="medium"),
         gr.Checkbox(label="Enable DeepSearch (web browsing)", value=True),
-        gr.Slider(label="Max New Tokens", minimum=50, maximum=2048, step=50, value=2048),
+        gr.Slider(label="Max New Tokens", minimum=50, maximum=4096, step=50, value=4096),
     ],
     stop_btn="Stop",
     examples=[
@@ -462,7 +436,7 @@ chatbot_ui = gr.ChatInterface(
         ["Provide guidelines for publishing a technical blog post."],
     ],
     title="MGZon Chatbot",
-    description="A versatile chatbot powered by GPT-OSS-20B and MGZon-Flan-T5-Base (auto-selected based on query). Supports code generation, analysis, review, web search, and MGZon-specific queries. Licensed under Apache 2.0. ***DISCLAIMER:*** Analysis may contain internal thoughts not suitable for final response.",
+    description="A versatile chatbot powered by GPT-OSS-20B and a fine-tuned model for MGZon queries. Supports code generation, analysis, review, web search, and MGZon-specific queries. Licensed under Apache 2.0. ***DISCLAIMER:*** Analysis may contain internal thoughts not suitable for final response.",
     theme="gradio/soft",
     css=css,
 )
