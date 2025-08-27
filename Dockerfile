@@ -8,8 +8,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy main.py directly to /app/main.py
-COPY ./app/main.py ./main.py
+# Create /app/ as a Python module
+COPY ./app/main.py ./app/main.py
+COPY ./app/__init__.py ./app/__init__.py
 
 # Verify files in /app
 RUN ls -R /app
