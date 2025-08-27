@@ -9,8 +9,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy main.py and __init__.py to /app
-COPY app/main.py ./main.py
-COPY app/__init__.py ./__init__.py
+COPY main.py ./main.py
+COPY __init__.py ./__init__.py
 
 # Verify files in /app
 RUN ls -R /app
