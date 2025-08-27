@@ -26,13 +26,13 @@ logger.info("Files in /app/: %s", os.listdir("/app"))
 
 # إعداد العميل لـ Hugging Face Inference API
 HF_TOKEN = os.getenv("HF_TOKEN")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
+FALLBACK_API_ENDPOINT = "https://api-inference.huggingface.co/v1"
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-20b:fireworks-ai")
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "MGZON/mgzon-flan-t5-base")
 if not HF_TOKEN:
     logger.error("HF_TOKEN is not set in environment variables.")
     raise ValueError("HF_TOKEN is required for Inference API.")
-client = OpenAI(api_key=HF_TOKEN, base_url=API_ENDPOINT)
 
 # إعدادات الـ queue
 QUEUE_SIZE = int(os.getenv("QUEUE_SIZE", 80))
@@ -45,15 +45,15 @@ MGZON_KEYWORDS = [
 ]
 
 # دالة لاختيار النموذج تلقائيًا
-def select_model(query: str) -> str:
-    """Selects the appropriate model based on the query content."""
+def select_model(query: str) -> tuple[str, str]:
+    """Selects the appropriate model and endpoint based on the query content."""
     query_lower = query.lower()
     for keyword in MGZON_KEYWORDS:
         if keyword in query_lower:
-            logger.info(f"Selected {SECONDARY_MODEL_NAME} for MGZon-related query: {query}")
-            return SECONDARY_MODEL_NAME
-    logger.info(f"Selected {MODEL_NAME} for general query: {query}")
-    return MODEL_NAME
+            logger.info(f"Selected {SECONDARY_MODEL_NAME} with endpoint {FALLBACK_API_ENDPOINT} for MGZon-related query: {query}")
+            return SECONDARY_MODEL_NAME, FALLBACK_API_ENDPOINT
+    logger.info(f"Selected {MODEL_NAME} with endpoint {API_ENDPOINT} for general query: {query}")
+    return MODEL_NAME, API_ENDPOINT
 
 # دالة بحث ويب محسنة
 def web_search(query: str) -> str:
@@ -81,9 +81,8 @@ def web_search(query: str) -> str:
                 page_response = requests.get(link, timeout=5)
                 page_response.raise_for_status()
                 soup = BeautifulSoup(page_response.text, "html.parser")
-                # استخراج النصوص من الصفحة (فقط الفقرات)
                 paragraphs = soup.find_all("p")
-                page_content = " ".join([p.get_text() for p in paragraphs][:500])  # نأخذ أول 500 حرف
+                page_content = " ".join([p.get_text() for p in paragraphs][:500])
             except Exception as e:
                 logger.warning(f"Failed to fetch page content for {link}: {e}")
                 page_content = snippet
@@ -94,7 +93,7 @@ def web_search(query: str) -> str:
         logger.exception("Web search failed")
         return f"Web search error: {e}"
 
-# دالة request_generation (محدثة لدعم المهام المتعددة)
+# دالة request_generation
 def request_generation(
     api_key: str,
     api_base: str,
@@ -109,10 +108,7 @@ def request_generation(
     tool_choice: Optional[str] = None,
     deep_search: bool = False,
 ) -> Generator[str, None, None]:
-    """Streams Responses API events. Emits:
-      - "analysis" sentinel once, then raw reasoning deltas
-      - "assistantfinal" sentinel once, then visible output deltas
-    If no visible deltas, emits a tool-call fallback message."""
+    """Streams Responses API events."""
     client = OpenAI(api_key=api_key, base_url=api_base)
 
     # تحديد نوع المهمة بناءً على السؤال
@@ -142,14 +138,14 @@ def request_generation(
             if clean_msg["content"]:
                 input_messages.append(clean_msg)
     
-    # إذا كان DeepSearch مفعّل أو السؤال عام، أضف نتائج البحث
+    # إذا كان DeepSearch مفعّل أو النموذج عام، أضف نتائج البحث
     if deep_search or model_name == MODEL_NAME:
         search_result = web_search(message)
         input_messages.append({"role": "user", "content": f"User query: {message}\nWeb search context: {search_result}"})
     else:
         input_messages.append({"role": "user", "content": message})
 
-    # إعداد tools و tool_choice (فقط لـ GPT-based models)
+    # إعداد tools و tool_choice
     tools = tools if tools and "gpt-oss" in model_name else []
     tool_choice = tool_choice if tool_choice in ["auto", "none", "any", "required"] and "gpt-oss" in model_name else "none"
 
@@ -230,8 +226,68 @@ def request_generation(
             yield buffer
 
     except Exception as e:
-        logger.exception("[Gateway] Streaming failed")
-        yield f"Error: {e}"
+        logger.exception(f"[Gateway] Streaming failed for model {model_name}: {e}")
+        # إذا كان النموذج الرئيسي فشل، جرب النموذج الثانوي مع الـ fallback endpoint
+        if model_name == MODEL_NAME:
+            fallback_model = SECONDARY_MODEL_NAME
+            fallback_endpoint = FALLBACK_API_ENDPOINT
+            logger.info(f"Retrying with fallback model: {fallback_model} on {fallback_endpoint}")
+            try:
+                client = OpenAI(api_key=api_key, base_url=fallback_endpoint)
+                stream = client.chat.completions.create(
+                    model=fallback_model,
+                    messages=input_messages,
+                    temperature=temperature,
+                    max_tokens=max_new_tokens,
+                    stream=True,
+                    tools=[],
+                    tool_choice="none",
+                )
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        content = chunk.choices[0].delta.content
+                        if content == "<|channel|>analysis<|message|>":
+                            if not reasoning_started:
+                                yield "analysis"
+                                reasoning_started = True
+                            continue
+                        if content == "<|channel|>final<|message|>":
+                            if reasoning_started and not reasoning_closed:
+                                yield "assistantfinal"
+                                reasoning_closed = True
+                            continue
+
+                        saw_visible_output = True
+                        buffer += content
+
+                        if "\n" in buffer or len(buffer) > 150:
+                            yield buffer
+                            buffer = ""
+                        continue
+
+                    if chunk.choices[0].finish_reason in ("stop", "error"):
+                        if buffer:
+                            yield buffer
+                            buffer = ""
+
+                        if reasoning_started and not reasoning_closed:
+                            yield "assistantfinal"
+                            reasoning_closed = True
+
+                        if not saw_visible_output:
+                            yield "No visible output produced."
+                        if chunk.choices[0].finish_reason == "error":
+                            yield f"Error: Unknown error with fallback model {fallback_model}"
+                        break
+
+                if buffer:
+                    yield buffer
+
+            except Exception as e2:
+                logger.exception(f"[Gateway] Streaming failed for fallback model {fallback_model}: {e2}")
+                yield f"Error: Failed to load both models ({model_name} and {fallback_model}): {e2}"
+        else:
+            yield f"Error: Failed to load model {model_name}: {e}"
 
 # وظيفة التنسيق النهائي
 def format_final(analysis_text: str, visible_text: str) -> str:
@@ -254,7 +310,7 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
         return
 
     # اختيار النموذج تلقائيًا
-    model_name = select_model(message)
+    model_name, api_endpoint = select_model(message)
 
     # Flatten gradio history وتنظيف metadata
     chat_history = []
@@ -322,7 +378,7 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
         # استدعاء request_generation
         stream = request_generation(
             api_key=HF_TOKEN,
-            api_base=API_ENDPOINT,
+            api_base=api_endpoint,
             message=message,
             system_prompt=system_prompt,
             model_name=model_name,
@@ -406,7 +462,7 @@ chatbot_ui = gr.ChatInterface(
         ["Provide guidelines for publishing a technical blog post."],
     ],
     title="MGZon Chatbot",
-    description="A versatile chatbot powered by GPT-OSS-120B and MGZon-Flan-T5-Base (auto-selected based on query). Supports code generation, analysis, review, web search, and MGZon-specific queries. Licensed under Apache 2.0. ***DISCLAIMER:*** Analysis may contain internal thoughts not suitable for final response.",
+    description="A versatile chatbot powered by GPT-OSS-20B and MGZon-Flan-T5-Base (auto-selected based on query). Supports code generation, analysis, review, web search, and MGZon-specific queries. Licensed under Apache 2.0. ***DISCLAIMER:*** Analysis may contain internal thoughts not suitable for final response.",
     theme="gradio/soft",
     css=css,
 )
