@@ -1,9 +1,6 @@
 fastapi==0.115.0
 uvicorn==0.30.6
 gradio==4.44.0
-transformers==4.44.2
-torch==2.4.1
-pydantic==2.9.2
+openai==1.44.0
 python-dotenv==1.0.1
-pydocstyle==6.3.0  # لـ pydoc.html إذا لزم
-accelerate==0.33.0  # لـ device_map في transformers
+pydocstyle==6.3.0
