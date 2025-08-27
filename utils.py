@@ -1,8 +1,8 @@
 # ----------------------------------------------------------------------
-# KaTeX delimiter config for Gradio (من التدميج)
+# KaTeX delimiter config for Gradio
 # ----------------------------------------------------------------------
 
 LATEX_DELIMS = [
-    {"left": "\\[", "right": "\\]", "display": True},  
-    {"left": "\\(", "right": "\\)", "display": False}, 
+    {"left": "\\[", "right": "\\]", "display": True},
+    {"left": "\\(", "right": "\\)", "display": False},
 ]
