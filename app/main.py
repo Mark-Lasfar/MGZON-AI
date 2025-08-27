@@ -3,7 +3,7 @@ import logging
 import gradio as gr
 from openai import OpenAI
 from pydoc import html
-from utils import LATEX_DELIMS
+from ..utils import LATEX_DELIMS  # Adjusted to import from root directory
 
 # إعداد التسجيل
 logging.basicConfig(level=logging.INFO)
@@ -12,14 +12,17 @@ logger = logging.getLogger(__name__)
 # إعداد العميل لـ Hugging Face Inference API
 HF_TOKEN = os.getenv("HF_TOKEN")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
-MODEL_NAME = "openai/gpt-oss-120b:cerebras"  # استخدام مزود Cerebras لـ gpt-oss-120b
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
+if not HF_TOKEN:
+    logger.error("HF_TOKEN is not set in environment variables.")
+    raise ValueError("HF_TOKEN is required for Inference API.")
 client = OpenAI(api_key=HF_TOKEN, base_url=API_ENDPOINT)
 
 # إعدادات الـ queue
 QUEUE_SIZE = int(os.getenv("QUEUE_SIZE", 80))
 CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 
-# وظيفة التنسيق النهائي (من الـ Space الأصلي)
+# وظيفة التنسيق النهائي
 def format_final(analysis_text: str, visible_text: str) -> str:
     """Render final message with collapsible analysis + normal Markdown answer."""
     reasoning_safe = html.escape((analysis_text or "").strip())
