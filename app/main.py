@@ -25,7 +25,7 @@ async def generate(req: RequestText):
         return_tensors="pt",
         truncation=True,
         max_length=512,
-        padding="max_length"  # مهم لضمان طول ثابت
+        padding="longest"   # بدل max_length
     ).to(model.device)
 
     # توليد النص باستخدام معلمات sampling
