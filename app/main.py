@@ -24,7 +24,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
 if not HF_TOKEN:
     logger.error("HF_TOKEN is not set in environment variables.")
     raise ValueError("HF_TOKEN is required for Inference API.")
-client = OpenAI(api_key=HF_TOKEN, base_url=API_ENDPOINT)
+client = OpenAI(api_key=HF_TOKEN, base_url=API_ENDPOINT, http_client=None)  # تجنب مشكلة proxies
 
 # إعدادات الـ queue
 QUEUE_SIZE = int(os.getenv("QUEUE_SIZE", 80))
