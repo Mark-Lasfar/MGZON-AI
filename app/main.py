@@ -3,14 +3,13 @@ import logging
 import gradio as gr
 from openai import OpenAI
 from pydoc import html
-from utils import LATEX_DELIMS  # استيراد من نفس المجلد (/app/)
-
+from utils import LATEX_DELIMS 
 # إعداد التسجيل
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # تحقق من الملفات في /app/
-logger.info("Files in /app/: %s", os.listdir("/app"))  # هيطبع الملفات الموجودة
+logger.info("Files in /app/: %s", os.listdir("/app"))  
 
 # إعداد العميل لـ Hugging Face Inference API
 HF_TOKEN = os.getenv("HF_TOKEN")
