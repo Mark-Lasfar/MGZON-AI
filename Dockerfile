@@ -8,8 +8,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy only main.py (no need for utils.py)
-COPY ./app/main.py ./app/main.py
+# Copy main.py directly to /app/main.py
+COPY ./app/main.py ./main.py
+
+# Verify files in /app
+RUN ls -R /app
 
 # Expose port 7860 for FastAPI/Gradio
 EXPOSE 7860
