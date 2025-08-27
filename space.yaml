@@ -1,10 +1,10 @@
 ---
-title: MGZON GPT-OSS-120B API
+title: MGZon Chatbot API
 emoji: "🤖"
 colorFrom: "blue"
 colorTo: "green"
 sdk: fastapi
 sdk_version: "0.101.0"
-app_file: app/main.py
+app_file: main.py
 pinned: false
 ---
