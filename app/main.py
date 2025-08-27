@@ -3,13 +3,19 @@ import logging
 import gradio as gr
 from openai import OpenAI
 from pydoc import html
-from utils import LATEX_DELIMS 
+
+# تعريف LATEX_DELIMS (دمج من utils.py)
+LATEX_DELIMS = [
+    {"left": "\\[", "right": "\\]", "display": True},
+    {"left": "\\(", "right": "\\)", "display": False},
+]
+
 # إعداد التسجيل
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# تحقق من الملفات في /app/
-logger.info("Files in /app/: %s", os.listdir("/app"))  
+# تحقق من الملفات في /app/ (للتصحيح)
+logger.info("Files in /app/: %s", os.listdir("/app"))
 
 # إعداد العميل لـ Hugging Face Inference API
 HF_TOKEN = os.getenv("HF_TOKEN")
