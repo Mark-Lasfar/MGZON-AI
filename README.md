@@ -7,9 +7,8 @@ title: MGZON FLAN-T5 API
 emoji: "🤖"
 colorFrom: "blue"
 colorTo: "green"
-sdk: gradio
-sdk_version: "3.38.0"
-app_file: app/main.py
+sdk: docker
+app_file: Dockerfile
 pinned: false
 ---
 
