@@ -3,7 +3,7 @@ import logging
 import gradio as gr
 from openai import OpenAI
 from pydoc import html
-from ..utils import LATEX_DELIMS  # Adjusted to import from root directory
+from utils import LATEX_DELIMS 
 
 # إعداد التسجيل
 logging.basicConfig(level=logging.INFO)
