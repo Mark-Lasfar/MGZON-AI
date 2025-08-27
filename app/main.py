@@ -5,12 +5,11 @@ import torch
 
 app = FastAPI(title="MGZON FLAN-T5 API")
 
-# تحميل الموديل مباشرة من Hugging Face
+# تحميل النموذج من Hugging Face مباشرة
 MODEL_NAME = "MGZON/mgzon-flan-t5-base"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
-# نموذج الطلب
 class RequestText(BaseModel):
     text: str
     max_length: int = 200
