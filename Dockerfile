@@ -8,9 +8,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create /app/ as a Python module
-COPY ./app/main.py ./app/main.py
-COPY ./app/__init__.py ./app/__init__.py
+# Copy main.py and __init__.py to /app
+COPY app/main.py ./main.py
+COPY app/__init__.py ./__init__.py
 
 # Verify files in /app
 RUN ls -R /app
@@ -19,4 +19,4 @@ RUN ls -R /app
 EXPOSE 7860
 
 # Run the FastAPI app with uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
