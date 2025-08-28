@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MGZon Chatbot - Powered by AI</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="logo">
+        <h1>Welcome to MGZon Chatbot 🚀</h1>
+        <p>
+            MGZon Chatbot is your AI-powered assistant for code generation, analysis, and MGZon-specific queries. Built with Gradio and FastAPI, it supports multiple frameworks and languages. Ready to explore?
+        </p>
+        <a href="/gradio" id="chatbot-link" class="btn">Launch Chatbot</a>
+        <div class="features">
+            <h2>Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <i class="bx bx-code-alt"></i>
+                    <h3>Code Generation</h3>
+                    <p>Generate code for React, Django, Flask, and more.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="bx bx-search"></i>
+                    <h3>Web Search</h3>
+                    <p>Integrated web search for MGZon-related queries.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="bx bx-analyse"></i>
+                    <h3>Analysis & Review</h3>
+                    <p>Detailed code and data analysis with insights.</p>
+                </div>
+            </div>
+        </div>
+        <div class="docs">
+            <h2>API Documentation</h2>
+            <p>Integrate MGZon Chatbot into your projects with our API. Supports Python, JavaScript, and more.</p>
+            <div class="code-block">
+                <h3>Python (gradio_client)</h3>
+                <pre><code class="language-python">from gradio_client import Client
+client = Client("https://mgzon-mgzon-app.hf.space/gradio")
+result = client.predict(
+    message="Generate a React component",
+    system_prompt="You are a coding expert",
+    temperature=0.7,
+    max_new_tokens=4096,
+    api_name="/api/chat"
+)
+print(result)</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-block">
+                <h3>JavaScript (fetch)</h3>
+                <pre><code class="language-javascript">fetch('https://mgzon-mgzon-app.hf.space/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        message: 'Generate a React component',
+        system_prompt: 'You are a coding expert',
+        temperature: 0.7,
+        max_new_tokens: 4096
+    })
+}).then(response => response.json()).then(data => console.log(data));</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-block">
+                <h3>Bash (curl)</h3>
+                <pre><code class="language-bash">curl -X POST https://mgzon-mgzon-app.hf.space/api/chat \
+-H "Content-Type: application/json" \
+-d '{"message":"Generate a React component","system_prompt":"You are a coding expert","temperature":0.7,"max_new_tokens":4096}'</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="footer-logo">
+            <p>MGZon is a leading platform for e-commerce integrations and API solutions.</p>
+            <div class="footer-grid">
+                <div class="footer-card">
+                    <i class="bx bx-mail-send"></i>
+                    <h3>Email Us</h3>
+                    <p>Contact: <a href="mailto:support@mgzon.com">support@mgzon.com</a></p>
+                </div>
+                <div class="footer-card">
+                    <i class="bx bx-phone"></i>
+                    <h3>Phone Support</h3>
+                    <p>Call: +1-800-123-4567</p>
+                </div>
+                <div class="footer-card">
+                    <i class="bx bx-group"></i>
+                    <h3>Community</h3>
+                    <p>Join: <a href="https://mgzon.com/community">mgzon.com/community</a></p>
+                </div>
+                <div class="footer-card">
+                    <i class="bx bx-code-alt"></i>
+                    <h3>API Docs</h3>
+                    <p>Explore: <a href="https://mgzon.com/developers">mgzon.com/developers</a></p>
+                </div>
+                <div class="footer-card">
+                    <i class="bx bx-help-circle"></i>
+                    <h3>FAQ</h3>
+                    <p>Read: <a href="https://mgzon.com/faq">mgzon.com/faq</a></p>
+                </div>
+                <div class="footer-card">
+                    <i class="bx bx-book"></i>
+                    <h3>Documentation</h3>
+                    <p>Learn: <a href="https://mgzon.com/docs">mgzon.com/docs</a></p>
+                </div>
+            </div>
+            <div class="footer-social">
+                <a href="https://github.com/Mark-Lasfar/MGZon"><i class="bx bxl-github"></i></a>
+                <a href="https://x.com/MGZon"><i class="bx bxl-twitter"></i></a>
+                <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/"><i class="bx bxl-facebook"></i></a>
+            </div>
+            <p>© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
+        </div>
+    </footer>
+    <script src="/static/js/scripts.js"></script>
+</body>
+</html>
