@@ -39,7 +39,7 @@ logger.info("Files in /app/: %s", os.listdir("/app"))
 # إعداد العميل لـ Hugging Face Inference API
 HF_TOKEN = os.getenv("HF_TOKEN")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
-FALLBACK_API_ENDPOINT = "https://api-inference.huggingface.co/v1")
+FALLBACK_API_ENDPOINT = "https://api-inference.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-20b:fireworks-ai")
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "MGZON/Veltrix")
 TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
