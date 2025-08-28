@@ -7,5 +7,5 @@ python-dotenv==1.0.1
 pydocstyle==6.3.0
 requests==2.32.3
 beautifulsoup4==4.12.3
-selenium==4.25.0
 tenacity==8.5.0
+selenium==4.25.0
