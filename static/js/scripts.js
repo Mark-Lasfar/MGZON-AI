@@ -6,7 +6,30 @@ function copyCode(button) {
     });
 }
 
-document.getElementById('chatbot-link').addEventListener('click', (e) => {
+document.getElementById('chatbot-link')?.addEventListener('click', (e) => {
     e.preventDefault();
     window.location.href = '/gradio';
+});
+
+// تأثيرات للكروت
+document.querySelectorAll('.feature-card, .footer-card, .news-card').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+        card.style.transform = 'scale(1.05) rotate(1deg)';
+    });
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = 'scale(1) rotate(0deg)';
+    });
+});
+
+// إغلاق/فتح الـ sidebar على الموبايل
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.createElement('button');
+    toggleBtn.textContent = '☰';
+    toggleBtn.className = 'sidebar-toggle';
+    document.body.prepend(toggleBtn);
+    
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+    });
 });
