@@ -2,6 +2,8 @@ import os
 import json
 import logging
 import gradio as gr
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from openai import OpenAI
 from pydoc import html
 from typing import List, Generator, Optional
@@ -9,7 +11,6 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from tenacity import retry, stop_after_attempt, wait_exponential
-from fastapi import FastAPI
 from pydantic import BaseModel
 
 # تعريف نموذج البيانات للـ API
@@ -498,6 +499,26 @@ chatbot_ui = gr.ChatInterface(
 
 # دمج FastAPI مع Gradio
 app = FastAPI(title="MGZon Chatbot API")
+
+# ربط Gradio مع FastAPI
+app = gr.mount_gradio_app(app, chatbot_ui, path="/gradio")
+
+# إضافة endpoint للـ root
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    return """
+    <html>
+        <head>
+            <title>MGZon Chatbot</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+        </head>
+        <body>
+            <h1>Welcome to MGZon Chatbot</h1>
+            <p>Access the chatbot interface at <a href="/gradio">/gradio</a>.</p>
+        </body>
+    </html>
+    """
 
 # API endpoints
 @app.get("/api/model-info")
