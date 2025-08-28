@@ -511,6 +511,14 @@ def model_info():
         "status": "online"
     }
 
+@app.get("/api/performance")
+async def performance_stats():
+    return {
+        "queue_size": QUEUE_SIZE,
+        "concurrency_limit": CONCURRENCY_LIMIT,
+        "uptime": os.popen("uptime").read().strip()
+    }
+
 @app.post("/api/chat")
 async def chat_endpoint(req: QueryRequest):
     model_name, api_endpoint = select_model(req.message)
