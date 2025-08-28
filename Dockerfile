@@ -1,16 +1,17 @@
-# Use Python 3.10 base image
-FROM python:3.10
+FROM python:3.10-slim
 
-# Set working directory to /app
+# Set working directory
 WORKDIR /app
+
+# Install chromium-driver and dependencies
+RUN apt-get update && apt-get install -y chromium-driver && apt-get clean
 
 # Copy requirements.txt and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy main.py and __init__.py to /app
-COPY main.py ./main.py
-COPY __init__.py ./__init__.py
+# Copy all project files
+COPY . .
 
 # Verify files in /app
 RUN ls -R /app
