@@ -537,6 +537,71 @@ async def root():
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
                 backdrop-filter: blur(10px);
             }
+            .footer {
+    text-align: center;
+    padding: 2rem 0;
+    background-color: var(--primary-color);
+    border-top: 1px solid var(--container-border);
+}
+
+.footer__copy {
+    font-size: 0.9rem;
+    color: var(--second-color);
+}
+
+.footer__links {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Footer-specific styles */
+.animate-gradient-x {
+  background: linear-gradient(270deg, #1f2937, #111827, #1f2937);
+  background-size: 200% 200%;
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.footer-card {
+  background: #374151;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+.footer-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  background: #4b5563;
+}
+.footer__links .footer__icon {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: color 0.3s;
+}
+
+.footer__links .footer__icon:hover {
+    color: var(--first-color);
+}
+
             h1 {
                 font-size: 3rem;
                 margin-bottom: 20px;
@@ -643,6 +708,255 @@ curl -X POST https://mgzon-mgzon-app.hf.space/api/chat \
                 </pre>
             </div>
         </div>
+        <footer class="bg-gray-800 p-8 mt-12 animate-gradient-x">
+  <div class="container mx-auto px-6">
+    <div class="mb-12 text-center">
+      <div class="containerDown">
+        <div class="last">
+          <div class="head">Total Website Visits</div>
+          <div id="visit-count">1930537</div>
+        </div>
+      </div>
+
+      <img
+        src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/9a1b2149507ae61fec3bb7fb86d8d16c11852f3b/public/icons/mg.svg"
+        alt="MGZon Logo" class="w-24 h-24 mx-auto mb-4">
+
+      <p id="footer-company-desc" class="text-gray-300 max-w-2xl mx-auto text-lg">MGZon is a leading platform for
+        e-commerce integrations and API solutions.</p>
+    </div>
+    <div class="mb-12">
+      <h3 id="contact-title" class="text-3xl font-bold mb-8 text-center text-white">Contact Information</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="contact_email_details">
+          <div class="flex justify-center mb-4"><i class="bx bx-mail-send text-4xl text-blue-400"></i></div>
+          <h4 id="contact-email-title" class="text-xl font-semibold text-center text-white">Email Us</h4>
+          <p id="contact-email-desc" class="text-gray-300 text-center mt-2">Reach out to our support team via email.
+          </p>
+          <p id="contact-email-details" class="text-gray-400 text-center text-sm mt-2 hidden">Contact our support team
+            at support@mgzon.com for assistance with technical issues, account management, or general inquiries. We
+            aim to respond within 24 hours during business days (Monday to Friday, 9 AM - 5 PM EST). For faster
+            resolution, include your account ID, order number, or a detailed description of your issue. You can also
+            submit a ticket via our support portal at mgzon.com/support.</p>
+        </div>
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="contact_phone_details">
+          <div class="flex justify-center mb-4"><i class="bx bx-phone text-4xl text-blue-400"></i></div>
+          <h4 id="contact-phone-title" class="text-xl font-semibold text-center text-white">Phone Support</h4>
+          <p id="contact-phone-desc" class="text-gray-300 text-center mt-2">Call us for immediate assistance.</p>
+          <p id="contact-phone-details" class="text-gray-400 text-center text-sm mt-2 hidden">Reach us at
+            +1-800-123-4567 for immediate support. Our phone lines are open Monday to Friday, 9 AM - 5 PM EST. For
+            urgent issues outside these hours, use our email support or live chat feature. Enterprise clients can
+            access 24/7 dedicated support by contacting their account manager.</p>
+        </div>
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="contact_hours_details">
+          <div class="flex justify-center mb-4"><i class="bx bx-group text-4xl text-blue-400"></i></div>
+          <h4 id="contact-hours-title" class="text-xl font-semibold text-center text-white">Support Hours</h4>
+          <p id="contact-hours-desc" class="text-gray-300 text-center mt-2">Available 9 AM - 6 PM, Monday to Friday.
+          </p>
+          <p id="contact-hours-details" class="text-gray-400 text-center text-sm mt-2 hidden">Our support team is
+            available Monday to Friday, 9 AM - 5 PM EST. Outside these hours, explore our self-service options,
+            including our comprehensive FAQ, community forums, and knowledge base. Enterprise clients can request 24/7
+            support through their dedicated account manager or by emailing enterprise@mgzon.com.</p>
+        </div>
+      </div>
+    </div>
+    <div class="mb-12">
+      <h3 id="resources-title" class="text-3xl font-bold mb-8 text-center text-white">Resources</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="resources_api_docs_details">
+          <div class="flex justify-center mb-4"><i class="bx bx-code-alt text-4xl text-green-400"></i></div>
+          <h4 id="resources-api-docs-title" class="text-xl font-semibold text-center text-white">API Documentation
+          </h4>
+          <p id="resources-api-docs-desc" class="text-gray-300 text-center mt-2">Explore our API endpoints and
+            integration guides.</p>
+          <p id="resources-api-docs-details" class="text-gray-400 text-center text-sm mt-2 hidden">Our API
+            documentation provides detailed guides for integrating MGZon services into your applications. Learn about
+            OAuth 2.0 authentication, available endpoints (e.g., /api/v1/clients, /api/products/import), rate limits,
+            and error handling. Includes code examples in Python, JavaScript, and cURL. Visit our developer portal at
+            mgzon.com/developers.</p>
+        </div>
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="resources_faq_details">
+          <div class="flex justify-center mb-4"><i class="bx bx-help-circle text-4xl text-green-400"></i></div>
+          <h4 id="resources-faq-title" class="text-xl font-semibold text-center text-white">FAQ</h4>
+          <p id="resources-faq-desc" class="text-gray-300 text-center mt-2">Find answers to common questions.</p>
+          <p id="resources-faq-details" class="text-gray-400 text-center text-sm mt-2 hidden">Find answers to common
+            questions about account setup, billing, API usage, and troubleshooting in our FAQ. Updated weekly based on
+            user feedback, it covers topics like OAuth scope management, seller integrations, and payment processing.
+            If your question isn’t answered, submit a ticket or join our community forums at mgzon.com/community.</p>
+        </div>
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="resources_docs_details">
+          <div class="flex justify-center mb-4"><img
+              src="https://github.blog/wp-content/uploads/2024/07/Icon-Circle.svg" alt="Docs Icon"
+              class="w-10 h-10 text-green-400"></div>
+          <h4 id="resources-docs-title" class="text-xl font-semibold text-center text-white">Documentation</h4>
+          <p id="resources-docs-desc" class="text-gray-300 text-center mt-2">Learn how to use MGZon with our detailed
+            guides.</p>
+          <p id="resources-docs-details" class="text-gray-400 text-center text-sm mt-2 hidden">Our documentation
+            offers step-by-step guides on using MGZon’s platform, covering account management, product
+            imports/exports, advertising campaigns, and analytics. Available in multiple languages (English, Arabic,
+            etc.) with video tutorials and interactive demos. Check out advanced topics like webhook setup and
+            real-time notifications at mgzon.com/docs.</p>
+        </div>
+      </div>
+    </div>
+    <div class="mb-12">
+      <h3 id="support-title" class="text-3xl font-bold mb-8 text-center text-white">Support</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="support_contact_us_details">
+          <div class="flex justify-center mb-4"><i class="bx bx-mail-send text-4xl text-yellow-400"></i></div>
+          <h4 id="support-contact-us-title" class="text-xl font-semibold text-center text-white">Contact Support</h4>
+          <p id="support-contact-us-desc" class="text-gray-300 text-center mt-2">Get in touch with our support team.
+          </p>
+          <p id="support-contact-us-details" class="text-gray-400 text-center text-sm mt-2 hidden">Our dedicated
+            support team is here to assist with technical issues, billing inquiries, or feature requests. Reach us via
+            live chat (available on mgzon.com/support), email (support@mgzon.com), or phone (+1-800-123-4567). For
+            complex issues, submit a ticket through our portal for detailed tracking and resolution.</p>
+        </div>
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="support_community_details">
+          <div class="flex justify-center mb-4"><i class="bx bx-group text-4xl text-yellow-400"></i></div>
+          <h4 id="support-community-title" class="text-xl font-semibold text-center text-white">Community</h4>
+          <p id="support-community-desc" class="text-gray-300 text-center mt-2">Join our community forums for help and
+            discussions.</p>
+          <p id="support-community-details" class="text-gray-400 text-center text-sm mt-2 hidden">Join our global
+            community of developers and users to share knowledge, collaborate on projects, and get peer support.
+            Participate in our forums at mgzon.com/community, attend virtual meetups, or contribute to our open-source
+            projects on GitHub (github.com/Mark-Lasfar/MGZon). Monthly webinars and Q&A sessions are also available.
+          </p>
+        </div>
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="support_tickets_details">
+          <div class="flex justify-center mb-4"><i class="bx bx-help-circle text-4xl text-yellow-400"></i></div>
+          <h4 id="support-tickets-title" class="text-xl font-semibold text-center text-white">Support Tickets</h4>
+          <p id="support-tickets-desc" class="text-gray-300 text-center mt-2">Submit a ticket for personalized
+            assistance.</p>
+          <p id="support-tickets-details" class="text-gray-400 text-center text-sm mt-2 hidden">Submit a support
+            ticket for personalized assistance with complex issues, such as API errors or integration challenges.
+            Track your ticket status in real-time via our support portal (mgzon.com/support/tickets). Premium users
+            and enterprise clients receive priority support with SLA-backed response times.</p>
+        </div>
+      </div>
+    </div>
+    <div class="mb-12">
+      <h3 id="about-title" class="text-3xl font-bold mb-8 text-center text-white">About MGZon</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="about_mgzon_details">
+          <div class="flex justify-center mb-4"><i class="bx bx-info-circle text-4xl text-purple-400"></i></div>
+          <h4 id="about-mgzon-title" class="text-xl font-semibold text-center text-white">Our Story</h4>
+          <p id="about-mgzon-desc" class="text-gray-300 text-center mt-2">Learn about MGZon's journey and vision.</p>
+          <p id="about-mgzon-details" class="text-gray-400 text-center text-sm mt-2 hidden">MGZon is a leading
+            platform empowering businesses and developers with innovative tools for e-commerce, advertising, and
+            analytics. Founded in 2023, we’ve grown to support thousands of sellers globally. Learn about our history,
+            values, and commitment to privacy and security at mgzon.com/about.</p>
+        </div>
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="about_team_details">
+          <div class="flex justify-center mb-4"><i class="bx bx-group text-4xl text-purple-400"></i></div>
+          <h4 id="about-team-title" class="text-xl font-semibold text-center text-white">Our Team</h4>
+          <p id="about-team-desc" class="text-gray-300 text-center mt-2">Meet the team behind MGZon.</p>
+          <p id="about-team-details" class="text-gray-400 text-center text-sm mt-2 hidden">Our team of developers,
+            designers, and support specialists is dedicated to your success. Meet our leadership, including our CTO
+            and product managers, who bring decades of experience in tech and e-commerce. Visit mgzon.com/team to
+            learn more about our expertise and open roles.</p>
+        </div>
+        <div
+          class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+          data-details="about_mission_details">
+          <div class="flex justify-center mb-4"><img
+              src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/9a1b2149507ae61fec3bb7fb86d8d16c11852f3b/public/icons/mg.svg"
+              alt="MGZon Logo" class="w-10 h-10 text-purple-400"></div>
+          <h4 id="about-mission-title" class="text-xl font-semibold text-center text-white">Our Mission</h4>
+          <p id="about-mission-desc" class="text-gray-300 text-center mt-2">Discover our mission to empower
+            e-commerce.</p>
+          <p id="about-mission-details" class="text-gray-400 text-center text-sm mt-2 hidden">Our mission is to drive
+            innovation by providing scalable, secure, and accessible technology solutions. We empower businesses and
+            developers to succeed through tools like our OAuth-based API, real-time analytics, and seamless
+            integrations with platforms like Shopify and ShipBob. Learn more at mgzon.com/mission.</p>
+        </div>
+      </div>
+    </div>
+    <div class="mb-12">
+      <h3 id="media-title" class="text-3xl font-bold mb-8 text-center text-white">Media</h3>
+      <div id="media-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Articles will be added dynamically here -->
+      </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+        data-details="media_videos_details">
+        <div class="flex justify-center mb-4"><i class="bx bx-video text-4xl text-red-400"></i></div>
+        <h4 id="media-videos-title" class="text-xl font-semibold text-center text-white">Videos</h4>
+        <p id="media-videos-desc" class="text-gray-300 text-center mt-2">Watch tutorials and guides on YouTube.</p>
+        <p id="media-videos-details" class="text-gray-400 text-center text-sm mt-2 hidden">Explore our video library
+          at mgzon.com/videos, featuring tutorials on API integration, product demos for sellers, and webinars on
+          e-commerce trends. New content is added weekly, including beginner guides and advanced topics like real-time
+          inventory syncing. Subscribe to our YouTube channel for updates.</p>
+      </div>
+      <div
+        class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+        data-details="media_books_details">
+        <div class="flex justify-center mb-4"><i class="bx bx-book text-4xl text-red-400"></i></div>
+        <h4 id="media-books-title" class="text-xl font-semibold text-center text-white">Books</h4>
+        <p id="media-books-desc" class="text-gray-300 text-center mt-2">Explore recommended books for e-commerce and
+          APIs.</p>
+        <p id="media-books-details" class="text-gray-400 text-center text-sm mt-2 hidden">Discover our curated list of
+          books and eBooks on e-commerce, software development, and innovation. Titles include 'API Design Patterns'
+          and 'E-commerce Essentials.' Access free resources or purchase through our partners at
+          mgzon.com/resources/books.</p>
+      </div>
+      <div
+        class="footer-card bg-gray-700 p-6 rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300 cursor-pointer card"
+        data-details="media_articles_details">
+        <div class="flex justify-center mb-4"><i class="bx bx-news text-4xl text-red-400"></i></div>
+        <h4 id="media-articles-title" class="text-xl font-semibold text-center text-white">Articles</h4>
+        <p id="media-articles-desc" class="text-gray-300 text-center mt-2">Read our latest articles and blog posts.
+        </p>
+        <p id="media-articles-details" class="text-gray-400 text-center text-sm mt-2 hidden">Read our blog at
+          mgzon.com/blog for insights on industry trends, technical tutorials, and MGZon updates. Recent posts cover
+          OAuth best practices, seller advertising strategies, and performance optimization for APIs. Contribute your
+          own articles via our community portal.</p>
+      </div>
+    </div>
+    <div class="mt-12 text-center">
+      <div class="flex justify-center space-x-6 mb-6">
+        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-gray-300 hover:text-blue-400"><i
+            class="bx bxl-github text-3xl"></i></a>
+        <a href="https://x.com/MGZon" class="text-gray-300 hover:text-blue-400"><i
+            class="bx bxl-twitter text-3xl"></i></a>
+        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/"
+          class="text-gray-300 hover:text-blue-400"><i class="bx bxl-facebook text-3xl"></i></a>
+      </div>
+      <p id="footer Rights-reserved" class="text-gray-300">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
+    </div>
+    <div id="footer-modal" class="modal">
+      <div id="modal-content" class="modal-content">
+        <span id="close-btn" class="close-btn">&times;</span>
+        <h3 id="modal-title" class="text-2xl font-bold mb-4"></h3>
+        <p id="modal-details" class="text-gray-300"></p>
+      </div>
+    </div>
+  </div>
+</footer>
         <script>
             // Redirect to /gradio on button click
             document.getElementById('chatbot-link').addEventListener('click', (e) => {
