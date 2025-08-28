@@ -29,46 +29,65 @@ CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 
 # إعداد CSS
 css = """
-.gradio-container { max-width: 800px; margin: auto; }
+.gradio-container { max-width: 800px; margin: auto; padding: 20px; }
+.logo { width: 100px; height: 100px; margin: 20px auto; display: block; }
 .chatbot { border: 1px solid #ccc; border-radius: 10px; }
 .input-textbox { font-size: 16px; }
+h1 { text-align: center; color: #fff; font-size: 2rem; margin-bottom: 20px; }
 """
 
-# إعداد واجهة Gradio
-chatbot_ui = gr.ChatInterface(
-    fn=generate,
-    type="messages",
-    chatbot=gr.Chatbot(
+# إعداد واجهة Gradio بـ Blocks
+with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
+    gr.HTML("""
+        <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="logo">
+        <h1>MGZon Chatbot</h1>
+        <p style="text-align: center; color: #ccc;">A versatile chatbot powered by GPT-OSS-20B and a fine-tuned model for MGZon queries. Licensed under Apache 2.0.</p>
+    """)
+    chatbot = gr.Chatbot(
         label="MGZon Chatbot",
         type="messages",
         height=600,
         latex_delimiters=LATEX_DELIMS,
-    ),
-    additional_inputs_accordion=gr.Accordion("⚙️ Settings", open=True),
-    additional_inputs=[
-        gr.Textbox(label="System prompt", value="You are a helpful assistant capable of code generation, analysis, review, and more.", lines=2),
-        gr.Slider(label="Temperature", minimum=0.0, maximum=1.0, step=0.1, value=0.9),
-        gr.Radio(label="Reasoning Effort", choices=["low", "medium", "high"], value="medium"),
-        gr.Checkbox(label="Enable DeepSearch (web browsing)", value=True),
-        gr.Slider(label="Max New Tokens", minimum=50, maximum=128000, step=50, value=4096),
-    ],
-    stop_btn="Stop",
-    examples=[
-        ["Explain the difference between supervised and unsupervised learning."],
-        ["Generate a React component for a login form."],
-        ["Review this Python code: print('Hello World')"],
-        ["Analyze the performance of a Django REST API."],
-        ["Tell me about MGZon products and services."],
-        ["Create a Flask route for user authentication."],
-        ["What are the latest trends in AI?"],
-        ["Provide guidelines for publishing a technical blog post."],
-        ["Who is the founder of MGZon?"],
-    ],
-    title="MGZon Chatbot",
-    description="A versatile chatbot powered by GPT-OSS-20B and a fine-tuned model for MGZon queries. Supports code generation, analysis, review, web search, and MGZon-specific queries. Licensed under Apache 2.0. ***DISCLAIMER:*** Analysis may contain internal thoughts not suitable for final response.",
-    theme="gradio/soft",
-    css=css,
-)
+    )
+    with gr.Row():
+        message = gr.Textbox(label="Your Message", placeholder="Type your message here...", lines=2)
+        submit = gr.Button("Send")
+        stop_btn = gr.Button("Stop")
+    with gr.Accordion("⚙️ Settings", open=False):
+        system_prompt = gr.Textbox(
+            label="System prompt",
+            value="You are a helpful assistant capable of code generation, analysis, review, and more.",
+            lines=2
+        )
+        temperature = gr.Slider(label="Temperature", minimum=0.0, maximum=1.0, step=0.1, value=0.9)
+        reasoning_effort = gr.Radio(label="Reasoning Effort", choices=["low", "medium", "high"], value="medium")
+        enable_browsing = gr.Checkbox(label="Enable DeepSearch (web browsing)", value=True)
+        max_new_tokens = gr.Slider(label="Max New Tokens", minimum=50, maximum=128000, step=50, value=4096)
+    gr.Examples(
+        examples=[
+            ["Explain the difference between supervised and unsupervised learning."],
+            ["Generate a React component for a login form."],
+            ["Review this Python code: print('Hello World')"],
+            ["Analyze the performance of a Django REST API."],
+            ["Tell me about MGZon products and services."],
+            ["Create a Flask route for user authentication."],
+            ["What are the latest trends in AI?"],
+            ["Provide guidelines for publishing a technical blog post."],
+            ["Who is the founder of MGZon?"],
+        ],
+        inputs=[message]
+    )
+
+    def handle_submit(msg, history, sys_prompt, temp, effort, browsing, max_tokens):
+        for response in generate(msg, history, sys_prompt, temp, effort, browsing, max_tokens):
+            yield response
+
+    submit.click(
+        fn=handle_submit,
+        inputs=[message, chatbot, system_prompt, temperature, reasoning_effort, enable_browsing, max_new_tokens],
+        outputs=[chatbot]
+    )
+    stop_btn.click(fn=None, cancels=[submit])  # زر Stop لإيقاف الـ generation
 
 # إعداد FastAPI
 app = FastAPI(title="MGZon Chatbot API")
