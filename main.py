@@ -3,7 +3,7 @@ import json
 import logging
 import gradio as gr
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from openai import OpenAI
 from pydoc import html
 from typing import List, Generator, Optional
@@ -504,19 +504,153 @@ app = FastAPI(title="MGZon Chatbot API")
 app = gr.mount_gradio_app(app, chatbot_ui, path="/gradio")
 
 # إضافة endpoint للـ root
+
 @app.get("/", response_class=HTMLResponse)
 async def root():
     return """
-    <html>
-        <head>
-            <title>MGZon Chatbot</title>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-        </head>
-        <body>
-            <h1>Welcome to MGZon Chatbot</h1>
-            <p>Access the chatbot interface at <a href="/gradio">/gradio</a>.</p>
-        </body>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>MGZon Chatbot - Powered by AI</title>
+        <style>
+            body {
+                font-family: 'Arial', sans-serif;
+                margin: 0;
+                padding: 0;
+                background: linear-gradient(135deg, #1e3c72, #2a5298);
+                color: #fff;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                overflow-x: hidden;
+            }
+            .container {
+                max-width: 800px;
+                text-align: center;
+                padding: 20px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 15px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+                backdrop-filter: blur(10px);
+            }
+            h1 {
+                font-size: 3rem;
+                margin-bottom: 20px;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            p {
+                font-size: 1.2rem;
+                line-height: 1.6;
+                margin-bottom: 30px;
+            }
+            a {
+                display: inline-block;
+                padding: 15px 30px;
+                background: #ff6f61;
+                color: #fff;
+                text-decoration: none;
+                border-radius: 25px;
+                font-size: 1.1rem;
+                transition: background 0.3s, transform 0.2s;
+            }
+            a:hover {
+                background: #e55a50;
+                transform: scale(1.05);
+            }
+            .features, .integration {
+                margin-top: 40px;
+                text-align: left;
+            }
+            .features h2, .integration h2 {
+                font-size: 1.8rem;
+                margin-bottom: 15px;
+            }
+            .features ul, .integration pre {
+                background: rgba(0, 0, 0, 0.2);
+                padding: 20px;
+                border-radius: 10px;
+                font-size: 1rem;
+            }
+            .features li {
+                margin-bottom: 10px;
+            }
+            pre {
+                white-space: pre-wrap;
+                font-family: 'Courier New', monospace;
+                color: #c9e4ca;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .container > * {
+                animation: fadeIn 0.5s ease-in-out;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Welcome to MGZon Chatbot 🚀</h1>
+            <p>
+                MGZon Chatbot is your AI-powered assistant for code generation, analysis, and MGZon-specific queries. Built with Gradio and FastAPI, it supports multiple frameworks and languages. Ready to explore?
+            </p>
+            <a href="/gradio" id="chatbot-link">Launch Chatbot</a>
+            <div class="features">
+                <h2>Features</h2>
+                <ul>
+                    <li>💻 Generate code for React, Django, Flask, and more.</li>
+                    <li>🔍 Analyze and review code or data with detailed insights.</li>
+                    <li>🌐 Web search integration for MGZon-related queries.</li>
+                    <li>🤖 Powered by GPT-OSS-20B and fine-tuned MGZon/Veltrix model.</li>
+                </ul>
+            </div>
+            <div class="integration">
+                <h2>Integrate with MGZon Chatbot</h2>
+                <p>Use our API to integrate the chatbot into your projects. Supports Python, JavaScript, and more.</p>
+                <pre>
+# Python Example (using gradio_client)
+from gradio_client import Client
+client = Client("https://mgzon-mgzon-app.hf.space/gradio")
+result = client.predict(
+    message="Generate a React component",
+    system_prompt="You are a coding expert",
+    temperature=0.7,
+    max_new_tokens=4096,
+    api_name="/api/chat"
+)
+print(result)
+
+# JavaScript Example (using fetch)
+fetch('https://mgzon-mgzon-app.hf.space/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        message: 'Generate a React component',
+        system_prompt: 'You are a coding expert',
+        temperature: 0.7,
+        max_new_tokens: 4096
+    })
+}).then(response => response.json()).then(data => console.log(data));
+
+// Bash Example (using curl)
+curl -X POST https://mgzon-mgzon-app.hf.space/api/chat \
+-H "Content-Type: application/json" \
+-d '{"message":"Generate a React component","system_prompt":"You are a coding expert","temperature":0.7,"max_new_tokens":4096}'
+                </pre>
+            </div>
+        </div>
+        <script>
+            // Redirect to /gradio on button click
+            document.getElementById('chatbot-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = '/gradio';
+            });
+        </script>
+    </body>
     </html>
     """
 
