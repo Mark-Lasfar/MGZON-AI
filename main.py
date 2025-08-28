@@ -285,7 +285,6 @@ def request_generation(
             except Exception as e2:
                 logger.exception(f"[Gateway] Streaming failed for fallback model {fallback_model}: {e2}")
                 yield f"Error: Failed to load both models ({model_name} and {fallback_model}): {e2}"
-                # تجربة النموذج الثالث
                 try:
                     client = OpenAI(api_key=api_key, base_url=FALLBACK_API_ENDPOINT, timeout=60.0)
                     stream = client.chat.completions.create(
@@ -498,7 +497,7 @@ chatbot_ui = gr.ChatInterface(
 
 # دمج FastAPI مع Gradio
 app = FastAPI(title="MGZon Chatbot API")
-app = mount_gradio_app(app, chatbot_ui, path="/")
+app.mount("/", chatbot_ui)
 
 # API endpoints
 @app.get("/api/model-info")
@@ -509,14 +508,6 @@ def model_info():
         "tertiary_model": TERTIARY_MODEL_NAME,
         "api_base": API_ENDPOINT,
         "status": "online"
-    }
-
-@app.get("/api/performance")
-async def performance_stats():
-    return {
-        "queue_size": QUEUE_SIZE,
-        "concurrency_limit": CONCURRENCY_LIMIT,
-        "uptime": os.popen("uptime").read().strip()
     }
 
 @app.post("/api/chat")
