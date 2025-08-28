@@ -11,7 +11,7 @@ def web_search(query: str) -> str:
         google_cse_id = os.getenv("GOOGLE_CSE_ID")
         if not google_api_key or not google_cse_id:
             return "Web search requires GOOGLE_API_KEY and GOOGLE_CSE_ID to be set."
-        url = f"https://www.googleapis.com/customsearch/v1?key={google_api_key}&cx={google_cse_id}&q={query}+site:mgzon.com"
+        url = f"https://www.googleapis.com/customsearch/v1?key={google_api_key}&cx={google_cse_id}&q={query}+site:https://hager-zon.vercel.app/"
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         results = response.json().get("items", [])
