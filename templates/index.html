@@ -4,106 +4,139 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MGZon Chatbot - Powered by AI</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+        .sidebar.active { transform: translateX(0); }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); animation: slideIn 0.3s ease; }
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body>
-    <div class="sidebar">
-        <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="sidebar-logo">
-        <nav>
-            <a href="/" class="active">Home</a>
-            <a href="/docs">API Documentation</a>
-            <a href="https://hager-zon.vercel.app/about">About MGZon</a>
-            <a href="https://hager-zon.vercel.app/community">Community</a>
-            <a href="https://mark-elasfar.web.app/" target="_blank">Mark Al-Asfar</a>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+    <button class="md:hidden fixed top-4 left-4 z-50 text-white text-2xl sidebar-toggle">☰</button>
+    <div class="sidebar fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-blue-800 to-orange-500 text-white p-6 flex flex-col md:translate-x-0 transition-transform duration-300">
+        <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="w-20 h-20 mb-6 animate-pulse">
+        <nav class="flex flex-col gap-4">
+            <a href="/" class="px-4 py-2 rounded-lg hover:bg-orange-600 transition active:bg-orange-600">Home</a>
+            <a href="/docs" class="px-4 py-2 rounded-lg hover:bg-orange-600 transition">API Documentation</a>
+            <a href="https://hager-zon.vercel.app/about" class="px-4 py-2 rounded-lg hover:bg-orange-600 transition">About MGZon</a>
+            <a href="https://hager-zon.vercel.app/community" class="px-4 py-2 rounded-lg hover:bg-orange-600 transition">Community</a>
+            <a href="https://mark-elasfar.web.app/" target="_blank" class="px-4 py-2 rounded-lg hover:bg-orange-600 transition">Mark Al-Asfar</a>
         </nav>
     </div>
-    <div class="container">
-        <h1>Welcome to MGZon Chatbot 🚀</h1>
-        <p>
-            MGZon Chatbot is your AI-powered assistant for code generation, analysis, and MGZon-specific queries. Built with Gradio and FastAPI, it supports multiple frameworks and languages. Ready to explore?
-        </p>
-        <a href="/gradio" id="chatbot-link" class="btn">Launch Chatbot</a>
-        <div class="features">
-            <h2>Features</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <i class="bx bx-code-alt"></i>
-                    <h3>Code Generation</h3>
-                    <p>Generate code for React, Django, Flask, and more.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="bx bx-search"></i>
-                    <h3>Web Search</h3>
-                    <p>Integrated web search for MGZon-related queries.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="bx bx-analyse"></i>
-                    <h3>Analysis & Review</h3>
-                    <p>Detailed code and data analysis with insights.</p>
+    <div class="flex-1 md:ml-64 p-6">
+        <div class="container max-w-6xl mx-auto">
+            <div class="text-center py-12">
+                <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
+                <h1 class="text-5xl font-bold mb-4 animate-fade-in">Welcome to MGZon Chatbot 🚀</h1>
+                <p class="text-lg mb-8">
+                    MGZon Chatbot is your AI-powered assistant for code generation, analysis, and MGZon-specific queries. Built with Gradio and FastAPI, it supports multiple frameworks and languages. Ready to explore?
+                </p>
+                <a href="/gradio" id="chatbot-link" class="inline-block bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition transform">Launch Chatbot <span class="loading hidden"></span></a>
+            </div>
+            <div class="features my-12">
+                <h2 class="text-3xl font-bold text-center mb-8">Features</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg hover:scale-105 transition transform">
+                        <i class="bx bx-code-alt text-4xl text-orange-500 mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Code Generation</h3>
+                        <p>Generate code for React, Django, Flask, and more.</p>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg hover:scale-105 transition transform">
+                        <i class="bx bx-search text-4xl text-orange-500 mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Web Search</h3>
+                        <p>Integrated web search for MGZon-related queries.</p>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg hover:scale-105 transition transform">
+                        <i class="bx bx-analyse text-4xl text-orange-500 mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Analysis & Review</h3>
+                        <p>Detailed code and data analysis with insights.</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="news">
-            <h2>Latest MGZon News</h2>
-            <div class="news-grid">
-                <div class="news-card">
-                    <h3>New API Features</h3>
-                    <p>Explore our updated API with OAuth 2.0 support.</p>
-                    <a href="https://hager-zon.vercel.app/blog" target="_blank">Read More</a>
-                </div>
-                <div class="news-card">
-                    <h3>Community Meetup</h3>
-                    <p>Join our next virtual meetup on e-commerce trends.</p>
-                    <a href="https://hager-zon.vercel.app/community" target="_blank">Join Now</a>
+            <div class="news my-12">
+                <h2 class="text-3xl font-bold text-center mb-8">Latest MGZon News</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg hover:scale-105 transition transform">
+                        <h3 class="text-xl font-semibold mb-2">New API Features</h3>
+                        <p>Explore our updated API with OAuth 2.0 support.</p>
+                        <a href="https://hager-zon.vercel.app/blog" target="_blank" class="text-orange-500 hover:underline">Read More</a>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg hover:scale-105 transition transform">
+                        <h3 class="text-xl font-semibold mb-2">Community Meetup</h3>
+                        <p>Join our next virtual meetup on e-commerce trends.</p>
+                        <a href="https://hager-zon.vercel.app/community" target="_blank" class="text-orange-500 hover:underline">Join Now</a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <footer>
-        <div class="footer-container">
-            <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="footer-logo">
-            <p>Developed by <a href="https://mark-elasfar.web.app/" target="_blank">Mark Al-Asfar</a> | Powered by <a href="https://hager-zon.vercel.app/" target="_blank">MGZon AI</a></p>
-            <div class="footer-grid">
-                <div class="footer-card">
-                    <i class="bx bx-mail-send"></i>
-                    <h3>Email Us</h3>
-                    <p>Contact: <a href="mailto:support@mgzon.com">support@mgzon.com</a></p>
+    <footer class="bg-gradient-to-r from-blue-900 to-gray-900 py-12 mt-auto">
+        <div class="container max-w-6xl mx-auto text-center">
+            <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="w-24 h-24 mx-auto mb-6 animate-pulse">
+            <p class="mb-4">Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-orange-500 hover:underline">Mark Al-Asfar</a> | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-orange-500 hover:underline">MGZon AI</a></p>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-mail-send text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Email Us</h3>
+                    <p>Contact: <a href="mailto:support@mgzon.com" class="text-orange-500 hover:underline">support@mgzon.com</a></p>
                 </div>
-                <div class="footer-card">
-                    <i class="bx bx-phone"></i>
-                    <h3>Phone Support</h3>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-phone text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Phone Support</h3>
                     <p>Call: +1-800-123-4567</p>
                 </div>
-                <div class="footer-card">
-                    <i class="bx bx-group"></i>
-                    <h3>Community</h3>
-                    <p>Join: <a href="https://hager-zon.vercel.app/community">mgzon.com/community</a></p>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-group text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Community</h3>
+                    <p>Join: <a href="https://hager-zon.vercel.app/community" class="text-orange-500 hover:underline">mgzon.com/community</a></p>
                 </div>
-                <div class="footer-card">
-                    <i class="bx bx-code-alt"></i>
-                    <h3>API Docs</h3>
-                    <p>Explore: <a href="/docs">mgzon.com/docs</a></p>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-code-alt text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">API Docs</h3>
+                    <p>Explore: <a href="/docs" class="text-orange-500 hover:underline">mgzon.com/docs</a></p>
                 </div>
-                <div class="footer-card">
-                    <i class="bx bx-help-circle"></i>
-                    <h3>FAQ</h3>
-                    <p>Read: <a href="https://hager-zon.vercel.app/faq">mgzon.com/faq</a></p>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-help-circle text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">FAQ</h3>
+                    <p>Read: <a href="https://hager-zon.vercel.app/faq" class="text-orange-500 hover:underline">mgzon.com/faq</a></p>
                 </div>
-                <div class="footer-card">
-                    <i class="bx bx-book"></i>
-                    <h3>Documentation</h3>
-                    <p>Learn: <a href="/docs">mgzon.com/docs</a></p>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-book text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Documentation</h3>
+                    <p>Learn: <a href="/docs" class="text-orange-500 hover:underline">mgzon.com/docs</a></p>
                 </div>
             </div>
-            <div class="footer-social">
-                <a href="https://github.com/Mark-Lasfar/MGZon"><i class="bx bxl-github"></i></a>
-                <a href="https://x.com/MGZon"><i class="bx bxl-twitter"></i></a>
-                <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/"><i class="bx bxl-facebook"></i></a>
+            <div class="flex justify-center gap-6 mt-6">
+                <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-orange-500 transition"><i class="bx bxl-github"></i></a>
+                <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-orange-500 transition"><i class="bx bxl-twitter"></i></a>
+                <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-orange-500 transition"><i class="bx bxl-facebook"></i></a>
             </div>
-            <p>© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
+            <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
         </div>
     </footer>
     <script src="/static/js/scripts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
 </body>
 </html>

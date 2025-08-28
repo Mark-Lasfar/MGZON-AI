@@ -1,3 +1,4 @@
+// Copy Code
 function copyCode(button) {
     const code = button.previousElementSibling.querySelector('code').textContent;
     navigator.clipboard.writeText(code).then(() => {
@@ -6,12 +7,18 @@ function copyCode(button) {
     });
 }
 
+// Redirect to /gradio with loading animation
 document.getElementById('chatbot-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    window.location.href = '/gradio';
+    const btn = e.target;
+    btn.querySelector('.loading').classList.remove('hidden');
+    btn.disabled = true;
+    setTimeout(() => {
+        window.location.href = '/gradio';
+    }, 1000); // تأخير بسيط عشان الـ animation
 });
 
-// تأثيرات للكروت
+// Card animations
 document.querySelectorAll('.feature-card, .footer-card, .news-card').forEach(card => {
     card.addEventListener('mouseenter', () => {
         card.style.transform = 'scale(1.05) rotate(1deg)';
@@ -21,13 +28,10 @@ document.querySelectorAll('.feature-card, .footer-card, .news-card').forEach(car
     });
 });
 
-// إغلاق/فتح الـ sidebar على الموبايل
+// Sidebar toggle for mobile
 document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.querySelector('.sidebar');
-    const toggleBtn = document.createElement('button');
-    toggleBtn.textContent = '☰';
-    toggleBtn.className = 'sidebar-toggle';
-    document.body.prepend(toggleBtn);
+    const toggleBtn = document.querySelector('.sidebar-toggle');
     
     toggleBtn.addEventListener('click', () => {
         sidebar.classList.toggle('active');

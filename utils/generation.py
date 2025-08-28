@@ -6,13 +6,18 @@ from openai import OpenAI
 from pydoc import html
 from tenacity import retry, stop_after_attempt, wait_exponential
 import logging
+from cachetools import TTLCache
+import hashlib
 
 logger = logging.getLogger(__name__)
 
+# إعداد Cache
+cache = TTLCache(maxsize=100, ttl=600)  # Cache بحجم 100 ومدة 10 دقايق
+
 # تعريف LATEX_DELIMS
 LATEX_DELIMS = [
-    {"left": "$$",  "right": "$$",  "display": True},
-    {"left": "$",   "right": "$",   "display": False},
+    {"left": "$$", "right": "$$", "display": True},
+    {"left": "$", "right": "$", "display": False},
     {"left": "\\[", "right": "\\]", "display": True},
     {"left": "\\(", "right": "\\)", "display": False},
 ]
@@ -38,7 +43,7 @@ def select_model(query: str) -> tuple[str, str]:
     logger.info(f"Selected {MODEL_NAME} with endpoint {API_ENDPOINT} for general query: {query}")
     return MODEL_NAME, API_ENDPOINT
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=4, max=30))
 def request_generation(
     api_key: str,
     api_base: str,
@@ -54,11 +59,28 @@ def request_generation(
     deep_search: bool = False,
 ) -> Generator[str, None, None]:
     from utils.web_search import web_search  # تأخير الاستيراد
+
+    # إنشاء مفتاح للـ cache بناءً على المدخلات
+    cache_key = hashlib.md5(json.dumps({
+        "message": message,
+        "system_prompt": system_prompt,
+        "model_name": model_name,
+        "chat_history": chat_history,
+        "temperature": temperature,
+        "max_new_tokens": max_new_tokens
+    }, sort_keys=True).encode()).hexdigest()
+
+    if cache_key in cache:
+        logger.info(f"Cache hit for query: {message[:50]}...")
+        for chunk in cache[cache_key]:
+            yield chunk
+        return
+
     client = OpenAI(api_key=api_key, base_url=api_base, timeout=60.0)
     task_type = "general"
-    if "code" in message.lower() or "programming" in message.lower() or any(ext in message.lower() for ext in ["python", "javascript", "react", "django", "flask"]):
+    if any(keyword in message.lower() for keyword in ["code", "programming", "python", "javascript", "react", "django", "flask"]):
         task_type = "code"
-        enhanced_system_prompt = f"{system_prompt}\nYou are an expert programmer. Provide accurate, well-commented code with examples and explanations. Support frameworks like React, Django, Flask, and others as needed."
+        enhanced_system_prompt = f"{system_prompt}\nYou are an expert programmer. Provide accurate, well-commented code with examples and explanations. Support frameworks like React, Django, Flask, and others as needed. Format code with triple backticks (```) and specify the language."
     elif any(keyword in message.lower() for keyword in ["analyze", "analysis", "تحليل"]):
         task_type = "analysis"
         enhanced_system_prompt = f"{system_prompt}\nProvide detailed analysis with step-by-step reasoning, examples, and data-driven insights."
@@ -80,14 +102,19 @@ def request_generation(
                 input_messages.append(clean_msg)
     
     if deep_search:
-        search_result = web_search(message)
-        input_messages.append({"role": "user", "content": f"User query: {message}\nWeb search context: {search_result}"})
+        try:
+            search_result = web_search(message)
+            input_messages.append({"role": "user", "content": f"User query: {message}\nWeb search context: {search_result}"})
+        except Exception as e:
+            logger.error(f"Web search failed: {e}")
+            input_messages.append({"role": "user", "content": message})
     else:
         input_messages.append({"role": "user", "content": message})
 
     tools = tools if tools and "gpt-oss" in model_name else []
     tool_choice = tool_choice if tool_choice in ["auto", "none", "any", "required"] and "gpt-oss" in model_name else "none"
 
+    cached_chunks = []
     try:
         stream = client.chat.completions.create(
             model=model_name,
@@ -111,11 +138,13 @@ def request_generation(
                 content = chunk.choices[0].delta.content
                 if content == "<|channel|>analysis<|message|>":
                     if not reasoning_started:
+                        cached_chunks.append("analysis")
                         yield "analysis"
                         reasoning_started = True
                     continue
                 if content == "<|channel|>final<|message|>":
                     if reasoning_started and not reasoning_closed:
+                        cached_chunks.append("assistantfinal")
                         yield "assistantfinal"
                         reasoning_closed = True
                     continue
@@ -123,7 +152,8 @@ def request_generation(
                 saw_visible_output = True
                 buffer += content
 
-                if "\n" in buffer or len(buffer) > 2000:
+                if "\n" in buffer or len(buffer) > 1000:  # تقليل حجم الـ buffer
+                    cached_chunks.append(buffer)
                     yield buffer
                     buffer = ""
                 continue
@@ -140,10 +170,12 @@ def request_generation(
 
             if chunk.choices[0].finish_reason in ("stop", "tool_calls", "error"):
                 if buffer:
+                    cached_chunks.append(buffer)
                     yield buffer
                     buffer = ""
 
                 if reasoning_started and not reasoning_closed:
+                    cached_chunks.append("assistantfinal")
                     yield "assistantfinal"
                     reasoning_closed = True
 
@@ -155,14 +187,19 @@ def request_generation(
                         except Exception:
                             args_text = str(last_tool_args)
                         msg += f"\n\n• Tool requested: **{last_tool_name}**\n• Arguments: `{args_text}`"
+                    cached_chunks.append(msg)
                     yield msg
 
                 if chunk.choices[0].finish_reason == "error":
+                    cached_chunks.append(f"Error: Unknown error")
                     yield f"Error: Unknown error"
                 break
 
         if buffer:
+            cached_chunks.append(buffer)
             yield buffer
+
+        cache[cache_key] = cached_chunks  # حفظ في الـ cache
 
     except Exception as e:
         logger.exception(f"[Gateway] Streaming failed for model {model_name}: {e}")
@@ -186,11 +223,13 @@ def request_generation(
                         content = chunk.choices[0].delta.content
                         if content == "<|channel|>analysis<|message|>":
                             if not reasoning_started:
+                                cached_chunks.append("analysis")
                                 yield "analysis"
                                 reasoning_started = True
                             continue
                         if content == "<|channel|>final<|message|>":
                             if reasoning_started and not reasoning_closed:
+                                cached_chunks.append("assistantfinal")
                                 yield "assistantfinal"
                                 reasoning_closed = True
                             continue
@@ -198,31 +237,40 @@ def request_generation(
                         saw_visible_output = True
                         buffer += content
 
-                        if "\n" in buffer or len(buffer) > 2000:
+                        if "\n" in buffer or len(buffer) > 1000:
+                            cached_chunks.append(buffer)
                             yield buffer
                             buffer = ""
                         continue
 
                     if chunk.choices[0].finish_reason in ("stop", "error"):
                         if buffer:
+                            cached_chunks.append(buffer)
                             yield buffer
                             buffer = ""
 
                         if reasoning_started and not reasoning_closed:
+                            cached_chunks.append("assistantfinal")
                             yield "assistantfinal"
                             reasoning_closed = True
 
                         if not saw_visible_output:
+                            cached_chunks.append("No visible output produced.")
                             yield "No visible output produced."
                         if chunk.choices[0].finish_reason == "error":
+                            cached_chunks.append(f"Error: Unknown error with fallback model {fallback_model}")
                             yield f"Error: Unknown error with fallback model {fallback_model}"
                         break
 
                 if buffer:
+                    cached_chunks.append(buffer)
                     yield buffer
+
+                cache[cache_key] = cached_chunks
 
             except Exception as e2:
                 logger.exception(f"[Gateway] Streaming failed for fallback model {fallback_model}: {e2}")
+                cached_chunks.append(f"Error: Failed to load both models ({model_name} and {fallback_model}): {e2}")
                 yield f"Error: Failed to load both models ({model_name} and {fallback_model}): {e2}"
                 try:
                     client = OpenAI(api_key=api_key, base_url=FALLBACK_API_ENDPOINT, timeout=60.0)
@@ -240,25 +288,33 @@ def request_generation(
                             content = chunk.choices[0].delta.content
                             saw_visible_output = True
                             buffer += content
-                            if "\n" in buffer or len(buffer) > 2000:
+                            if "\n" in buffer or len(buffer) > 1000:
+                                cached_chunks.append(buffer)
                                 yield buffer
                                 buffer = ""
                             continue
                         if chunk.choices[0].finish_reason in ("stop", "error"):
                             if buffer:
+                                cached_chunks.append(buffer)
                                 yield buffer
                                 buffer = ""
                             if not saw_visible_output:
+                                cached_chunks.append("No visible output produced.")
                                 yield "No visible output produced."
                             if chunk.choices[0].finish_reason == "error":
+                                cached_chunks.append(f"Error: Unknown error with tertiary model {TERTIARY_MODEL_NAME}")
                                 yield f"Error: Unknown error with tertiary model {TERTIARY_MODEL_NAME}"
                             break
                     if buffer:
+                        cached_chunks.append(buffer)
                         yield buffer
+                    cache[cache_key] = cached_chunks
                 except Exception as e3:
                     logger.exception(f"[Gateway] Streaming failed for tertiary model {TERTIARY_MODEL_NAME}: {e3}")
+                    cached_chunks.append(f"Error: Failed to load all models: {e3}")
                     yield f"Error: Failed to load all models: {e3}"
         else:
+            cached_chunks.append(f"Error: Failed to load model {model_name}: {e}")
             yield f"Error: Failed to load model {model_name}: {e}"
 
 def format_final(analysis_text: str, visible_text: str) -> str:
@@ -316,6 +372,21 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
                         "task": {"type": "string", "description": "Task description (e.g., create a component, fix a bug)"},
                     },
                     "required": ["task"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "code_formatter",
+                "description": "Format code for readability and consistency",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "code": {"type": "string", "description": "Code to format"},
+                        "language": {"type": "string", "description": "Programming language (e.g., Python, JavaScript)"},
+                    },
+                    "required": ["code", "language"],
                 },
             },
         }
