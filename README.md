@@ -1,7 +1,7 @@
-<<<<<<< HEAD
+
 # MGZON-AI
   A versatile chatbot powered by MGZON/Veltrix for MGZon queries. Supports code generation, analysis, review, web search, and MGZon-specific queries. Licensed under Apache 2.0.
-=======
+
 ---
 title: MGZON FLAN-T5 API
 emoji: "🤖"
@@ -82,4 +82,4 @@ The following hyperparameters were used during training:
 - Pytorch 2.8.0+cu126
 - Datasets 4.0.0
 - Tokenizers 0.21.4
->>>>>>> 38501a7 (Initial commit with API and model)
+
