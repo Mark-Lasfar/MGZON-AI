@@ -39,7 +39,7 @@ logger.info("Files in /app/: %s", os.listdir("/app"))
 # إعداد العميل لـ Hugging Face Inference API
 HF_TOKEN = os.getenv("HF_TOKEN")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
-FALLBACK_API_ENDPOINT = "https://api-inference.huggingface.co/v1"
+FALLBACK_API_ENDPOINT = "https://api-inference.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-20b:fireworks-ai")
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "MGZON/Veltrix")
 TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
@@ -285,6 +285,7 @@ def request_generation(
             except Exception as e2:
                 logger.exception(f"[Gateway] Streaming failed for fallback model {fallback_model}: {e2}")
                 yield f"Error: Failed to load both models ({model_name} and {fallback_model}): {e2}"
+                # تجربة النموذج الثالث
                 try:
                     client = OpenAI(api_key=api_key, base_url=FALLBACK_API_ENDPOINT, timeout=60.0)
                     stream = client.chat.completions.create(
@@ -497,7 +498,6 @@ chatbot_ui = gr.ChatInterface(
 
 # دمج FastAPI مع Gradio
 app = FastAPI(title="MGZon Chatbot API")
-app.mount("/", chatbot_ui)
 
 # API endpoints
 @app.get("/api/model-info")
@@ -508,6 +508,14 @@ def model_info():
         "tertiary_model": TERTIARY_MODEL_NAME,
         "api_base": API_ENDPOINT,
         "status": "online"
+    }
+
+@app.get("/api/performance")
+async def performance_stats():
+    return {
+        "queue_size": QUEUE_SIZE,
+        "concurrency_limit": CONCURRENCY_LIMIT,
+        "uptime": os.popen("uptime").read().strip()
     }
 
 @app.post("/api/chat")
@@ -576,6 +584,4 @@ async def test_model(model: str = MODEL_NAME, endpoint: str = API_ENDPOINT):
 # تشغيل الخادم
 if __name__ == "__main__":
     import uvicorn
-    chatbot_ui.queue(max_size=QUEUE_SIZE, concurrency_count=CONCURRENCY_LIMIT).launch(
-        server_name="0.0.0.0", server_port=int(os.getenv("PORT", 7860)), share=False
-    )
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 7860)))
