@@ -25,7 +25,7 @@ tags:
 model-index:
 - name: mgzon-flan-t5-base
   results: []
----
+--
 
 <!-- This model card has been generated automatically according to the information the Trainer had access to. You
 should probably proofread and complete it, then remove this comment. -->
