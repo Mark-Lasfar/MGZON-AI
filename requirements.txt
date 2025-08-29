@@ -15,10 +15,9 @@ cachetools==5.5.0
 pydub==0.25.1
 ffmpeg-python==0.2.0
 numpy==1.26.4
-parler-tts==0.2.0
+parler-tts==0.2.2
 torch==2.4.1
 torchaudio==2.4.1
-transformers==4.45.1
+transformers==4.46.1
 webrtcvad==2.0.10
 Pillow==10.4.0
-
