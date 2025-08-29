@@ -32,32 +32,7 @@ CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 # إعداد CSS
 css = """
 .gradio-container { max-width: 1200px; margin: auto; }
-
-
-.chatbot {
-    background: #fafafa;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 10px;
-}
-
-.header h1 {
-    font-size: 32px;
-    color: #333;
-}
-.header p {
-    color: #555;
-    margin-top: -10px;
-}
-
-.gr-accordion {
-    border-radius: 12px;
-    border: 1px solid #ddd;
-    margin-top: 15px;
-}
-
-
-
+.chatbot { border: 1px solid #ccc; border-radius: 10px; padding: 15px; background-color: #f9f9f9; }
 .input-textbox { font-size: 16px; padding: 10px; }
 .upload-button::before {
     content: '📷';
@@ -144,95 +119,42 @@ def process_input(message, audio_input=None, file_input=None, history=None, syst
         yield response_text, audio_response
 
 # إعداد واجهة Gradio
-with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
-    with gr.Column(elem_classes="header"):
-        gr.Markdown("<h1 style='text-align:center'>🤖 MGZon Chatbot</h1>")
-        gr.Markdown(
-            "<p style='text-align:center; font-size:16px'>"
-            "A versatile assistant powered by DeepSeek, CLIP, Whisper, and Parler-TTS for text, image, audio, and file queries."
-            "</p>"
-        )
-
-    with gr.Row():
-        chatbot = gr.Chatbot(
-            label="MGZon Chatbot",
-            height=750,
-            latex_delimiters=LATEX_DELIMS,
-            elem_classes="chatbot"
-        )
-
-    gr.Markdown("---")  # فاصل بسيط
-
-    with gr.Accordion("⚙️ Settings", open=False):
-        with gr.Row():
-            with gr.Column(scale=2):
-                system_prompt = gr.Textbox(
-                    label="System Prompt",
-		    value="""You are an expert assistant providing detailed, comprehensive, and well-structured responses. 
-		Support text, audio, image, and file inputs. 
-		For audio, transcribe using Whisper. For text-to-speech, use Parler-TTS. 
-		For images and files, analyze content appropriately. 
-		Continue generating content until the query is fully addressed, leveraging the full capacity of the model.""",
-                    lines=6,
-                    elem_classes="input-textbox"
-                )
-                reasoning_effort = gr.Radio(
-                    label="Reasoning Effort",
-                    choices=["low", "medium", "high"],
-                    value="medium"
-                )
-                enable_browsing = gr.Checkbox(
-                    label="Enable DeepSearch (web browsing)",
-                    value=True
-                )
-            with gr.Column(scale=1):
-                temperature = gr.Slider(
-                    label="Temperature",
-                    minimum=0.0,
-                    maximum=1.0,
-                    step=0.1,
-                    value=0.7
-                )
-                max_new_tokens = gr.Slider(
-                    label="Max New Tokens",
-                    minimum=50,
-                    maximum=128000,
-                    step=50,
-                    value=128000
-                )
-                audio_input = gr.Audio(
-                    label="Voice Input",
-                    type="filepath",
-                    elem_classes="audio-input"
-                )
-                file_input = gr.File(
-                    label="Upload Image/File",
-                    file_types=["image", ".pdf", ".txt"],
-                    elem_classes="upload-button"
-                )
-
-    audio_output = gr.Audio(
-        label="Voice Output",
-        type="filepath",
-        elem_classes="audio-output",
-        autoplay=True
-    )
-
-    gr.ChatInterface(
-        fn=process_input,
-        chatbot=chatbot,
-        additional_inputs=[system_prompt, temperature, reasoning_effort, enable_browsing, max_new_tokens, audio_input, file_input],
-        additional_outputs=[audio_output],
-        stop_btn="Stop",
-        examples=[
-            ["Explain the difference between supervised and unsupervised learning in detail with examples."],
-            ["Generate a complete React component for a login form with form validation and error handling."],
-            ["Describe this image: https://example.com/image.jpg"],
-            ["Transcribe this audio: [upload audio file]."],
-            ["Convert this text to speech: Hello, welcome to MGZon!"],
-            ["Analyze this file: [upload PDF or text file]."],
-        ],
-    )
+chatbot_ui = gr.ChatInterface(
+    fn=process_input,
+    chatbot=gr.Chatbot(
+        label="MGZon Chatbot",     
+        height=800,
+        latex_delimiters=LATEX_DELIMS,
+    ),
+    additional_inputs_accordion=gr.Accordion("⚙️ Settings", open=True),
+    additional_inputs=[
+        gr.Textbox(
+            label="System Prompt",
+            value="You are an expert assistant providing detailed, comprehensive, and well-structured responses. Support text, audio, image, and file inputs. For audio, transcribe using Whisper. For text-to-speech, use Parler-TTS. For images and files, analyze content appropriately. Continue generating content until the query is fully addressed, leveraging the full capacity of the model.",
+            lines=4
+        ),
+        gr.Slider(label="Temperature", minimum=0.0, maximum=1.0, step=0.1, value=0.7),
+        gr.Radio(label="Reasoning Effort", choices=["low", "medium", "high"], value="medium"),
+        gr.Checkbox(label="Enable DeepSearch (web browsing)", value=True),
+        gr.Slider(label="Max New Tokens", minimum=50, maximum=128000, step=50, value=128000),
+        gr.Audio(label="Voice Input", type="filepath", elem_classes="audio-input"),
+        gr.File(label="Upload Image/File", file_types=["image", ".pdf", ".txt"], elem_classes="upload-button"),
+    ],
+    additional_outputs=[gr.Audio(label="Voice Output", type="filepath", elem_classes="audio-output", autoplay=True)],
+    stop_btn="Stop",
+    examples=[
+        ["Explain the difference between supervised and unsupervised learning in detail with examples."],
+        ["Generate a complete React component for a login form with form validation and error handling."],
+        ["Describe this image: https://example.com/image.jpg"],
+        ["Transcribe this audio: [upload audio file]."],
+        ["Convert this text to speech: Hello, welcome to MGZon!"],
+        ["Analyze this file: [upload PDF or text file]."],
+    ],
+    title="MGZon Chatbot",
+    description="A versatile chatbot powered by DeepSeek, CLIP, Whisper, and Parler-TTS for text, image, audio, and file queries. Supports long responses, voice input/output, file uploads with custom icons, and backup token switching. Licensed under Apache 2.0.",
+    theme="gradio/soft",
+    css=css,
+)
 
 # إعداد FastAPI
 app = FastAPI(title="MGZon Chatbot API")
