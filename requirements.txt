@@ -4,8 +4,8 @@ gradio==4.26.0
 openai==1.42.0
 httpx==0.27.0
 python-dotenv==1.0.1
-pydocstyle==6.4.0
-requests==2.32.3
+pydocstyle
+requests
 beautifulsoup4==4.12.3
 tenacity==8.5.0
 selenium==4.25.0
