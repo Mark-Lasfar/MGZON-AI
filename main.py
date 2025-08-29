@@ -121,10 +121,8 @@ def process_input(message, audio_input=None, file_input=None, history=None, syst
 # إعداد واجهة Gradio
 chatbot_ui = gr.ChatInterface(
     fn=process_input,
-    type="messages",
     chatbot=gr.Chatbot(
-        label="MGZon Chatbot",
-        type="messages",
+        label="MGZon Chatbot",     
         height=800,
         latex_delimiters=LATEX_DELIMS,
     ),
