@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from openai import OpenAI
 from api.models import QueryRequest
 from utils.generation import request_generation, select_model
