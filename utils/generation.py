@@ -13,7 +13,8 @@ import pydub
 import io
 import torchaudio
 from PIL import Image
-from transformers import CLIPModel, CLIPProcessor, AutoProcessor, ParlerTTSForConditionalGeneration
+from transformers import CLIPModel, CLIPProcessor, AutoProcessor
+from parler_tts import ParlerTTSForConditionalGeneration
 
 logger = logging.getLogger(__name__)
 
