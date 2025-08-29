@@ -15,8 +15,10 @@ MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-20b:fireworks-ai")
 def model_info():
     return {
         "model_name": MODEL_NAME,
-        "secondary_model": os.getenv("SECONDARY_MODEL_NAME", "MGZON/Veltrix"),
+        "secondary_model": os.getenv("SECONDARY_MODEL_NAME", "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"),
         "tertiary_model": os.getenv("TERTIARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1"),
+        "clip_base_model": os.getenv("CLIP_BASE_MODEL", "openai/clip-vit-base-patch32"),
+        "clip_large_model": os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14"),
         "api_base": API_ENDPOINT,
         "status": "online"
     }
@@ -46,6 +48,42 @@ async def chat_endpoint(req: QueryRequest):
     response = "".join(list(stream))
     return {"response": response}
 
+
+# في api/endpoints.py
+@router.post("/api/audio-transcription")
+async def audio_transcription_endpoint(file: UploadFile = File(...)):
+    model_name, api_endpoint = select_model("transcribe audio", input_type="audio")
+    audio_data = await file.read()
+    response = "".join(list(request_generation(
+        api_key=HF_TOKEN,
+        api_base=api_endpoint,
+        message="Transcribe audio",
+        system_prompt="Transcribe the provided audio using Whisper.",
+        model_name=model_name,
+        temperature=0.7,
+        max_new_tokens=128000,
+        input_type="audio",
+        audio_data=audio_data,
+    )))
+    return {"transcription": response}
+
+@router.post("/api/text-to-speech")
+async def text_to_speech_endpoint(req: dict):
+    text = req.get("text", "")
+    model_name, api_endpoint = select_model("text to speech", input_type="text")
+    response = request_generation(
+        api_key=HF_TOKEN,
+        api_base=api_endpoint,
+        message=text,
+        system_prompt="Convert the provided text to speech using Parler-TTS.",
+        model_name=model_name,
+        temperature=0.7,
+        max_new_tokens=128000,
+        input_type="text",
+    )
+    audio_data = b"".join(list(response))
+    return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+
 @router.post("/api/code")
 async def code_endpoint(req: dict):
     framework = req.get("framework")
@@ -57,7 +95,7 @@ async def code_endpoint(req: dict):
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message=prompt,
-        system_prompt="You are a coding expert.",
+        system_prompt="You are a coding expert. Provide detailed, well-commented code with examples and explanations.",
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=128000,
@@ -72,12 +110,29 @@ async def analysis_endpoint(req: dict):
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message=message,
-        system_prompt="You are an expert analyst. Provide detailed analysis with step-by-step reasoning.",
+        system_prompt="You are an expert analyst. Provide detailed analysis with step-by-step reasoning and examples.",
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=128000,
     )))
     return {"analysis": response}
+
+@router.post("/api/image-analysis")
+async def image_analysis_endpoint(req: dict):
+    image_url = req.get("image_url", "")
+    task = req.get("task", "describe")
+    prompt = f"Perform the following task on the image at {image_url}: {task}"
+    model_name, api_endpoint = select_model(prompt)
+    response = "".join(list(request_generation(
+        api_key=HF_TOKEN,
+        api_base=api_endpoint,
+        message=prompt,
+        system_prompt="You are an expert in image analysis. Provide detailed descriptions or classifications based on the query.",
+        model_name=model_name,
+        temperature=0.7,
+        max_new_tokens=128000,
+    )))
+    return {"image_analysis": response}
 
 @router.get("/api/test-model")
 async def test_model(model: str = MODEL_NAME, endpoint: str = API_ENDPOINT):

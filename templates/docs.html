@@ -1,176 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MGZon API Documentation</title>
-  <!-- Tailwind CSS v3 -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Boxicons -->
-  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-  <!-- Prism for code highlighting -->
-  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-  <style>
-    /* Animated gradient background */
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    body {
-      background: linear-gradient(135deg, #0f172a, #0e7490, #065f46, #064e3b);
-      background-size: 400% 400%;
-      animation: gradientShift 15s ease infinite;
-      font-family: system-ui, sans-serif;
-    }
-    /* Glass-morphism helpers */
-    .glass {
-      background: rgba(255, 255, 255, 0.07);
-      border-radius: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    /* Sidebar transition */
-    .sidebar {
-      transition: transform 0.3s ease-in-out;
-    }
-    .sidebar.collapsed .logo {
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    /* Prevent sidebar from covering footer */
-    .main-content {
-      min-height: calc(100vh - 4rem);
-    }
-    /* Hover effects for cards and tabs */
-    .glass:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-      background: rgba(255, 255, 255, 0.15);
-    }
-    /* Tab content transition */
-    .tab-content {
-      display: none;
-      transition: opacity 0.3s ease;
-    }
-    .tab-content.active {
-      display: block;
-      opacity: 1;
-    }
-    /* Responsive sidebar */
-    @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
-      }
-      .sidebar.active {
-        transform: translateX(0);
-      }
-    }
-    /* Copy button feedback */
-    .copy-btn.copied::after {
-      content: 'Copied!';
-      position: absolute;
-      top: -2rem;
-      right: 1rem;
-      background: #10b981;
-      color: white;
-      padding: 0.5rem;
-      border-radius: 0.5rem;
-      font-size: 0.875rem;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MGZon API Documentation</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+        .sidebar.active { transform: translateX(0); }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); animation: slideIn 0.3s ease; }
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
 </head>
-<body class="text-white flex flex-col min-h-screen">
-  <!-- Mobile toggle button -->
-  <button
-    id="sidebarToggle"
-    class="md:hidden fixed top-4 left-4 z-50 p-2 text-2xl text-white rounded bg-gray-800/60 hover:bg-gray-700/80 transition"
-    aria-label="Toggle navigation"
-  >
-    <i class="bx bx-menu"></i>
-  </button>
-
-  <!-- Sidebar -->
-  <aside
-    id="sidebar"
-    class="sidebar fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-teal-800 to-emerald-900 p-6 flex flex-col overflow-y-auto z-40"
-  >
-    <button
-      id="closeSidebar"
-      class="md:hidden text-white text-2xl absolute top-4 right-4"
-      aria-label="Close sidebar"
-    >
-      ✕
-    </button>
-    <img
-      src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg"
-      alt="MGZon Logo"
-      class="logo w-20 h-20 mx-auto mb-8 animate-pulse"
-    />
-    <nav class="flex flex-col gap-3">
-      <a href="/" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Home</a>
-      <a href="/docs" class="px-4 py-2 rounded-lg bg-emerald-600">API Documentation</a>
-      <a href="https://hager-zon.vercel.app/about" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">About MGZon</a>
-      <a href="https://hager-zon.vercel.app/community" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Community</a>
-      <a href="https://mark-elasfar.web.app/" target="_blank" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Mark Al-Asfar</a>
-    </nav>
-  </aside>
-
-  <!-- Main content -->
-  <main class="flex-1 md:ml-64 p-6 main-content">
-    <section class="container max-w-6xl mx-auto">
-      <a
-        href="/"
-        class="inline-block bg-gray-700/80 text-white px-4 py-2 rounded-lg mb-4 hover:bg-emerald-600 transition"
-      >
-        Back to Home
-      </a>
-      <div class="text-center py-12">
-        <img
-          src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg"
-          alt="MGZon Logo"
-          class="w-32 h-32 mx-auto mb-6 animate-bounce"
-        />
-        <h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">
-          MGZon API Documentation 📚
-        </h1>
-        <p class="text-lg max-w-2xl mx-auto mb-8">
-          Integrate MGZon Chatbot into your projects with our API. Supports Python (Django, Flask, FastAPI), JavaScript (React, Node.js, Express), Ruby (Rails), PHP (Laravel), and more.
-        </p>
-        <a
-          href="/swagger"
-          class="inline-block bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 hover:bg-emerald-600 transition"
-        >
-          View Interactive API Docs
-        </a>
-      </div>
-      <div class="docs my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Endpoints</h2>
-        <div class="flex flex-wrap gap-4 mb-8">
-          <button class="tab-btn glass px-4 py-2 rounded-lg text-white bg-emerald-500" data-tab="chat">Chat</button>
-          <button class="tab-btn glass px-4 py-2 rounded-lg text-white" data-tab="code">Code</button>
-          <button class="tab-btn glass px-4 py-2 rounded-lg text-white" data-tab="analysis">Analysis</button>
-          <button class="tab-btn glass px-4 py-2 rounded-lg text-white" data-tab="oauth">OAuth</button>
-        </div>
-        <div id="chat" class="tab-content glass p-6 active">
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">POST /api/chat</h3>
-            <p>Send a chat message to the MGZon Chatbot and get a response.</p>
-            <pre><code class="language-json">{
-  "message": "Your query here",
-  "system_prompt": "You are a helpful assistant",
-  "history": [{"role": "user", "content": "Previous message"}, {"role": "assistant", "content": "Previous response"}],
-  "temperature": 0.7,
-  "max_new_tokens": 4096,
-  "enable_browsing": false
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+    <button class="md:hidden fixed top-4 left-4 z-50 text-white text-2xl sidebar-toggle">☰</button>
+    <div class="sidebar fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-blue-800 to-orange-500 text-white p-6 flex flex-col md:translate-x-0 transition-transform duration-300">
+        <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="w-20 h-20 mb-6 animate-pulse">
+        <nav class="flex flex-col gap-4">
+            <a href="/" class="px-4 py-2 rounded-lg hover:bg-orange-600 transition">Home</a>
+            <a href="/docs" class="px-4 py-2 rounded-lg bg-orange-600">API Documentation</a>
+            <a href="https://hager-zon.vercel.app/about" class="px-4 py-2 rounded-lg hover:bg-orange-600 transition">About MGZon</a>
+            <a href="https://hager-zon.vercel.app/community" class="px-4 py-2 rounded-lg hover:bg-orange-600 transition">Community</a>
+            <a href="https://mark-elasfar.web.app/" target="_blank" class="px-4 py-2 rounded-lg hover:bg-orange-600 transition">Mark Al-Asfar</a>
+        </nav>
+    </div>
+    <div class="flex-1 md:ml-64 p-6">
+        <div class="container max-w-6xl mx-auto">
+            <div class="text-center py-12">
+                <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
+                <h1 class="text-5xl font-bold mb-4 animate-fade-in">MGZon API Documentation 📚</h1>
+                <p class="text-lg mb-8">
+                    Integrate MGZon Chatbot into your projects with our API. Supports Python (Django, Flask, FastAPI), JavaScript (React, Node.js, Express), Ruby (Rails), PHP (Laravel), and more.
+                </p>
+            </div>
+            <div class="docs my-12">
+                <h2 class="text-3xl font-bold text-center mb-8">Endpoints</h2>
+                <div class="flex flex-wrap gap-4 mb-8">
+                    <button class="tab-btn bg-orange-500 text-white px-4 py-2 rounded-lg" data-tab="chat">Chat</button>
+                    <button class="tab-btn bg-gray-700 text-white px-4 py-2 rounded-lg" data-tab="code">Code</button>
+                    <button class="tab-btn bg-gray-700 text-white px-4 py-2 rounded-lg" data-tab="analysis">Analysis</button>
+                    <button class="tab-btn bg-gray-700 text-white px-4 py-2 rounded-lg" data-tab="oauth">OAuth</button>
+                </div>
+                <div id="chat" class="tab-content active">
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">POST /api/chat</h3>
+                        <p>Send a chat message to the MGZon Chatbot and get a response.</p>
+                        <pre><code class="language-json">{
+    "message": "Your query here",
+    "system_prompt": "You are a helpful assistant",
+    "history": [{"role": "user", "content": "Previous message"}, {"role": "assistant", "content": "Previous response"}],
+    "temperature": 0.7,
+    "max_new_tokens": 4096,
+    "enable_browsing": false
 }</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">Python (requests)</h3>
-            <pre><code class="language-python">import requests
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">Python (requests)</h3>
+                        <pre><code class="language-python">import requests
 
 response = requests.post(
     "https://hager-zon.vercel.app/api/chat",
@@ -182,11 +78,11 @@ response = requests.post(
     }
 )
 print(response.json())</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">Python (Django)</h3>
-            <pre><code class="language-python">import requests
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">Python (Django)</h3>
+                        <pre><code class="language-python">import requests
 from django.http import JsonResponse
 from django.views import View
 
@@ -198,11 +94,11 @@ class ChatView(View):
             json={"message": data, "system_prompt": "You are a coding expert", "temperature": 0.7}
         )
         return JsonResponse(response.json())</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">Python (Flask)</h3>
-            <pre><code class="language-python">from flask import Flask, request, jsonify
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">Python (Flask)</h3>
+                        <pre><code class="language-python">from flask import Flask, request, jsonify
 import requests
 
 app = Flask(__name__)
@@ -215,11 +111,11 @@ def chat():
         json={"message": data, "system_prompt": "You are a coding expert", "temperature": 0.7}
     )
     return jsonify(response.json())</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">JavaScript (React)</h3>
-            <pre><code class="language-javascript">import React, { useState } from 'react';
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">JavaScript (React)</h3>
+                        <pre><code class="language-javascript">import React, { useState } from 'react';
 
 function ChatComponent() {
     const [message, setMessage] = useState('');
@@ -250,11 +146,11 @@ function ChatComponent() {
 }
 
 export default ChatComponent;</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">JavaScript (Node.js/Express)</h3>
-            <pre><code class="language-javascript">const express = require('express');
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">JavaScript (Node.js/Express)</h3>
+                        <pre><code class="language-javascript">const express = require('express');
 const fetch = require('node-fetch');
 const app = express();
 
@@ -277,11 +173,11 @@ app.post('/chat', async (req, res) => {
 });
 
 app.listen(3000, () => console.log('Server running on port 3000'));</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">Ruby (Rails)</h3>
-            <pre><code class="language-ruby">require 'httparty'
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">Ruby (Rails)</h3>
+                        <pre><code class="language-ruby">require 'httparty'
 
 class ChatController < ApplicationController
     def create
@@ -298,11 +194,11 @@ class ChatController < ApplicationController
         render json: response.parsed_response
     end
 end</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">PHP (Laravel)</h3>
-            <pre><code class="language-php">use Illuminate\Support\Facades\Http;
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">PHP (Laravel)</h3>
+                        <pre><code class="language-php">use Illuminate\Support\Facades\Http;
 
 class ChatController extends Controller
 {
@@ -317,206 +213,107 @@ class ChatController extends Controller
         return $response->json();
     }
 }</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">Bash (cURL)</h3>
-            <pre><code class="language-bash">curl -X POST https://hager-zon.vercel.app/api/chat \
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">Bash (cURL)</h3>
+                        <pre><code class="language-bash">curl -X POST https://hager-zon.vercel.app/api/chat \
 -H "Content-Type: application/json" \
 -d '{"message":"Generate a React component","system_prompt":"You are a coding expert","temperature":0.7,"max_new_tokens":4096}'</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-        </div>
-        <div id="code" class="tab-content glass p-6">
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">POST /api/code</h3>
-            <p>Generate or modify code for various frameworks.</p>
-            <pre><code class="language-json">{
-  "framework": "React",
-  "task": "Create a login form component",
-  "code": "// Existing code (optional)"
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                </div>
+                <div id="code" class="tab-content">
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">POST /api/code</h3>
+                        <p>Generate or modify code for various frameworks.</p>
+                        <pre><code class="language-json">{
+    "framework": "React",
+    "task": "Create a login form component",
+    "code": "// Existing code (optional)"
 }</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-        </div>
-        <div id="analysis" class="tab-content glass p-6">
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">POST /api/analysis</h3>
-            <p>Analyze code or data with detailed insights.</p>
-            <pre><code class="language-json">{
-  "text": "Analyze this Python code: print('Hello World')"
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                </div>
+                <div id="analysis" class="tab-content">
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">POST /api/analysis</h3>
+                        <p>Analyze code or data with detailed insights.</p>
+                        <pre><code class="language-json">{
+    "text": "Analyze this Python code: print('Hello World')"
 }</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
-        </div>
-        <div id="oauth" class="tab-content glass p-6">
-          <div class="code-block glass p-6 mb-6 relative">
-            <h3 class="text-xl font-semibold text-emerald-300 mb-2">OAuth 2.0 Authentication</h3>
-            <p>Authenticate with MGZon using OAuth 2.0.</p>
-            <pre><code class="language-bash">curl -X POST https://hager-zon.vercel.app/oauth/token \
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                </div>
+                <div id="oauth" class="tab-content">
+                    <div class="code-block bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+                        <h3 class="text-xl font-semibold text-orange-500 mb-2">OAuth 2.0 Authentication</h3>
+                        <p>Authenticate with MGZon using OAuth 2.0.</p>
+                        <pre><code class="language-bash">curl -X POST https://hager-zon.vercel.app/oauth/token \
 -H "Content-Type: application/json" \
 -d '{"client_id": "YOUR_CLIENT_ID", "client_secret": "YOUR_CLIENT_SECRET", "grant_type": "client_credentials"}'</code></pre>
-            <button class="copy-btn bg-emerald-500 text-white px-4 py-2 rounded-lg mt-4 relative">Copy</button>
-          </div>
+                        <button class="copy-btn bg-orange-500 text-white px-4 py-2 rounded-lg mt-4">Copy</button>
+                    </div>
+                </div>
+                <a href="/" class="inline-block bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition transform mt-8">Back to Home</a>
+            </div>
         </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Footer -->
-  <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 mt-8">
-    <div class="container max-w-6xl mx-auto text-center">
-      <img
-        src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg"
-        alt="MGZon Logo"
-        class="w-24 h-24 mx-auto mb-6 animate-pulse"
-      />
-      <p class="mb-4">
-        Developed by
-        <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
-        | Powered by
-        <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('email')">
-          <i class="bx bx-mail-send text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Email Us</h4>
-          <p>
-            <a href="mailto:support@mgzon.com" class="text-emerald-300 hover:underline">support@mgzon.com</a>
-          </p>
-          <div id="email-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Reach out to our support team for any inquiries or assistance.</p>
-            <button onclick="closeCardDetails('email')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('phone')">
-          <i class="bx bx-phone text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Phone Support</h4>
-          <p>+1-800-123-4567</p>
-          <div id="phone-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Contact our support team via phone for immediate assistance.</p>
-            <button onclick="closeCardDetails('phone')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('community')">
-          <i class="bx bx-group text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Community</h4>
-          <p>
-            <a href="https://hager-zon.vercel.app/community" class="text-emerald-300 hover:underline">Join us</a>
-          </p>
-          <div id="community-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Join our vibrant community to share ideas and collaborate.</p>
-            <button onclick="closeCardDetails('community')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('api-docs')">
-          <i class="bx bx-code-alt text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">API Docs</h4>
-          <p>
-            <a href="/docs" class="text-emerald-300 hover:underline">Explore Docs</a>
-          </p>
-          <div id="api-docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Explore our API documentation for seamless integration.</p>
-            <button onclick="closeCardDetails('api-docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('faq')">
-          <i class="bx bx-help-circle text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">FAQ</h4>
-          <p>
-            <a href="https://hager-zon.vercel.app/faq" target="_blank" class="text-emerald-300 hover:underline">Read FAQ</a>
-          </p>
-          <div id="faq-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Find answers to common questions in our FAQ section.</p>
-            <button onclick="closeCardDetails('faq')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('docs')">
-          <i class="bx bx-book text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Documentation</h4>
-          <p>
-            <a href="/docs" class="text-emerald-300 hover:underline">Full Docs</a>
-          </p>
-          <div id="docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Access comprehensive documentation for MGZon Chatbot.</p>
-            <button onclick="closeCardDetails('docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-      </div>
-      <div class="flex justify-center gap-6 mt-6">
-        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-emerald-300 transition">
-          <i class="bx bxl-github"></i>
-        </a>
-        <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-emerald-300 transition">
-          <i class="bx bxl-twitter"></i>
-        </a>
-        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-emerald-300 transition">
-          <i class="bx bxl-facebook"></i>
-        </a>
-      </div>
-      <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
     </div>
-  </footer>
-
-  <!-- Scripts -->
-  <script>
-    // Sidebar toggle
-    const sidebar = document.getElementById('sidebar');
-    const toggleBtn = document.getElementById('sidebarToggle');
-    const closeSidebarBtn = document.getElementById('closeSidebar');
-
-    toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
-      sidebar.classList.toggle('-translate-x-full');
-      sidebar.classList.toggle('translate-x-0');
-    });
-
-    closeSidebarBtn.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-      sidebar.classList.add('-translate-x-full');
-      sidebar.classList.remove('translate-x-0');
-    });
-
-    document.addEventListener('click', (e) => {
-      if (
-        !sidebar.contains(e.target) &&
-        !toggleBtn.contains(e.target) &&
-        window.innerWidth < 768
-      ) {
-        sidebar.classList.remove('active');
-        sidebar.classList.add('-translate-x-full');
-        sidebar.classList.remove('translate-x-0');
-      }
-    });
-
-    // Tab switching
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('bg-emerald-500'));
-        btn.classList.add('bg-emerald-500');
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.getElementById(btn.dataset.tab).classList.add('active');
-      });
-    });
-
-    // Copy button logic
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const code = btn.previousElementSibling.querySelector('code').textContent;
-        navigator.clipboard.writeText(code).then(() => {
-          btn.classList.add('copied');
-          setTimeout(() => btn.classList.remove('copied'), 2000);
+    <footer class="bg-gradient-to-r from-blue-900 to-gray-900 py-12 mt-auto">
+        <div class="container max-w-6xl mx-auto text-center">
+            <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="w-24 h-24 mx-auto mb-6 animate-pulse">
+            <p class="mb-4">Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-orange-500 hover:underline">Mark Al-Asfar</a> | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-orange-500 hover:underline">MGZon AI</a></p>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-mail-send text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Email Us</h3>
+                    <p>Contact: <a href="mailto:support@mgzon.com" class="text-orange-500 hover:underline">support@mgzon.com</a></p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-phone text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Phone Support</h3>
+                    <p>Call: +1-800-123-4567</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-group text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Community</h3>
+                    <p>Join: <a href="https://hager-zon.vercel.app/community" class="text-orange-500 hover:underline">mgzon.com/community</a></p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-code-alt text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">API Docs</h3>
+                    <p>Explore: <a href="/docs" class="text-orange-500 hover:underline">mgzon.com/docs</a></p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-help-circle text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">FAQ</h3>
+                    <p>Read: <a href="https://hager-zon.vercel.app/faq" class="text-orange-500 hover:underline">mgzon.com/faq</a></p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <i class="bx bx-book text-3xl text-orange-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Documentation</h3>
+                    <p>Learn: <a href="/docs" class="text-orange-500 hover:underline">mgzon.com/docs</a></p>
+                </div>
+            </div>
+            <div class="flex justify-center gap-6 mt-6">
+                <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-orange-500 transition"><i class="bx bxl-github"></i></a>
+                <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-orange-500 transition"><i class="bx bxl-twitter"></i></a>
+                <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-orange-500 transition"><i class="bx bxl-facebook"></i></a>
+            </div>
+            <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
+        </div>
+    </footer>
+    <script src="/static/js/scripts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.replace('bg-orange-500', 'bg-gray-700'));
+                btn.classList.replace('bg-gray-700', 'bg-orange-500');
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
         });
-      });
-    });
-
-    // Card details toggle
-    function showCardDetails(cardId) {
-      document.getElementById(`${cardId}-details`).classList.remove('hidden');
-    }
-    function closeCardDetails(cardId) {
-      document.getElementById(`${cardId}-details`).classList.add('hidden');
-    }
-  </script>
+    </script>
 </body>
 </html>
