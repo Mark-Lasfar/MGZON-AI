@@ -15,7 +15,7 @@ cachetools==5.5.0
 pydub==0.25.1
 ffmpeg-python==0.2.0
 numpy==1.26.4
-parler-tts==0.2.2
+parler-tts @ git+https://github.com/huggingface/parler-tts.git@5d0aca9753ab74ded179732f5bd797f7a8c6f8ee
 torch==2.4.1
 torchaudio==2.4.1
 transformers==4.46.1
