@@ -158,8 +158,7 @@ with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
             label="MGZon Chatbot",
             height=750,
             latex_delimiters=LATEX_DELIMS,
-            elem_classes="chatbot",
-            type="messages"
+            elem_classes="chatbot"
         )
 
     gr.Markdown("---")  # فاصل بسيط
