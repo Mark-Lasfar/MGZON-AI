@@ -4,7 +4,7 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Install chromium-driver and dependencies
-RUN apt-get update && apt-get install -y chromium-driver && apt-get clean
+RUN apt-get update && apt-get install -y chromium-driver git && apt-get clean
 
 # Update pip
 RUN pip install --upgrade pip
