@@ -6,6 +6,9 @@ WORKDIR /app
 # Install chromium-driver and dependencies
 RUN apt-get update && apt-get install -y chromium-driver && apt-get clean
 
+# Update pip
+RUN pip install --upgrade pip
+
 # Copy requirements.txt and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -16,8 +19,8 @@ COPY . .
 # Verify files in /app
 RUN ls -R /app
 
-# Expose port 7860 for FastAPI/Gradio
+# Expose port 7860 for Gradio
 EXPOSE 7860
 
-# Run the FastAPI app with uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Run the Gradio app
+CMD ["python", "main.py"]
