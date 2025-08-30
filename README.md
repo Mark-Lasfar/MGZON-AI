@@ -1,9 +1,9 @@
 ---
-title: MGZON FLAN-T5 API
+title: MGZon Chatbot
 emoji: "🤖"
 colorFrom: "blue"
 colorTo: "green"
-sdk: docker
+sdk: gradio
 app_file: main.py
 pinned: false
 ---
@@ -36,6 +36,13 @@ should probably proofread and complete it, then remove this comment. -->
 This model is a fine-tuned version of [MGZON/Veltrix](https://huggingface.co/MGZON/Veltrix) on the None dataset.
 It achieves the following results on the evaluation set:
 - Loss: nan
+
+## Features
+- Real-time voice input/output with Whisper and Parler-TTS.
+- Image capture and analysis with CLIP.
+- Web search integration with Google API.
+- Model selection for flexible query handling.
+- Enhanced UI with custom icons and responsive design.
 
 ## Model description
 
