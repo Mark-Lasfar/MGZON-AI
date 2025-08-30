@@ -1,9 +1,9 @@
 ---
-title: MGZon Chatbot
+title: MGZON Chat
 emoji: "🤖"
 colorFrom: "blue"
 colorTo: "green"
-sdk: gradio
+sdk: docker
 app_file: main.py
 pinned: false
 ---
@@ -43,6 +43,7 @@ It achieves the following results on the evaluation set:
 - Web search integration with Google API.
 - Model selection for flexible query handling.
 - Enhanced UI with custom icons and responsive design.
+
 
 ## Model description
 
