@@ -31,99 +31,104 @@ CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 
 # إعداد CSS
 css = """
-.gradio-container { 
-    max-width: 1000px; 
-    margin: auto; 
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-    background: #f0f2f5;
+.gradio-container {
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f7fa;
+    padding: 20px;
 }
-.chatbot { 
-    border: none; 
-    border-radius: 20px; 
-    padding: 15px; 
-    background: #fff; 
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
-    height: 600px; 
+.chatbot {
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    height: 70vh;
     overflow-y: auto;
+    padding: 20px;
 }
-.input-container { 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-    border: 1px solid #ddd; 
-    border-radius: 25px; 
-    padding: 8px; 
-    background: #fff; 
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-    position: sticky; 
-    bottom: 10px; 
-    margin: 10px;
+.chatbot .message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 8px;
 }
-.input-textbox { 
-    flex-grow: 1; 
-    border: none; 
-    outline: none; 
-    font-size: 16px; 
-    padding: 10px 15px; 
-    border-radius: 20px; 
+.chatbot .user {
+    background: #25D366;
+    color: white;
+    margin-left: 20%;
+    border-radius: 8px 8px 0 8px;
+}
+.chatbot .assistant {
+    background: #f1f0f0;
+    margin-right: 20%;
+    border-radius: 8px 8px 8px 0;
+}
+.input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 50px;
+    padding: 10px;
+    margin: 20px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.input-textbox {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    padding: 12px 15px;
     background: transparent;
 }
-.input-icon { 
-    background: none; 
-    border: none; 
-    cursor: pointer; 
-    font-size: 22px; 
-    padding: 8px; 
-    color: #555; 
+.input-icon, .submit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 10px;
+    color: #333;
     transition: color 0.2s;
 }
-.input-icon:hover { 
-    color: #25D366; 
+.input-icon:hover, .submit-btn:hover {
+    color: #25D366;
 }
-.submit-btn { 
-    background: #25D366; 
-    color: white; 
-    border-radius: 50%; 
-    width: 36px; 
-    height: 36px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 18px; 
-    cursor: pointer; 
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+.submit-btn {
+    background: #25D366;
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.submit-btn:hover { 
-    background: #20B858; 
+.output-container {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
 }
-.output-container { 
-    margin: 15px 0; 
-    padding: 15px; 
-    border-radius: 10px; 
-    background: #f9f9f9; 
-    border: 1px solid #e0e0e0;
+.audio-output-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
 }
-.settings-accordion { 
-    background: #fff; 
-    border-radius: 10px; 
-    padding: 15px; 
-    box-shadow: 0 1px 5px rgba(0,0,0,0.1); 
-    margin-bottom: 10px;
+.settings-accordion {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
-.audio-output-container { 
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
-    margin-top: 10px; 
-    background: #fff; 
-    padding: 10px; 
-    border-radius: 10px;
-}
-.gr-button { 
-    transition: background-color 0.2s, transform 0.1s; 
-}
-.gr-button:hover { 
-    transform: scale(1.05); 
+.upload-preview {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 8px;
+    margin: 10px 0;
 }
 """
 
@@ -140,7 +145,7 @@ def process_input(message, audio_input=None, image_input=None, history=None, sys
             message = "Transcribe this audio"
         except Exception as e:
             logger.error(f"Failed to read audio file: {e}")
-            return f"Error: Failed to read audio file: {e}", None
+            return f"Error: Failed to read audio file: {e}", None, [], ""
     elif image_input:
         input_type = "image"
         try:
@@ -149,10 +154,11 @@ def process_input(message, audio_input=None, image_input=None, history=None, sys
             message = "Analyze this image"
         except Exception as e:
             logger.error(f"Failed to read image file: {e}")
-            return f"Error: Failed to read image file: {e}", None
+            return f"Error: Failed to read image file: {e}", None, [], ""
     
     response_text = ""
     audio_response = None
+    chatbot_history = history or []
     try:
         for chunk in generate(
             message=message,
@@ -172,51 +178,67 @@ def process_input(message, audio_input=None, image_input=None, history=None, sys
                 audio_response.name = "response.wav"
             else:
                 response_text += chunk
-            yield response_text or "Processing...", audio_response
+            chatbot_history.append({"role": "assistant", "content": response_text})
+            yield response_text or "Processing...", audio_response, chatbot_history, ""
     except Exception as e:
         logger.error(f"Generation failed: {e}")
-        yield f"Error: Generation failed: {e}", None
+        return f"Error: Generation failed: {e}", None, [], ""
 
 # دالة لتنظيف المدخلات بعد الإرسال
 def clear_inputs(response_text, audio_response, chatbot, message):
     return response_text, audio_response, [], ""
 
+# دالة لمعاينة الملفات
+def preview_file(file_input, audio_input):
+    if file_input:
+        return gr.update(value=f"<img src='{file_input}' class='upload-preview'>", visible=True), gr.update(visible=False)
+    if audio_input:
+        return gr.update(visible=False), gr.update(value=f"<audio controls src='{audio_input}'></audio>", visible=True)
+    return gr.update(visible=False), gr.update(visible=False)
+
 # دالة لمعالجة زر إرسال الصوت
 def submit_audio(audio_input, output_format):
     if not audio_input:
-        return "Please upload or record an audio file.", None
+        return "Please upload or record an audio file.", None, [], ""
     response_text = ""
     audio_response = None
+    chatbot_history = []
     try:
         for text, audio in process_input(message="", audio_input=audio_input, output_format=output_format):
             response_text = text or "No text response generated."
             audio_response = audio
-        return response_text, audio_response
+            chatbot_history.append({"role": "assistant", "content": response_text})
+        return response_text, audio_response, chatbot_history, ""
     except Exception as e:
         logger.error(f"Audio submission failed: {e}")
-        return f"Error: Audio processing failed: {e}", None
+        return f"Error: Audio processing failed: {e}", None, [], ""
 
 # دالة لمعالجة زر إرسال الصورة
 def submit_image(image_input, output_format):
     if not image_input:
-        return "Please upload an image.", None
+        return "Please upload an image.", None, [], ""
     response_text = ""
     audio_response = None
+    chatbot_history = []
     try:
         for text, audio in process_input(message="", image_input=image_input, output_format=output_format):
             response_text = text or "No text response generated."
             audio_response = audio
-        return response_text, audio_response
+            chatbot_history.append({"role": "assistant", "content": response_text})
+        return response_text, audio_response, chatbot_history, ""
     except Exception as e:
         logger.error(f"Image submission failed: {e}")
-        return f"Error: Image processing failed: {e}", None
+        return f"Error: Image processing failed: {e}", None, [], ""
 
 # إعداد واجهة Gradio
 with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
     gr.Markdown(
         """
-        # MGZon Chatbot 🤖
-        A versatile chatbot powered by DeepSeek, GPT-OSS, CLIP, Whisper, and Parler-TTS. Type your query, upload images/files, or record audio in one sleek input form!
+        <div style="text-align: center;">
+            <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" style="width: 100px; margin-bottom: 10px;">
+            <h1>MGZon Chatbot</h1>
+            <p>A versatile chatbot powered by DeepSeek, GPT-OSS, CLIP, Whisper, and TTS. Type your query, upload images/files, or record audio in one sleek input form!</p>
+        </div>
         """
     )
     with gr.Row():
@@ -232,7 +254,7 @@ with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
             with gr.Accordion("⚙️ Settings", open=False, elem_classes="settings-accordion"):
                 system_prompt = gr.Textbox(
                     label="System Prompt",
-                    value="You are an expert assistant providing detailed, comprehensive, and well-structured responses. Support text, audio, image, and file inputs. For audio, transcribe using Whisper. For text-to-speech, use Parler-TTS. For images, analyze content appropriately. Respond in the requested output format (text or audio).",
+                    value="You are an expert assistant providing detailed, comprehensive, and well-structured responses. Support text, audio, image, and file inputs. For audio, transcribe using Whisper. For text-to-speech, use TTS. For images, analyze content appropriately. Respond in the requested output format (text or audio).",
                     lines=4
                 )
                 temperature = gr.Slider(label="Temperature", minimum=0.0, maximum=1.0, step=0.1, value=0.7)
@@ -261,6 +283,8 @@ with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
                     elem_classes="input-icon",
                     visible=False
                 )
+                file_preview = gr.HTML(label="File Preview", visible=False)
+                audio_preview = gr.HTML(label="Audio Preview", visible=False)
                 file_btn = gr.Button("📎", elem_classes="input-icon")
                 audio_btn = gr.Button("🎤", elem_classes="input-icon")
                 submit_btn = gr.Button("➡️", elem_classes="submit-btn")
@@ -276,6 +300,16 @@ with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
         fn=lambda: gr.update(visible=True),
         outputs=audio_input
     )
+    file_input.change(
+        fn=preview_file,
+        inputs=[file_input, audio_input],
+        outputs=[file_preview, audio_preview]
+    )
+    audio_input.change(
+        fn=preview_file,
+        inputs=[file_input, audio_input],
+        outputs=[file_preview, audio_preview]
+    )
     submit_btn.click(
         fn=process_input,
         inputs=[message, audio_input, file_input, chatbot, system_prompt, temperature, reasoning_effort, enable_browsing, max_new_tokens, output_format],
@@ -284,6 +318,9 @@ with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
         fn=clear_inputs,
         inputs=[output_text, output_audio, chatbot, message],
         outputs=[output_text, output_audio, chatbot, message]
+    ).then(
+        fn=lambda: [gr.update(visible=False), gr.update(visible=False)],
+        outputs=[file_preview, audio_preview]
     )
     message.submit(
         fn=process_input,
@@ -293,6 +330,9 @@ with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
         fn=clear_inputs,
         inputs=[output_text, output_audio, chatbot, message],
         outputs=[output_text, output_audio, chatbot, message]
+    ).then(
+        fn=lambda: [gr.update(visible=False), gr.update(visible=False)],
+        outputs=[file_preview, audio_preview]
     )
     file_input.change(
         fn=submit_image,
@@ -302,6 +342,9 @@ with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
         fn=clear_inputs,
         inputs=[output_text, output_audio, chatbot, message],
         outputs=[output_text, output_audio, chatbot, message]
+    ).then(
+        fn=lambda: [gr.update(visible=False), gr.update(visible=False)],
+        outputs=[file_preview, audio_preview]
     )
     audio_input.change(
         fn=submit_audio,
@@ -311,6 +354,9 @@ with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
         fn=clear_inputs,
         inputs=[output_text, output_audio, chatbot, message],
         outputs=[output_text, output_audio, chatbot, message]
+    ).then(
+        fn=lambda: [gr.update(visible=False), gr.update(visible=False)],
+        outputs=[file_preview, audio_preview]
     )
 
 # إعداد FastAPI
