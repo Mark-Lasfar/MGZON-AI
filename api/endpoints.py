@@ -1,25 +1,22 @@
 import os
 from fastapi import APIRouter, HTTPException, UploadFile, File
-from fastapi.responses import StreamingResponse
 from openai import OpenAI
 from api.models import QueryRequest
 from utils.generation import request_generation, select_model
 from utils.web_search import web_search
-import io
 
 router = APIRouter()
 
 HF_TOKEN = os.getenv("HF_TOKEN")
-BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-20b:fireworks-ai")
 
 @router.get("/api/model-info")
 def model_info():
     return {
         "model_name": MODEL_NAME,
-        "secondary_model": os.getenv("SECONDARY_MODEL_NAME", "meta-llama/Meta-Llama-3-8B-Instruct"),
-        "tertiary_model": os.getenv("TERTIARY_MODEL_NAME", "mistralai/Mixtral-8x22B-Instruct-v0.1"),
+        "secondary_model": os.getenv("SECONDARY_MODEL_NAME", "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"),
+        "tertiary_model": os.getenv("TERTIARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1"),
         "clip_base_model": os.getenv("CLIP_BASE_MODEL", "openai/clip-vit-base-patch32"),
         "clip_large_model": os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14"),
         "api_base": API_ENDPOINT,
@@ -48,14 +45,16 @@ async def chat_endpoint(req: QueryRequest):
         max_new_tokens=req.max_new_tokens,
         deep_search=req.enable_browsing,
     )
-    response = "".join([chunk for chunk in stream if isinstance(chunk, str)])
+    response = "".join(list(stream))
     return {"response": response}
 
+
+# في api/endpoints.py
 @router.post("/api/audio-transcription")
 async def audio_transcription_endpoint(file: UploadFile = File(...)):
     model_name, api_endpoint = select_model("transcribe audio", input_type="audio")
     audio_data = await file.read()
-    response = "".join([chunk for chunk in request_generation(
+    response = "".join(list(request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message="Transcribe audio",
@@ -65,7 +64,7 @@ async def audio_transcription_endpoint(file: UploadFile = File(...)):
         max_new_tokens=128000,
         input_type="audio",
         audio_data=audio_data,
-    ) if isinstance(chunk, str)])
+    )))
     return {"transcription": response}
 
 @router.post("/api/text-to-speech")
@@ -82,7 +81,7 @@ async def text_to_speech_endpoint(req: dict):
         max_new_tokens=128000,
         input_type="text",
     )
-    audio_data = b"".join([chunk for chunk in response if isinstance(chunk, bytes)])
+    audio_data = b"".join(list(response))
     return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
 
 @router.post("/api/code")
@@ -92,7 +91,7 @@ async def code_endpoint(req: dict):
     code = req.get("code", "")
     prompt = f"Generate code for task: {task} using {framework}. Existing code: {code}"
     model_name, api_endpoint = select_model(prompt)
-    response = "".join([chunk for chunk in request_generation(
+    response = "".join(list(request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message=prompt,
@@ -100,14 +99,14 @@ async def code_endpoint(req: dict):
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=128000,
-    ) if isinstance(chunk, str)])
+    )))
     return {"generated_code": response}
 
 @router.post("/api/analysis")
 async def analysis_endpoint(req: dict):
     message = req.get("text", "")
     model_name, api_endpoint = select_model(message)
-    response = "".join([chunk for chunk in request_generation(
+    response = "".join(list(request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message=message,
@@ -115,24 +114,24 @@ async def analysis_endpoint(req: dict):
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=128000,
-    ) if isinstance(chunk, str)])
+    )))
     return {"analysis": response}
 
 @router.post("/api/image-analysis")
-async def image_analysis_endpoint(file: UploadFile = File(...)):
-    model_name, api_endpoint = select_model("image analysis", input_type="image")
-    image_data = await file.read()
-    response = "".join([chunk for chunk in request_generation(
+async def image_analysis_endpoint(req: dict):
+    image_url = req.get("image_url", "")
+    task = req.get("task", "describe")
+    prompt = f"Perform the following task on the image at {image_url}: {task}"
+    model_name, api_endpoint = select_model(prompt)
+    response = "".join(list(request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
-        message="Analyze this image",
+        message=prompt,
         system_prompt="You are an expert in image analysis. Provide detailed descriptions or classifications based on the query.",
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=128000,
-        input_type="image",
-        image_data=image_data,
-    ) if isinstance(chunk, str)])
+    )))
     return {"image_analysis": response}
 
 @router.get("/api/test-model")

@@ -3,7 +3,7 @@ title: MGZON Chat
 emoji: "🤖"
 colorFrom: "blue"
 colorTo: "green"
-sdk: gradio
+sdk: docker
 app_file: main.py
 pinned: false
 ---
