@@ -3,12 +3,13 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
-# Install chromium-driver and build dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     chromium-driver \
     git \
     gcc \
     libc-dev \
+    ffmpeg \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Update pip
