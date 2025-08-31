@@ -12,9 +12,14 @@ router = APIRouter()
 HF_TOKEN = os.getenv("HF_TOKEN")
 BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:together")
-SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B:featherless-ai")
-TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-20b:together")
+FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
+SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mistral-7B-Instruct-v0.2")
+TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-20b:cerebras")
+CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
+CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
+ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
+TTS_MODEL = os.getenv("TTS_MODEL", "espnet/kan-bayashi_arabic_vits")
 
 @router.get("/api/model-info")
 def model_info():
@@ -22,9 +27,12 @@ def model_info():
         "model_name": MODEL_NAME,
         "secondary_model": SECONDARY_MODEL_NAME,
         "tertiary_model": TERTIARY_MODEL_NAME,
-        "clip_base_model": os.getenv("CLIP_BASE_MODEL", "openai/clip-vit-base-patch32"),
-        "clip_large_model": os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14"),
+        "clip_base_model": CLIP_BASE_MODEL,
+        "clip_large_model": CLIP_LARGE_MODEL,
+        "asr_model": ASR_MODEL,
+        "tts_model": TTS_MODEL,
         "api_base": API_ENDPOINT,
+        "fallback_api_base": FALLBACK_API_ENDPOINT,
         "status": "online"
     }
 
@@ -38,7 +46,7 @@ async def performance_stats():
 
 @router.post("/api/chat")
 async def chat_endpoint(req: QueryRequest):
-    model_name, api_endpoint = select_model(req.message)
+    model_name, api_endpoint = select_model(req.message, input_type="text")
     stream = request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
@@ -49,6 +57,7 @@ async def chat_endpoint(req: QueryRequest):
         temperature=req.temperature,
         max_new_tokens=req.max_new_tokens,
         deep_search=req.enable_browsing,
+        input_type="text",
         output_format=req.output_format
     )
     if req.output_format == "audio":
@@ -61,7 +70,7 @@ async def chat_endpoint(req: QueryRequest):
 async def audio_transcription_endpoint(file: UploadFile = File(...)):
     model_name, api_endpoint = select_model("transcribe audio", input_type="audio")
     audio_data = await file.read()
-    response = "".join(list(request_generation(
+    stream = request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message="Transcribe audio",
@@ -72,13 +81,14 @@ async def audio_transcription_endpoint(file: UploadFile = File(...)):
         input_type="audio",
         audio_data=audio_data,
         output_format="text"
-    )))
+    )
+    response = "".join([chunk for chunk in stream if isinstance(chunk, str)])
     return {"transcription": response}
 
 @router.post("/api/text-to-speech")
 async def text_to_speech_endpoint(req: dict):
     text = req.get("text", "")
-    model_name, api_endpoint = select_model("text to speech", input_type="text")
+    model_name, api_endpoint = select_model("text to speech", input_type="tts")
     stream = request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
@@ -87,7 +97,7 @@ async def text_to_speech_endpoint(req: dict):
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=128000,
-        input_type="text",
+        input_type="tts",
         output_format="audio"
     )
     audio_data = b"".join([chunk for chunk in stream if isinstance(chunk, bytes)])
@@ -100,7 +110,7 @@ async def code_endpoint(req: dict):
     code = req.get("code", "")
     output_format = req.get("output_format", "text")
     prompt = f"Generate code for task: {task} using {framework}. Existing code: {code}"
-    model_name, api_endpoint = select_model(prompt)
+    model_name, api_endpoint = select_model(prompt, input_type="text")
     stream = request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
@@ -109,6 +119,7 @@ async def code_endpoint(req: dict):
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=128000,
+        input_type="text",
         output_format=output_format
     )
     if output_format == "audio":
@@ -121,7 +132,7 @@ async def code_endpoint(req: dict):
 async def analysis_endpoint(req: dict):
     message = req.get("text", "")
     output_format = req.get("output_format", "text")
-    model_name, api_endpoint = select_model(message)
+    model_name, api_endpoint = select_model(message, input_type="text")
     stream = request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
@@ -130,6 +141,7 @@ async def analysis_endpoint(req: dict):
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=128000,
+        input_type="text",
         output_format=output_format
     )
     if output_format == "audio":
@@ -139,8 +151,7 @@ async def analysis_endpoint(req: dict):
     return {"analysis": response}
 
 @router.post("/api/image-analysis")
-async def image_analysis_endpoint(file: UploadFile = File(...)):
-    output_format = "text"  # يمكن تعديله لدعم الصوت
+async def image_analysis_endpoint(file: UploadFile = File(...), output_format: str = "text"):
     model_name, api_endpoint = select_model("analyze image", input_type="image")
     image_data = await file.read()
     stream = request_generation(

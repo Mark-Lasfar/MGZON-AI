@@ -15,12 +15,12 @@ import torchaudio
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor, AutoProcessor
 from parler_tts import ParlerTTSForConditionalGeneration
-from utils.web_search import web_search  # نقل الاستيراد لأعلى
+from utils.web_search import web_search
 
 logger = logging.getLogger(__name__)
 
 # إعداد Cache
-cache = TTLCache(maxsize=100, ttl=600)
+cache = TTLCache(maxsize=int(os.getenv("QUEUE_SIZE", 100)), ttl=600)
 
 # تعريف LATEX_DELIMS
 LATEX_DELIMS = [
@@ -34,14 +34,14 @@ LATEX_DELIMS = [
 HF_TOKEN = os.getenv("HF_TOKEN")
 BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
-FALLBACK_API_ENDPOINT = "https://api-inference.huggingface.co/v1"
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:together")
-SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B:featherless-ai")
-TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-20b:together")
-CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "openai/clip-vit-base-patch32")
+FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
+SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mistral-7B-Instruct-v0.2")
+TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-20b:cerebras")
+CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
 CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
-ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3-turbo")
-TTS_MODEL = os.getenv("TTS_MODEL", "parler-tts/parler-tts-mini-v1")
+ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
+TTS_MODEL = os.getenv("TTS_MODEL", "espnet/kan-bayashi_arabic_vits")
 
 def check_model_availability(model_name: str, api_base: str, api_key: str) -> tuple[bool, str]:
     try:
@@ -71,7 +71,7 @@ def select_model(query: str, input_type: str = "text") -> tuple[str, str]:
         logger.info(f"Selected {ASR_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for audio input")
         return ASR_MODEL, FALLBACK_API_ENDPOINT
     # دعم تحويل النص إلى صوت
-    if any(keyword in query_lower for keyword in ["text-to-speech", "tts", "تحويل نص إلى صوت"]):
+    if any(keyword in query_lower for keyword in ["text-to-speech", "tts", "تحويل نص إلى صوت"]) or input_type == "tts":
         logger.info(f"Selected {TTS_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for text-to-speech")
         return TTS_MODEL, FALLBACK_API_ENDPOINT
     # نماذج CLIP للصور
@@ -87,7 +87,7 @@ def select_model(query: str, input_type: str = "text") -> tuple[str, str]:
     available_models = [
         (MODEL_NAME, API_ENDPOINT),
         (SECONDARY_MODEL_NAME, FALLBACK_API_ENDPOINT),
-        (TERTIARY_MODEL_NAME, FALLBACK_API_ENDPOINT)
+        (TERTIARY_MODEL_NAME, API_ENDPOINT)
     ]
     for model_name, api_endpoint in available_models:
         is_available, _ = check_model_availability(model_name, api_endpoint, HF_TOKEN)
@@ -114,7 +114,7 @@ def request_generation(
     input_type: str = "text",
     audio_data: Optional[bytes] = None,
     image_data: Optional[bytes] = None,
-    output_format: str = "text"  # جديد: تحديد نوع الإخراج (text أو audio)
+    output_format: str = "text"
 ) -> Generator[bytes | str, None, None]:
     is_available, selected_api_key = check_model_availability(model_name, api_base, api_key)
     if not is_available:
@@ -196,7 +196,6 @@ def request_generation(
             probs = logits_per_image.softmax(dim=1)
             result = f"Image analysis result: {probs.tolist()}"
             if output_format == "audio":
-                # تحويل النتيجة إلى صوت
                 model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
                 processor = AutoProcessor.from_pretrained(TTS_MODEL)
                 inputs = processor(text=result, return_tensors="pt")
@@ -345,7 +344,6 @@ def request_generation(
             cached_chunks.append(buffer)
             yield buffer
 
-        # إذا طلب الإخراج صوتي
         if output_format == "audio" and buffer:
             try:
                 model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
@@ -473,11 +471,11 @@ def request_generation(
             except Exception as e2:
                 logger.exception(f"[Gateway] Streaming failed for fallback model {fallback_model}: {e2}")
                 try:
-                    is_available, selected_api_key = check_model_availability(TERTIARY_MODEL_NAME, FALLBACK_API_ENDPOINT, selected_api_key)
+                    is_available, selected_api_key = check_model_availability(TERTIARY_MODEL_NAME, API_ENDPOINT, selected_api_key)
                     if not is_available:
                         yield f"Error: Tertiary model {TERTIARY_MODEL_NAME} is not available."
                         return
-                    client = OpenAI(api_key=selected_api_key, base_url=FALLBACK_API_ENDPOINT, timeout=120.0)
+                    client = OpenAI(api_key=selected_api_key, base_url=API_ENDPOINT, timeout=120.0)
                     stream = client.chat.completions.create(
                         model=TERTIARY_MODEL_NAME,
                         messages=input_messages,
