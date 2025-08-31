@@ -13,15 +13,13 @@ import pydub
 import io
 import torchaudio
 from PIL import Image
-import numpy as np
 from transformers import CLIPModel, CLIPProcessor, AutoProcessor
 from parler_tts import ParlerTTSForConditionalGeneration
-from utils.web_search import web_search  # استيراد مباشر
 
 logger = logging.getLogger(__name__)
 
 # إعداد Cache
-cache = TTLCache(maxsize=100, ttl=600)
+cache = TTLCache(maxsize=100, ttl=600)  # Cache بحجم 100 ومدة 10 دقايق
 
 # تعريف LATEX_DELIMS
 LATEX_DELIMS = [
@@ -33,18 +31,19 @@ LATEX_DELIMS = [
 
 # إعداد العميل لـ Hugging Face Inference API
 HF_TOKEN = os.getenv("HF_TOKEN")
-BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co")
-FALLBACK_API_ENDPOINT = "https://api-inference.huggingface.co"
-MODEL_NAME = os.getenv("MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
-SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "meta-llama/Meta-Llama-3-8B-Instruct")
-TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "mistralai/Mixtral-8x22B-Instruct-v0.1")
+BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")  # توكن احتياطي
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
+FALLBACK_API_ENDPOINT = "https://api-inference.huggingface.co/v1"
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-20b:fireworks-ai")
+SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B")
+TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "openai/clip-vit-base-patch32")
 CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
-ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
+ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3-turbo")
 TTS_MODEL = os.getenv("TTS_MODEL", "parler-tts/parler-tts-mini-v1")
 
 def check_model_availability(model_name: str, api_base: str, api_key: str) -> tuple[bool, str]:
+    """التحقق من توفر النموذج عبر API مع دعم التوكن الاحتياطي"""
     try:
         response = requests.get(
             f"{api_base}/models/{model_name}",
@@ -67,12 +66,15 @@ def check_model_availability(model_name: str, api_base: str, api_key: str) -> tu
 
 def select_model(query: str, input_type: str = "text") -> tuple[str, str]:
     query_lower = query.lower()
+    # دعم الصوت
     if input_type == "audio" or any(keyword in query_lower for keyword in ["voice", "audio", "speech", "صوت", "تحويل صوت"]):
         logger.info(f"Selected {ASR_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for audio input")
         return ASR_MODEL, FALLBACK_API_ENDPOINT
+    # دعم تحويل النص إلى صوت
     if any(keyword in query_lower for keyword in ["text-to-speech", "tts", "تحويل نص إلى صوت"]):
         logger.info(f"Selected {TTS_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for text-to-speech")
         return TTS_MODEL, FALLBACK_API_ENDPOINT
+    # نماذج CLIP للاستعلامات المتعلقة بالصور
     image_patterns = [
         r"\bimage\b", r"\bpicture\b", r"\bphoto\b", r"\bvisual\b", r"\bصورة\b", r"\bتحليل\s+صورة\b",
         r"\bimage\s+analysis\b", r"\bimage\s+classification\b", r"\bimage\s+description\b"
@@ -81,6 +83,16 @@ def select_model(query: str, input_type: str = "text") -> tuple[str, str]:
         if re.search(pattern, query_lower, re.IGNORECASE):
             logger.info(f"Selected {CLIP_BASE_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for image-related query: {query}")
             return CLIP_BASE_MODEL, FALLBACK_API_ENDPOINT
+    # نموذج DeepSeek للاستعلامات المتعلقة بـ MGZon
+    mgzon_patterns = [
+        r"\bmgzon\b", r"\bmgzon\s+(products|services|platform|features|mission|technology|solutions|oauth)\b",
+        r"\bميزات\s+mgzon\b", r"\bخدمات\s+mgzon\b", r"\boauth\b"
+    ]
+    for pattern in mgzon_patterns:
+        if re.search(pattern, query_lower, re.IGNORECASE):
+            logger.info(f"Selected {SECONDARY_MODEL_NAME} with endpoint {FALLBACK_API_ENDPOINT} for MGZon-related query: {query}")
+            return SECONDARY_MODEL_NAME, FALLBACK_API_ENDPOINT
+    # النموذج الافتراضي للاستعلامات العامة
     logger.info(f"Selected {MODEL_NAME} with endpoint {API_ENDPOINT} for general query: {query}")
     return MODEL_NAME, API_ENDPOINT
 
@@ -102,7 +114,9 @@ def request_generation(
     audio_data: Optional[bytes] = None,
     image_data: Optional[bytes] = None,
 ) -> Generator[bytes | str, None, None]:
-    # التحقق من توفر النموذج
+    from utils.web_search import web_search  # تأخير الاستيراد
+
+    # التحقق من توفر النموذج مع دعم التوكن الاحتياطي
     is_available, selected_api_key = check_model_availability(model_name, api_base, api_key)
     if not is_available:
         yield f"Error: Model {model_name} is not available. Please check the model endpoint or token."
@@ -129,10 +143,10 @@ def request_generation(
     enhanced_system_prompt = system_prompt
 
     # معالجة الصوت (ASR)
-    if model_name == ASR_MODEL and audio_data is not None:
+    if model_name == ASR_MODEL and audio_data:
         task_type = "audio_transcription"
         try:
-            audio_file = io.BytesIO(audio_data if isinstance(audio_data, bytes) else audio_data.tobytes())
+            audio_file = io.BytesIO(audio_data)
             audio = pydub.AudioSegment.from_file(audio_file)
             audio = audio.set_channels(1).set_frame_rate(16000)
             audio_file = io.BytesIO()
@@ -171,12 +185,12 @@ def request_generation(
             return
 
     # معالجة الصور
-    if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data is not None:
+    if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:
         task_type = "image_analysis"
         try:
             model = CLIPModel.from_pretrained(model_name)
             processor = CLIPProcessor.from_pretrained(model_name)
-            image = Image.fromarray(np.uint8(image_data)) if isinstance(image_data, np.ndarray) else Image.open(io.BytesIO(image_data)).convert("RGB")
+            image = Image.open(io.BytesIO(image_data)).convert("RGB")
             inputs = processor(text=message, images=image, return_tensors="pt", padding=True)
             outputs = model(**inputs)
             logits_per_image = outputs.logits_per_image
@@ -208,6 +222,7 @@ def request_generation(
     else:
         enhanced_system_prompt = f"{system_prompt}\nFor general queries, provide comprehensive, detailed responses with examples and explanations where applicable. Continue generating content until the query is fully answered, leveraging the full capacity of the model."
 
+    # إذا كان الاستعلام قصيرًا، شجع على التفصيل
     if len(message.split()) < 5:
         enhanced_system_prompt += "\nEven for short or general queries, provide a detailed, in-depth response with examples, explanations, and additional context to ensure completeness."
 
@@ -487,7 +502,7 @@ def format_final(analysis_text: str, visible_text: str) -> str:
 
 def generate(message, history, system_prompt, temperature, reasoning_effort, enable_browsing, max_new_tokens, input_type="text", audio_data=None, image_data=None):
     if not message.strip() and not audio_data and not image_data:
-        yield "Please enter a prompt, record audio, or capture an image."
+        yield "Please enter a prompt or upload a file."
         return
 
     model_name, api_endpoint = select_model(message, input_type=input_type)
