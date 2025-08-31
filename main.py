@@ -78,10 +78,10 @@ css = """
     transition: color 0.2s;
 }
 .input-icon:hover { 
-    color: #0084ff; 
+    color: #25D366; 
 }
 .submit-btn { 
-    background: #0084ff; 
+    background: #25D366; 
     color: white; 
     border-radius: 50%; 
     width: 36px; 
@@ -94,7 +94,7 @@ css = """
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 .submit-btn:hover { 
-    background: #0066cc; 
+    background: #20B858; 
 }
 .output-container { 
     margin: 15px 0; 
@@ -126,6 +126,7 @@ css = """
     transform: scale(1.05); 
 }
 """
+
 # دالة لمعالجة الإدخال
 def process_input(message, audio_input=None, image_input=None, history=None, system_prompt=None, temperature=0.7, reasoning_effort="medium", enable_browsing=True, max_new_tokens=128000, output_format="text"):
     input_type = "text"
@@ -176,6 +177,10 @@ def process_input(message, audio_input=None, image_input=None, history=None, sys
         logger.error(f"Generation failed: {e}")
         yield f"Error: Generation failed: {e}", None
 
+# دالة لتنظيف المدخلات بعد الإرسال
+def clear_inputs(response_text, audio_response, chatbot, message):
+    return response_text, audio_response, [], ""
+
 # دالة لمعالجة زر إرسال الصوت
 def submit_audio(audio_input, output_format):
     if not audio_input:
@@ -207,7 +212,6 @@ def submit_image(image_input, output_format):
         return f"Error: Image processing failed: {e}", None
 
 # إعداد واجهة Gradio
-# إعداد واجهة Gradio
 with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
     gr.Markdown(
         """
@@ -217,7 +221,13 @@ with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
     )
     with gr.Row():
         with gr.Column(scale=3):
-            chatbot = gr.Chatbot(label="Chat", height=600, latex_delimiters=LATEX_DELIMS, elem_classes="chatbot")
+            chatbot = gr.Chatbot(
+                label="Chat",
+                height=600,
+                latex_delimiters=LATEX_DELIMS,
+                elem_classes="chatbot",
+                type="messages"
+            )
         with gr.Column(scale=1):
             with gr.Accordion("⚙️ Settings", open=False, elem_classes="settings-accordion"):
                 system_prompt = gr.Textbox(
@@ -270,25 +280,37 @@ with gr.Blocks(css=css, theme="gradio/soft") as chatbot_ui:
         fn=process_input,
         inputs=[message, audio_input, file_input, chatbot, system_prompt, temperature, reasoning_effort, enable_browsing, max_new_tokens, output_format],
         outputs=[output_text, output_audio, chatbot, message],
-        _js="() => { return ['', null, null, []]; }"  # تنظيف المدخلات
+    ).then(
+        fn=clear_inputs,
+        inputs=[output_text, output_audio, chatbot, message],
+        outputs=[output_text, output_audio, chatbot, message]
     )
     message.submit(
         fn=process_input,
         inputs=[message, audio_input, file_input, chatbot, system_prompt, temperature, reasoning_effort, enable_browsing, max_new_tokens, output_format],
         outputs=[output_text, output_audio, chatbot, message],
-        _js="() => { return ['', null, null, []]; }"  # تنظيف المدخلات
+    ).then(
+        fn=clear_inputs,
+        inputs=[output_text, output_audio, chatbot, message],
+        outputs=[output_text, output_audio, chatbot, message]
     )
     file_input.change(
         fn=submit_image,
         inputs=[file_input, output_format],
         outputs=[output_text, output_audio, chatbot, message],
-        _js="() => { return ['', null, null, []]; }"  # تنظيف المدخلات
+    ).then(
+        fn=clear_inputs,
+        inputs=[output_text, output_audio, chatbot, message],
+        outputs=[output_text, output_audio, chatbot, message]
     )
     audio_input.change(
         fn=submit_audio,
         inputs=[audio_input, output_format],
         outputs=[output_text, output_audio, chatbot, message],
-        _js="() => { return ['', null, null, []]; }"  # تنظيف المدخلات
+    ).then(
+        fn=clear_inputs,
+        inputs=[output_text, output_audio, chatbot, message],
+        outputs=[output_text, output_audio, chatbot, message]
     )
 
 # إعداد FastAPI
