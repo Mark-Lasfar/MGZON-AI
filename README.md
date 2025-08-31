@@ -1,5 +1,5 @@
 ---
-title: MGZON Chat
+title: MGZon Chatbot
 emoji: "🤖"
 colorFrom: "blue"
 colorTo: "green"

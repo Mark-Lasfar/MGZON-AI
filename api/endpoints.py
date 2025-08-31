@@ -5,6 +5,7 @@ import io
 from openai import OpenAI
 from api.models import QueryRequest
 from utils.generation import request_generation, select_model
+from utils.web_search import web_search
 
 router = APIRouter()
 
@@ -12,13 +13,15 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-20b:together")
+SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B:featherless-ai")
+TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-120b:cerebras")
 
 @router.get("/api/model-info")
 def model_info():
     return {
         "model_name": MODEL_NAME,
-        "secondary_model": os.getenv("SECONDARY_MODEL_NAME", "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B:featherless-ai"),
-        "tertiary_model": os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-120b:cerebras"),
+        "secondary_model": SECONDARY_MODEL_NAME,
+        "tertiary_model": TERTIARY_MODEL_NAME,
         "clip_base_model": os.getenv("CLIP_BASE_MODEL", "openai/clip-vit-base-patch32"),
         "clip_large_model": os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14"),
         "api_base": API_ENDPOINT,
@@ -46,7 +49,11 @@ async def chat_endpoint(req: QueryRequest):
         temperature=req.temperature,
         max_new_tokens=req.max_new_tokens,
         deep_search=req.enable_browsing,
+        output_format=req.output_format
     )
+    if req.output_format == "audio":
+        audio_data = b"".join([chunk for chunk in stream if isinstance(chunk, bytes)])
+        return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
     response = "".join([chunk for chunk in stream if isinstance(chunk, str)])
     return {"response": response}
 
@@ -54,7 +61,7 @@ async def chat_endpoint(req: QueryRequest):
 async def audio_transcription_endpoint(file: UploadFile = File(...)):
     model_name, api_endpoint = select_model("transcribe audio", input_type="audio")
     audio_data = await file.read()
-    response = "".join([chunk for chunk in request_generation(
+    response = "".join(list(request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message="Transcribe audio",
@@ -64,14 +71,15 @@ async def audio_transcription_endpoint(file: UploadFile = File(...)):
         max_new_tokens=128000,
         input_type="audio",
         audio_data=audio_data,
-    ) if isinstance(chunk, str)])
+        output_format="text"
+    )))
     return {"transcription": response}
 
 @router.post("/api/text-to-speech")
 async def text_to_speech_endpoint(req: dict):
     text = req.get("text", "")
     model_name, api_endpoint = select_model("text to speech", input_type="text")
-    response = request_generation(
+    stream = request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message=text,
@@ -80,8 +88,9 @@ async def text_to_speech_endpoint(req: dict):
         temperature=0.7,
         max_new_tokens=128000,
         input_type="text",
+        output_format="audio"
     )
-    audio_data = b"".join([chunk for chunk in response if isinstance(chunk, bytes)])
+    audio_data = b"".join([chunk for chunk in stream if isinstance(chunk, bytes)])
     return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
 
 @router.post("/api/code")
@@ -89,9 +98,10 @@ async def code_endpoint(req: dict):
     framework = req.get("framework")
     task = req.get("task")
     code = req.get("code", "")
+    output_format = req.get("output_format", "text")
     prompt = f"Generate code for task: {task} using {framework}. Existing code: {code}"
     model_name, api_endpoint = select_model(prompt)
-    response = "".join([chunk for chunk in request_generation(
+    stream = request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message=prompt,
@@ -99,14 +109,20 @@ async def code_endpoint(req: dict):
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=128000,
-    ) if isinstance(chunk, str)])
+        output_format=output_format
+    )
+    if output_format == "audio":
+        audio_data = b"".join([chunk for chunk in stream if isinstance(chunk, bytes)])
+        return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+    response = "".join([chunk for chunk in stream if isinstance(chunk, str)])
     return {"generated_code": response}
 
 @router.post("/api/analysis")
 async def analysis_endpoint(req: dict):
     message = req.get("text", "")
+    output_format = req.get("output_format", "text")
     model_name, api_endpoint = select_model(message)
-    response = "".join([chunk for chunk in request_generation(
+    stream = request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message=message,
@@ -114,14 +130,20 @@ async def analysis_endpoint(req: dict):
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=128000,
-    ) if isinstance(chunk, str)])
+        output_format=output_format
+    )
+    if output_format == "audio":
+        audio_data = b"".join([chunk for chunk in stream if isinstance(chunk, bytes)])
+        return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+    response = "".join([chunk for chunk in stream if isinstance(chunk, str)])
     return {"analysis": response}
 
 @router.post("/api/image-analysis")
 async def image_analysis_endpoint(file: UploadFile = File(...)):
+    output_format = "text"  # يمكن تعديله لدعم الصوت
     model_name, api_endpoint = select_model("analyze image", input_type="image")
     image_data = await file.read()
-    response = "".join([chunk for chunk in request_generation(
+    stream = request_generation(
         api_key=HF_TOKEN,
         api_base=api_endpoint,
         message="Analyze this image",
@@ -131,7 +153,12 @@ async def image_analysis_endpoint(file: UploadFile = File(...)):
         max_new_tokens=128000,
         input_type="image",
         image_data=image_data,
-    ) if isinstance(chunk, str)])
+        output_format=output_format
+    )
+    if output_format == "audio":
+        audio_data = b"".join([chunk for chunk in stream if isinstance(chunk, bytes)])
+        return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+    response = "".join([chunk for chunk in stream if isinstance(chunk, str)])
     return {"image_analysis": response}
 
 @router.get("/api/test-model")
