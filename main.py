@@ -29,32 +29,29 @@ if not HF_TOKEN:
 QUEUE_SIZE = int(os.getenv("QUEUE_SIZE", 80))
 CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 
-# إعداد CSS محسّن
+# إعداد CSS
 css = """
 .gradio-container { max-width: 1200px; margin: auto; font-family: Arial, sans-serif; }
 .chatbot { border: 1px solid #ccc; border-radius: 12px; padding: 20px; background-color: #f5f5f5; }
 .input-textbox { font-size: 16px; padding: 12px; border-radius: 8px; }
-.upload-button, .audio-button, .camera-button { 
-    background-color: #007bff; color: white; padding: 10px 20px; border-radius: 8px; 
-    display: inline-flex; align-items: center; gap: 8px; font-size: 16px; 
+.upload-button, .capture-button, .record-button {
+    background-color: #4CAF50; color: white; padding: 10px 20px; border-radius: 8px; font-size: 16px; cursor: pointer;
 }
-.upload-button::before { content: '📷'; font-size: 20px; }
-.audio-button::before { content: '🎤'; font-size: 20px; }
-.camera-button::before { content: '📸'; font-size: 20px; }
-.audio-output-container { 
-    display: flex; align-items: center; gap: 12px; margin-top: 15px; 
-    background-color: #e9ecef; padding: 10px; border-radius: 8px; 
-}
-.audio-output-container::before { content: '🔊'; font-size: 20px; }
+.upload-button:hover, .capture-button:hover, .record-button:hover { background-color: #45a049; }
+.upload-button::before { content: '📷 '; font-size: 20px; }
+.capture-button::before { content: '🎥 '; font-size: 20px; }
+.record-button::before { content: '🎤 '; font-size: 20px; }
+.audio-output::before { content: '🔊 '; font-size: 20px; }
 .loading::after {
-    content: ''; display: inline-block; width: 18px; height: 18px; 
-    border: 3px solid #007bff; border-top-color: transparent; 
-    border-radius: 50%; animation: spin 1s linear infinite; margin-left: 10px;
+    content: ''; display: inline-block; width: 18px; height: 18px; border: 3px solid #333;
+    border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-left: 10px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.output-container { 
-    margin-top: 20px; padding: 15px; border: 1px solid #ddd; 
-    border-radius: 10px; background-color: white; 
+.output-container {
+    margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; background-color: #fff;
+}
+.audio-output-container {
+    display: flex; align-items: center; gap: 12px; margin-top: 15px;
 }
 """
 
@@ -70,7 +67,7 @@ def process_input(message, audio_input=None, image_input=None, history=None, sys
     elif image_input:
         input_type = "image"
         image_data = image_input
-        message = f"Analyze image: {message or 'describe this image'}"
+        message = "Analyze this image"
     
     response_text = ""
     audio_response = None
@@ -93,47 +90,56 @@ def process_input(message, audio_input=None, image_input=None, history=None, sys
             response_text += chunk
         yield response_text, audio_response
 
+# دالة لتفعيل تسجيل الصوت
+def start_recording():
+    return gr.update(visible=True)
+
+# دالة لتفعيل التقاط الصورة
+def start_image_capture():
+    return gr.update(visible=True)
+
 # إعداد واجهة Gradio
-chatbot_ui = gr.ChatInterface(
+chatbot_ui = gr.Interface(
     fn=process_input,
-    chatbot=gr.Chatbot(
-        label="MGZon Chatbot",
-        height=800,
-        latex_delimiters=LATEX_DELIMS,
-        elem_classes="chatbot",
-    ),
-    additional_inputs_accordion=gr.Accordion("⚙️ Settings", open=True),
-    additional_inputs=[
+    inputs=[
+        gr.Textbox(label="Message", placeholder="Type your message or use buttons below...", elem_classes="input-textbox"),
+        gr.Audio(label="Record Audio", sources=["microphone"], type="numpy", streaming=True, visible=False, elem_classes="record-button"),
+        gr.Image(label="Capture/Upload Image", sources=["webcam", "upload"], type="numpy", visible=False, elem_classes="capture-button"),
+        gr.State(value=[]),  # History
         gr.Textbox(
             label="System Prompt",
-            value="You are an expert assistant providing detailed, comprehensive, and well-structured responses. Support text, audio, image inputs. Transcribe audio using Whisper, convert text to speech using Parler-TTS, and analyze images using CLIP. Respond with text or audio based on input type. Continue until the query is fully addressed.",
+            value="You are an expert assistant providing detailed, comprehensive, and well-structured responses. Support text, audio, image inputs. For audio, transcribe using Whisper. For text-to-speech, use Parler-TTS. For images, analyze using CLIP. Respond with voice output when requested. Continue until the query is fully addressed.",
             lines=4
         ),
         gr.Slider(label="Temperature", minimum=0.0, maximum=1.0, step=0.1, value=0.7),
         gr.Radio(label="Reasoning Effort", choices=["low", "medium", "high"], value="medium"),
         gr.Checkbox(label="Enable DeepSearch", value=True),
         gr.Slider(label="Max New Tokens", minimum=50, maximum=128000, step=50, value=128000),
-        gr.Audio(label="Record Audio", source="microphone", type="numpy", elem_classes="audio-button"),
-        gr.Image(label="Capture Image", source="webcam", type="numpy", elem_classes="camera-button"),
-        gr.File(label="Upload Image/File", file_types=["image", ".pdf", ".txt"], elem_classes="upload-button"),
     ],
-    additional_outputs=[gr.Audio(label="Voice Output", type="filepath", elem_classes="audio-output-container", autoplay=True)],
-    stop_btn="Stop",
+    outputs=[
+        gr.Markdown(label="Response", elem_classes="output-container"),
+        gr.Audio(label="Voice Output", type="filepath", elem_classes="audio-output", autoplay=True)
+    ],
+    additional_inputs=[
+        gr.Button("Record Audio", elem_classes="record-button", onclick=start_recording),
+        gr.Button("Capture/Upload Image", elem_classes="capture-button", onclick=start_image_capture),
+    ],
     examples=[
         ["Explain the history of AI in detail."],
-        ["Generate a React login component with validation."],
-        ["Describe this image: [capture or upload image]"],
-        ["Transcribe this audio: [record audio]"],
-        ["Convert to speech: Hello, welcome to MGZon!"],
+        ["Generate a React component for a login form."],
+        ["Transcribe this audio: [record audio]."],
+        ["Convert this text to speech: Hello, welcome to MGZon!"],
+        ["Analyze this image: [capture/upload image]."],
     ],
     title="MGZon Chatbot",
-    description="A versatile chatbot powered by Hugging Face models for text, image, and audio queries. Supports real-time audio recording, webcam image capture, and web search. Licensed under Apache 2.0.",
+    description="A versatile chatbot powered by advanced AI models. Supports text, audio, and image inputs with voice responses. Licensed under Apache 2.0.",
     theme="gradio/soft",
     css=css,
 )
 
 # إعداد FastAPI
 app = FastAPI(title="MGZon Chatbot API")
+app.include_router(api_router)
 
 # ربط Gradio مع FastAPI
 app = gr.mount_gradio_app(app, chatbot_ui, path="/gradio")
@@ -157,27 +163,22 @@ class NotFoundMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(NotFoundMiddleware)
 
-# Root endpoint
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# Docs endpoint
 @app.get("/docs", response_class=HTMLResponse)
 async def docs(request: Request):
     return templates.TemplateResponse("docs.html", {"request": request})
 
-# Swagger UI endpoint
 @app.get("/swagger", response_class=HTMLResponse)
 async def swagger_ui():
     return get_swagger_ui_html(openapi_url="/openapi.json", title="MGZon API Documentation")
 
-# Redirect لـ /gradio
 @app.get("/launch-chatbot", response_class=RedirectResponse)
 async def launch_chatbot():
     return RedirectResponse(url="/gradio", status_code=302)
 
-# تشغيل الخادم
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 7860)))
