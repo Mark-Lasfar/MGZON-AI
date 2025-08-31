@@ -3,7 +3,7 @@ title: MGZON Chat
 emoji: "🤖"
 colorFrom: "blue"
 colorTo: "green"
-sdk: docker
+sdk: gradio
 app_file: main.py
 pinned: false
 ---
@@ -38,12 +38,23 @@ It achieves the following results on the evaluation set:
 - Loss: nan
 
 ## Features
-- Real-time voice input/output with Whisper and Parler-TTS.
-- Image capture and analysis with CLIP.
-- Web search integration with Google API.
-- Model selection for flexible query handling.
-- Enhanced UI with custom icons and responsive design.
+- **Text Queries**: Ask anything and get detailed responses.
+- **Audio Input/Output**: Record audio directly or convert text to speech.
+- **Image Analysis**: Capture images from webcam or upload for analysis.
+- **Web Search**: Enable DeepSearch for real-time web context.
+- **API Support**: Use endpoints like `/api/chat`, `/api/audio-transcription`, `/api/text-to-speech`, `/api/image-analysis`.
 
+## Setup
+1. Add `HF_TOKEN` and `BACKUP_HF_TOKEN` as Secrets in Space settings.
+2. Add `GOOGLE_API_KEY` and `GOOGLE_CSE_ID` for web search (optional).
+3. Set `PORT=7860`, `QUEUE_SIZE=80`, `CONCURRENCY_LIMIT=20` as Variables.
+4. Ensure `requirements.txt` and `Dockerfile` are configured correctly.
+
+## Usage
+Access the app at `/gradio` or use API endpoints. Examples:
+- **Text**: "Explain AI history."
+- **Audio**: Record audio for transcription.
+- **Image**: Capture or upload an image for analysis.
 
 ## Model description
 
