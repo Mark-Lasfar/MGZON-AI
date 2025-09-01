@@ -1,0 +1,51 @@
+/*
+ * SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+@media (min-width: 3840px) {
+  :root {
+    --header-height: 5.5rem;
+    --footer-height: 7rem;
+    --border-radius: 1.5rem;
+    --bubble-radius: 1.5rem;
+    --prompt-radius: 1.5rem;
+    font-size: 1.3rem;
+  }
+
+  .title {
+    font-size: clamp(3rem, 2vw, 5rem);
+  }
+
+  .prompts {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    max-width: 2000px;
+    gap: 1.5rem;
+  }
+
+  .prompt-item {
+    padding: 1.5rem 1.75rem;
+    border-radius: 1.5rem;
+  }
+
+  .bubble {
+    padding: 1.5rem 1.75rem;
+    font-size: 1.2rem;
+    border-radius: 1.5rem;
+  }
+
+  #userInput {
+    padding: 1.25rem 1.5rem;
+    font-size: 1.2rem;
+  }
+
+  #sendBtn, #stopBtn {
+    width: 3.75rem;
+    height: 3.75rem;
+  }
+
+  .icon-btn {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+}

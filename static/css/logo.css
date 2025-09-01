@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+.logo {
+  font-weight: 800;
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #eaeef8;
+  word-break: break-word;
+  transition: transform 0.2s ease;
+  height: 100%;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+}

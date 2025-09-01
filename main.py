@@ -125,6 +125,20 @@ app.add_middleware(NotFoundMiddleware)
 async def root(request: Request, user: User = Depends(fastapi_users.current_user(optional=True))):
     return templates.TemplateResponse("index.html", {"request": request, "user": user})
 
+# Login page
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, user: User = Depends(fastapi_users.current_user(optional=True))):
+    if user:
+        return RedirectResponse(url="/chat", status_code=302)
+    return templates.TemplateResponse("login.html", {"request": request})
+
+# Register page
+@app.get("/register", response_class=HTMLResponse)
+async def register_page(request: Request, user: User = Depends(fastapi_users.current_user(optional=True))):
+    if user:
+        return RedirectResponse(url="/chat", status_code=302)
+    return templates.TemplateResponse("register.html", {"request": request})
+
 # Chat endpoint
 @app.get("/chat", response_class=HTMLResponse)
 async def chat(request: Request, user: User = Depends(fastapi_users.current_user(optional=True))):

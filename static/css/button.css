@@ -1,0 +1,65 @@
+/*
+ * SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#sendBtn, #stopBtn {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#sendBtn {
+  background: linear-gradient(135deg, var(--color-primary), #2563eb);
+  color: white;
+}
+
+#sendBtn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+#sendBtn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+#sendBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: scale(0.96);
+}
+
+#stopBtn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  display: none;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+#stopBtn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+#stopBtn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+#sendIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke: #fff;
+  transition: transform 0.2s ease;
+}
+
+#sendBtn:hover:not(:disabled) #sendIcon {
+  transform: translateX(2px);
+}

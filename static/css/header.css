@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+.main-header, .chat-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+  height: var(--header-height);
+  background-color: rgba(15, 15, 15, 0.85);
+}
+
+.main-header {
+  justify-content: space-between;
+}
+
+.chat-header {
+  justify-content: space-between;
+  display: none;
+}

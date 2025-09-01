@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#footerForm {
+  display: flex;
+  gap: 0.75rem;
+  background-color: transparent;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  position: fixed;
+  bottom: 5rem;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  animation: slideInUp 0.3s ease-out forwards;
+  height: 0;
+}
