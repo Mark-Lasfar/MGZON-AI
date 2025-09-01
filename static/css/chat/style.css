@@ -16,6 +16,9 @@
   text-overflow: ellipsis;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
 .chat-controls {
   display: flex;
   align-items: center;
