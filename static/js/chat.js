@@ -36,12 +36,13 @@ let abortController = null;
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
-let pressTimer = null;
 
 // Auto-resize textarea
 function autoResizeTextarea() {
-  input.style.height = 'auto';
-  input.style.height = `${Math.min(input.scrollHeight, 200)}px`; // Max height is 200px as per CSS
+  if (input) {
+    input.style.height = 'auto';
+    input.style.height = `${Math.min(input.scrollHeight, 200)}px`; // Max height is 200px as per CSS
+  }
 }
 
 // تحميل المحادثة عند تحميل الصفحة
@@ -61,7 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize textarea height
   autoResizeTextarea();
   // Enable send button based on input
-  btn.disabled = input.value.trim() === '' && fileInput.files.length === 0 && audioInput.files.length === 0;
+  if (btn && input && fileInput && audioInput) {
+    btn.disabled = input.value.trim() === '' && fileInput.files.length === 0 && audioInput.files.length === 0;
+  }
 });
 
 // تحقق من الـ token
@@ -106,20 +109,36 @@ function renderMarkdown(el) {
 
 // Chat view.
 function enterChatView() {
-  mainHeader.style.display = 'none';
-  chatHeader.style.display = 'flex';
-  chatHeader.setAttribute('aria-hidden', 'false');
-  chatBox.style.display = 'flex';
-  initialContent.style.display = 'none';
+  if (mainHeader) {
+    mainHeader.style.display = 'none';
+  }
+  if (chatHeader) {
+    chatHeader.style.display = 'flex';
+    chatHeader.setAttribute('aria-hidden', 'false');
+  }
+  if (chatBox) {
+    chatBox.style.display = 'flex';
+  }
+  if (initialContent) {
+    initialContent.style.display = 'none';
+  }
 }
 
 // Home view.
 function leaveChatView() {
-  mainHeader.style.display = 'flex';
-  chatHeader.style.display = 'none';
-  chatHeader.setAttribute('aria-hidden', 'true');
-  chatBox.style.display = 'none';
-  initialContent.style.display = 'flex';
+  if (mainHeader) {
+    mainHeader.style.display = 'flex';
+  }
+  if (chatHeader) {
+    chatHeader.style.display = 'none';
+    chatHeader.setAttribute('aria-hidden', 'true');
+  }
+  if (chatBox) {
+    chatBox.style.display = 'none';
+  }
+  if (initialContent) {
+    initialContent.style.display = 'flex';
+  }
 }
 
 // Chat bubble.
@@ -128,9 +147,11 @@ function addMsg(who, text) {
   div.className = 'bubble ' + (who === 'user' ? 'bubble-user' : 'bubble-assist');
   div.dataset.text = text;
   renderMarkdown(div);
-  chatBox.appendChild(div);
-  chatBox.style.display = 'flex';
-  chatBox.scrollTop = chatBox.scrollHeight;
+  if (chatBox) {
+    chatBox.appendChild(div);
+    chatBox.style.display = 'flex';
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
   return div;
 }
 
@@ -145,42 +166,70 @@ function clearAllMessages() {
     if (loadingEl) loadingEl.remove();
     streamMsg = null;
   }
-  chatBox.innerHTML = '';
-  input.value = '';
-  btn.disabled = true;
-  stopBtn.style.display = 'none';
-  btn.style.display = 'inline-flex';
-  filePreview.style.display = 'none';
-  audioPreview.style.display = 'none';
-  messageLimitWarning.classList.add('hidden');
+  if (chatBox) {
+    chatBox.innerHTML = '';
+  }
+  if (input) {
+    input.value = '';
+  }
+  if (btn) {
+    btn.disabled = true;
+  }
+  if (stopBtn) {
+    stopBtn.style.display = 'none';
+  }
+  if (btn) {
+    btn.style.display = 'inline-flex';
+  }
+  if (filePreview) {
+    filePreview.style.display = 'none';
+  }
+  if (audioPreview) {
+    audioPreview.style.display = 'none';
+  }
+  if (messageLimitWarning) {
+    messageLimitWarning.classList.add('hidden');
+  }
   enterChatView();
   autoResizeTextarea();
 }
 
 // File preview.
 function previewFile() {
-  if (fileInput.files.length > 0) {
+  if (fileInput && fileInput.files.length > 0) {
     const file = fileInput.files[0];
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = e => {
-        filePreview.innerHTML = `<img src="${e.target.result}" class="upload-preview">`;
-        filePreview.style.display = 'block';
-        audioPreview.style.display = 'none';
-        btn.disabled = false; // Enable send button when file is selected
+        if (filePreview) {
+          filePreview.innerHTML = `<img src="${e.target.result}" class="upload-preview">`;
+          filePreview.style.display = 'block';
+        }
+        if (audioPreview) {
+          audioPreview.style.display = 'none';
+        }
+        if (btn) {
+          btn.disabled = false; // Enable send button when file is selected
+        }
       };
       reader.readAsDataURL(file);
     }
   }
-  if (audioInput.files.length > 0) {
+  if (audioInput && audioInput.files.length > 0) {
     const file = audioInput.files[0];
     if (file.type.startsWith('audio/')) {
       const reader = new FileReader();
       reader.onload = e => {
-        audioPreview.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
-        audioPreview.style.display = 'block';
-        filePreview.style.display = 'none';
-        btn.disabled = false; // Enable send button when audio is selected
+        if (audioPreview) {
+          audioPreview.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
+          audioPreview.style.display = 'block';
+        }
+        if (filePreview) {
+          filePreview.style.display = 'none';
+        }
+        if (btn) {
+          btn.disabled = false; // Enable send button when audio is selected
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -191,7 +240,9 @@ function previewFile() {
 function startVoiceRecording() {
   if (isRequestActive || isRecording) return;
   isRecording = true;
-  btn.classList.add('recording');
+  if (btn) {
+    btn.classList.add('recording');
+  }
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
@@ -203,14 +254,18 @@ function startVoiceRecording() {
     console.error('Error accessing microphone:', err);
     alert('Failed to access microphone. Please check permissions.');
     isRecording = false;
-    btn.classList.remove('recording');
+    if (btn) {
+      btn.classList.remove('recording');
+    }
   });
 }
 
 function stopVoiceRecording() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
-    btn.classList.remove('recording');
+    if (btn) {
+      btn.classList.remove('recording');
+    }
     isRecording = false;
     mediaRecorder.addEventListener('stop', async () => {
       const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
@@ -231,12 +286,24 @@ async function submitAudioMessage(formData) {
   const loadingEl = document.createElement('span');
   loadingEl.className = 'loading';
   streamMsg.appendChild(loadingEl);
-  stopBtn.style.display = 'inline-flex';
-  btn.style.display = 'none';
-  input.value = '';
-  btn.disabled = true;
-  filePreview.style.display = 'none';
-  audioPreview.style.display = 'none';
+  if (stopBtn) {
+    stopBtn.style.display = 'inline-flex';
+  }
+  if (btn) {
+    btn.style.display = 'none';
+  }
+  if (input) {
+    input.value = '';
+  }
+  if (btn) {
+    btn.disabled = true;
+  }
+  if (filePreview) {
+    filePreview.style.display = 'none';
+  }
+  if (audioPreview) {
+    audioPreview.style.display = 'none';
+  }
 
   isRequestActive = true;
   abortController = new AbortController();
@@ -253,15 +320,25 @@ async function submitAudioMessage(formData) {
 
     if (!response.ok) {
       if (response.status === 403) {
-        messageLimitWarning.classList.remove('hidden');
-        input.disabled = true;
-        const loadingEl = streamMsg.querySelector('.loading');
-        if (loadingEl) loadingEl.remove();
-        streamMsg = null;
+        if (messageLimitWarning) {
+          messageLimitWarning.classList.remove('hidden');
+        }
+        if (input) {
+          input.disabled = true;
+        }
+        if (streamMsg) {
+          const loadingEl = streamMsg.querySelector('.loading');
+          if (loadingEl) loadingEl.remove();
+          streamMsg = null;
+        }
         isRequestActive = false;
         abortController = null;
-        btn.style.display = 'inline-flex';
-        stopBtn.style.display = 'none';
+        if (btn) {
+          btn.style.display = 'inline-flex';
+        }
+        if (stopBtn) {
+          stopBtn.style.display = 'none';
+        }
         window.location.href = '/login';
         return;
       }
@@ -275,17 +352,23 @@ async function submitAudioMessage(formData) {
 
     const data = await response.json();
     const transcription = data.transcription || 'Error: No transcription generated.';
-    streamMsg.dataset.text = transcription;
-    renderMarkdown(streamMsg);
-    streamMsg.dataset.done = '1';
+    if (streamMsg) {
+      streamMsg.dataset.text = transcription;
+      renderMarkdown(streamMsg);
+      streamMsg.dataset.done = '1';
+    }
     conversationHistory.push({ role: 'assistant', content: transcription });
     sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
 
     streamMsg = null;
     isRequestActive = false;
     abortController = null;
-    btn.style.display = 'inline-flex';
-    stopBtn.style.display = 'none';
+    if (btn) {
+      btn.style.display = 'inline-flex';
+    }
+    if (stopBtn) {
+      stopBtn.style.display = 'none';
+    }
   } catch (error) {
     if (streamMsg) {
       const loadingEl = streamMsg.querySelector('.loading');
@@ -297,8 +380,12 @@ async function submitAudioMessage(formData) {
       isRequestActive = false;
       abortController = null;
     }
-    btn.style.display = 'inline-flex';
-    stopBtn.style.display = 'none';
+    if (btn) {
+      btn.style.display = 'inline-flex';
+    }
+    if (stopBtn) {
+      stopBtn.style.display = 'none';
+    }
   }
 }
 
@@ -311,7 +398,7 @@ async function submitMessage() {
   let inputType = 'text';
   let outputFormat = 'text';
 
-  if (fileInput.files.length > 0) {
+  if (fileInput && fileInput.files.length > 0) {
     const file = fileInput.files[0];
     if (file.type.startsWith('image/')) {
       endpoint = '/api/image-analysis';
@@ -320,7 +407,7 @@ async function submitMessage() {
       formData.append('file', file);
       formData.append('output_format', 'text');
     }
-  } else if (audioInput.files.length > 0) {
+  } else if (audioInput && audioInput.files.length > 0) {
     const file = audioInput.files[0];
     if (file.type.startsWith('audio/')) {
       endpoint = '/api/audio-transcription';
@@ -348,12 +435,24 @@ async function submitMessage() {
   const loadingEl = document.createElement('span');
   loadingEl.className = 'loading';
   streamMsg.appendChild(loadingEl);
-  stopBtn.style.display = 'inline-flex';
-  btn.style.display = 'none';
-  input.value = '';
-  btn.disabled = true;
-  filePreview.style.display = 'none';
-  audioPreview.style.display = 'none';
+  if (stopBtn) {
+    stopBtn.style.display = 'inline-flex';
+  }
+  if (btn) {
+    btn.style.display = 'none';
+  }
+  if (input) {
+    input.value = '';
+  }
+  if (btn) {
+    btn.disabled = true;
+  }
+  if (filePreview) {
+    filePreview.style.display = 'none';
+  }
+  if (audioPreview) {
+    audioPreview.style.display = 'none';
+  }
   autoResizeTextarea();
 
   isRequestActive = true;
@@ -371,15 +470,25 @@ async function submitMessage() {
 
     if (!response.ok) {
       if (response.status === 403) {
-        messageLimitWarning.classList.remove('hidden');
-        input.disabled = true;
-        const loadingEl = streamMsg.querySelector('.loading');
-        if (loadingEl) loadingEl.remove();
-        streamMsg = null;
+        if (messageLimitWarning) {
+          messageLimitWarning.classList.remove('hidden');
+        }
+        if (input) {
+          input.disabled = true;
+        }
+        if (streamMsg) {
+          const loadingEl = streamMsg.querySelector('.loading');
+          if (loadingEl) loadingEl.remove();
+          streamMsg = null;
+        }
         isRequestActive = false;
         abortController = null;
-        btn.style.display = 'inline-flex';
-        stopBtn.style.display = 'none';
+        if (btn) {
+          btn.style.display = 'inline-flex';
+        }
+        if (stopBtn) {
+          stopBtn.style.display = 'none';
+        }
         window.location.href = '/login';
         return;
       }
@@ -394,17 +503,21 @@ async function submitMessage() {
     if (endpoint === '/api/audio-transcription') {
       const data = await response.json();
       const transcription = data.transcription || 'Error: No transcription generated.';
-      streamMsg.dataset.text = transcription;
-      renderMarkdown(streamMsg);
-      streamMsg.dataset.done = '1';
+      if (streamMsg) {
+        streamMsg.dataset.text = transcription;
+        renderMarkdown(streamMsg);
+        streamMsg.dataset.done = '1';
+      }
       conversationHistory.push({ role: 'assistant', content: transcription });
       sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
     } else if (endpoint === '/api/image-analysis') {
       const data = await response.json();
       const analysis = data.image_analysis || 'Error: No analysis generated.';
-      streamMsg.dataset.text = analysis;
-      renderMarkdown(streamMsg);
-      streamMsg.dataset.done = '1';
+      if (streamMsg) {
+        streamMsg.dataset.text = analysis;
+        renderMarkdown(streamMsg);
+        streamMsg.dataset.done = '1';
+      }
       conversationHistory.push({ role: 'assistant', content: analysis });
       sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
     } else {
@@ -416,14 +529,20 @@ async function submitMessage() {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        streamMsg.dataset.text = buffer;
-        currentAssistantText = buffer;
-        const loadingEl = streamMsg.querySelector('.loading');
-        if (loadingEl) loadingEl.remove();
-        renderMarkdown(streamMsg);
-        chatBox.scrollTop = chatBox.scrollHeight;
+        if (streamMsg) {
+          streamMsg.dataset.text = buffer;
+          currentAssistantText = buffer;
+          const loadingEl = streamMsg.querySelector('.loading');
+          if (loadingEl) loadingEl.remove();
+          renderMarkdown(streamMsg);
+          if (chatBox) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+          }
+        }
       }
-      streamMsg.dataset.done = '1';
+      if (streamMsg) {
+        streamMsg.dataset.done = '1';
+      }
       conversationHistory.push({ role: 'assistant', content: buffer });
       sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
     }
@@ -431,8 +550,12 @@ async function submitMessage() {
     streamMsg = null;
     isRequestActive = false;
     abortController = null;
-    btn.style.display = 'inline-flex';
-    stopBtn.style.display = 'none';
+    if (btn) {
+      btn.style.display = 'inline-flex';
+    }
+    if (stopBtn) {
+      stopBtn.style.display = 'none';
+    }
   } catch (error) {
     if (streamMsg) {
       const loadingEl = streamMsg.querySelector('.loading');
@@ -444,8 +567,12 @@ async function submitMessage() {
       isRequestActive = false;
       abortController = null;
     }
-    btn.style.display = 'inline-flex';
-    stopBtn.style.display = 'none';
+    if (btn) {
+      btn.style.display = 'inline-flex';
+    }
+    if (stopBtn) {
+      stopBtn.style.display = 'none';
+    }
   }
 }
 
@@ -468,99 +595,140 @@ function stopStream(forceCancel = false) {
     streamMsg.dataset.done = '1';
     streamMsg = null;
   }
-  stopBtn.style.display = 'none';
-  btn.style.display = 'inline-flex';
-  stopBtn.style.pointerEvents = 'auto';
+  if (stopBtn) {
+    stopBtn.style.display = 'none';
+  }
+  if (btn) {
+    btn.style.display = 'inline-flex';
+  }
+  if (stopBtn) {
+    stopBtn.style.pointerEvents = 'auto';
+  }
 }
 
 // Prompts.
 promptItems.forEach(p => {
   p.addEventListener('click', e => {
     e.preventDefault();
-    input.value = p.dataset.prompt;
-    autoResizeTextarea();
-    btn.disabled = false;
+    if (input) {
+      input.value = p.dataset.prompt;
+      autoResizeTextarea();
+    }
+    if (btn) {
+      btn.disabled = false;
+    }
     submitMessage();
   });
 });
 
 // File and audio inputs.
-fileBtn.addEventListener('click', () => {
-  fileInput.click();
-});
-audioBtn.addEventListener('click', () => {
-  audioInput.click();
-});
-fileInput.addEventListener('change', previewFile);
-audioInput.addEventListener('change', previewFile);
+if (fileBtn) {
+  fileBtn.addEventListener('click', () => {
+    if (fileInput) {
+      fileInput.click();
+    }
+  });
+}
+if (audioBtn) {
+  audioBtn.addEventListener('click', () => {
+    if (audioInput) {
+      audioInput.click();
+    }
+  });
+}
+if (fileInput) {
+  fileInput.addEventListener('change', previewFile);
+}
+if (audioInput) {
+  audioInput.addEventListener('change', previewFile);
+}
 
 // Send button events for send and voice recording.
-btn.addEventListener('mousedown', e => {
-  if (btn.disabled || isRequestActive) return;
-  pressTimer = setTimeout(() => {
+if (btn) {
+  btn.addEventListener('mousedown', e => {
+    if (btn.disabled || isRequestActive || isRecording) return;
     startVoiceRecording();
-  }, 500); // 500ms for long press
-});
-btn.addEventListener('mouseup', e => {
-  clearTimeout(pressTimer);
-  if (isRecording) {
-    stopVoiceRecording();
-  }
-});
-btn.addEventListener('touchstart', e => {
-  e.preventDefault();
-  if (btn.disabled || isRequestActive) return;
-  pressTimer = setTimeout(() => {
+  });
+  btn.addEventListener('mouseup', e => {
+    if (isRecording) {
+      stopVoiceRecording();
+    }
+  });
+  btn.addEventListener('mouseleave', e => {
+    if (isRecording) {
+      stopVoiceRecording();
+    }
+  });
+  btn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (btn.disabled || isRequestActive || isRecording) return;
     startVoiceRecording();
-  }, 500);
-});
-btn.addEventListener('touchend', e => {
-  e.preventDefault();
-  clearTimeout(pressTimer);
-  if (isRecording) {
-    stopVoiceRecording();
-  }
-});
+  });
+  btn.addEventListener('touchend', e => {
+    e.preventDefault();
+    if (isRecording) {
+      stopVoiceRecording();
+    }
+  });
+  btn.addEventListener('touchcancel', e => {
+    e.preventDefault();
+    if (isRecording) {
+      stopVoiceRecording();
+    }
+  });
+}
 
 // Submit.
-form.addEventListener('submit', e => {
-  e.preventDefault();
-  if (!isRecording) {
-    submitMessage();
-  }
-});
-
-// Handle Enter key to submit without adding new line.
-input.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
+if (form) {
+  form.addEventListener('submit', e => {
     e.preventDefault();
-    if (!isRecording && !btn.disabled) {
+    if (!isRecording) {
       submitMessage();
     }
-  }
-});
+  });
+}
 
-// Auto-resize textarea on input.
-input.addEventListener('input', () => {
-  autoResizeTextarea();
-  btn.disabled = input.value.trim() === '' && fileInput.files.length === 0 && audioInput.files.length === 0;
-});
+// Handle Enter key to submit without adding new line.
+if (input) {
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!isRecording && !btn.disabled) {
+        submitMessage();
+      }
+    }
+  });
+
+  // Auto-resize textarea on input.
+  input.addEventListener('input', () => {
+    autoResizeTextarea();
+    if (btn && input && fileInput && audioInput) {
+      btn.disabled = input.value.trim() === '' && fileInput.files.length === 0 && audioInput.files.length === 0;
+    }
+  });
+}
 
 // Stop.
-stopBtn.addEventListener('click', () => {
-  stopBtn.style.pointerEvents = 'none';
-  stopStream();
-});
+if (stopBtn) {
+  stopBtn.addEventListener('click', () => {
+    stopBtn.style.pointerEvents = 'none';
+    stopStream();
+  });
+}
 
 // Home.
-homeBtn.addEventListener('click', () => {
-  window.location.href = '/';
-});
+if (homeBtn) {
+  homeBtn.addEventListener('click', () => {
+    window.location.href = '/';
+  });
+}
 
 // Clear messages.
-clearBtn.addEventListener('click', () => {
-  clearAllMessages();
-});
+if (clearBtn) {
+  clearBtn.addEventListener('click', () => {
+    clearAllMessages();
+  });
+}
 
 // Login button.
 if (loginBtn) {
