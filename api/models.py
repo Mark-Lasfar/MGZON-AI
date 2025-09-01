@@ -11,8 +11,8 @@ Base = declarative_base()
 # جدول OAuth Accounts لتخزين بيانات تسجيل الدخول الخارجي
 class OAuthAccount(SQLAlchemyBaseOAuthAccountTable, Base):
     __tablename__ = "oauth_accounts"
-    pass
-
+    id = Column(Integer, primary_key=True)
+    user = relationship("User", back_populates="oauth_accounts")
 # نموذج المستخدم
 class User(SQLAlchemyBaseUserTable, Base):
     __tablename__ = "users"
