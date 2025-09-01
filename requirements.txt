@@ -35,4 +35,4 @@ aiofiles
 motor
 redis
 markdown2
-flash-attn==2.6.3
+
