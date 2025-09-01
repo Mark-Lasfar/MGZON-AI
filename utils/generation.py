@@ -165,23 +165,24 @@ def request_generation(
             return
 
     # معالجة تحويل النص إلى صوت (TTS)
-if model_name == TTS_MODEL or output_format == "audio":
-    task_type = "text_to_speech"
-    try:
-        model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
-        processor = AutoProcessor.from_pretrained(TTS_MODEL)
-        inputs = processor(text=message, return_tensors="pt")
-        audio = model.generate(**inputs)
-        audio_file = io.BytesIO()
-        torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
-        audio_file.seek(0)
-        yield audio_file.read()
-        cache[cache_key] = [audio_file.read()]
-        return
-    except Exception as e:
-        logger.error(f"Text-to-speech failed: {e}")
-        yield f"Error: Text-to-speech failed: {e}"
-        return
+    if model_name == TTS_MODEL or output_format == "audio":
+        task_type = "text_to_speech"
+        try:
+            model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
+            processor = AutoProcessor.from_pretrained(TTS_MODEL)
+            inputs = processor(text=message, return_tensors="pt")
+            audio = model.generate(**inputs)
+            audio_file = io.BytesIO()
+            torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
+            audio_file.seek(0)
+            audio_data = audio_file.read()
+            yield audio_data  # ← تصحيح: استخدام yield مع البيانات مباشرة
+            cache[cache_key] = [audio_data]
+            return
+        except Exception as e:
+            logger.error(f"Text-to-speech failed: {e}")
+            yield f"Error: Text-to-speech failed: {e}"
+            return
 
     # معالجة الصور
     if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:
@@ -203,7 +204,8 @@ if model_name == TTS_MODEL or output_format == "audio":
                 audio_file = io.BytesIO()
                 torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
                 audio_file.seek(0)
-                yield audio_file.read()
+                audio_data = audio_file.read()
+                yield audio_data
             else:
                 yield result
             cache[cache_key] = [result]
@@ -353,8 +355,9 @@ if model_name == TTS_MODEL or output_format == "audio":
                 audio_file = io.BytesIO()
                 torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
                 audio_file.seek(0)
-                cached_chunks.append(audio_file.read())
-                yield audio_file.read()
+                audio_data = audio_file.read()
+                cached_chunks.append(audio_data)
+                yield audio_data
             except Exception as e:
                 logger.error(f"Text-to-speech conversion failed: {e}")
                 yield f"Error: Text-to-speech conversion failed: {e}"
@@ -460,8 +463,9 @@ if model_name == TTS_MODEL or output_format == "audio":
                         audio_file = io.BytesIO()
                         torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
                         audio_file.seek(0)
-                        cached_chunks.append(audio_file.read())
-                        yield audio_file.read()
+                        audio_data = audio_file.read()
+                        cached_chunks.append(audio_data)
+                        yield audio_data
                     except Exception as e:
                         logger.error(f"Text-to-speech conversion failed: {e}")
                         yield f"Error: Text-to-speech conversion failed: {e}"
@@ -519,8 +523,9 @@ if model_name == TTS_MODEL or output_format == "audio":
                             audio_file = io.BytesIO()
                             torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
                             audio_file.seek(0)
-                            cached_chunks.append(audio_file.read())
-                            yield audio_file.read()
+                            audio_data = audio_file.read()
+                            cached_chunks.append(audio_data)
+                            yield audio_data
                         except Exception as e:
                             logger.error(f"Text-to-speech conversion failed: {e}")
                             yield f"Error: Text-to-speech conversion failed: {e}"
