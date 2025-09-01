@@ -74,99 +74,6 @@
   <link rel="stylesheet" href="/static/css/screen/common.css" />
   <link rel="stylesheet" href="/static/css/style.css" />
   <link rel="stylesheet" href="/static/css/webkit.css" />
-  <style>
-    /* Fix footer position */
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    main {
-      flex: 1 0 auto;
-      padding-bottom: 20px;
-    }
-    footer {
-      flex-shrink: 0;
-      position: sticky;
-      bottom: 0;
-      width: 100%;
-      padding: 1rem 0;
-    }
-    footer .container {
-      max-width: 1200px;
-      padding: 0 1rem;
-    }
-    footer .grid {
-      gap: 1rem;
-    }
-    footer .glass {
-      padding: 0.75rem;
-    }
-    footer .glass h4 {
-      font-size: 1rem;
-    }
-    footer .glass p {
-      font-size: 0.875rem;
-    }
-    footer .glass .bx {
-      font-size: 1.5rem;
-    }
-    /* Adjust prompts */
-    .prompts {
-      max-width: 600px;
-      margin-bottom: 2rem;
-    }
-    .prompt-item {
-      font-size: 0.9rem;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      transition: transform 0.2s ease;
-    }
-    .prompt-item:hover {
-      transform: scale(1.02);
-    }
-    .prompt-item .icon {
-      width: 20px;
-      height: 20px;
-      margin-right: 0.5rem;
-    }
-    /* Make input flexible */
-    #inputContainer {
-      position: relative;
-      display: flex;
-      align-items: center;
-      width: 100%;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-    #userInput {
-      width: 100%;
-      min-height: 40px;
-      max-height: 120px;
-      resize: vertical;
-      padding: 0.5rem 3rem 0.5rem 1rem;
-      border-radius: 8px;
-      font-size: 1rem;
-      line-height: 1.5;
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    #rightIconGroup {
-      position: absolute;
-      right: 0.5rem;
-      display: flex;
-      gap: 0.5rem;
-    }
-    #chatArea {
-      padding: 1rem;
-      overflow-y: auto;
-    }
-    #chatBox {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-  </style>
 </head>
 <body class="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-teal-900 to-emerald-900">
   <!-- Main Header -->
@@ -250,7 +157,7 @@
       <div id="chatBox" class="flex-col" aria-live="polite"></div>
     </div>
     <!-- Footer Form -->
-    <form id="footerForm" class="flex p-3 bg-transparent" autocomplete="off" style="position: sticky; bottom: 0; width: 100%;">
+    <form id="footerForm" class="flex" autocomplete="off">
       <div id="inputContainer" class="w-full">
         <textarea id="userInput" placeholder="Ask anything..." required></textarea>
         <div id="rightIconGroup" class="flex gap-2">
