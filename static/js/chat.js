@@ -339,7 +339,9 @@ async function submitAudioMessage(formData) {
         if (stopBtn) {
           stopBtn.style.display = 'none';
         }
-        window.location.href = '/login';
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 3000); // تأخير 3 ثواني قبل التحويل
         return;
       }
       if (response.status === 401) {
@@ -388,7 +390,6 @@ async function submitAudioMessage(formData) {
     }
   }
 }
-
 // Send user message.
 async function submitMessage() {
   if (isRequestActive || isRecording) return;
@@ -489,7 +490,9 @@ async function submitMessage() {
         if (stopBtn) {
           stopBtn.style.display = 'none';
         }
-        window.location.href = '/login';
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 3000); // تأخير 3 ثواني قبل التحويل
         return;
       }
       if (response.status === 401) {
@@ -575,7 +578,6 @@ async function submitMessage() {
     }
   }
 }
-
 // Stop streaming and cancel the ongoing request.
 function stopStream(forceCancel = false) {
   if (!isRequestActive && !isRecording) return;
