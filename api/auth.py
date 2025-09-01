@@ -5,8 +5,7 @@ from fastapi_users.db import SQLAlchemyUserDatabase
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from api.database import SessionLocal
-from api.models import User
-from fastapi_users_db_sqlalchemy.generics import OAuthAccount
+from api.models import User, OAuthAccount
 import os
 
 # إعداد Cookie Transport
