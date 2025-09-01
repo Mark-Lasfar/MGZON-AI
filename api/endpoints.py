@@ -11,6 +11,7 @@ from utils.generation import request_generation, select_model
 from utils.web_search import web_search
 import io
 from openai import OpenAI
+from motor.motor_asyncio import AsyncIOMotorClient
 
 router = APIRouter()
 
@@ -26,11 +27,14 @@ CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14"
 ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
 TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
 
-# تخزين عدد الرسائل لكل جلسة (بديل مؤقت)
-session_message_counts = {}
+# إعداد MongoDB
+MONGO_URI = os.getenv("MONGODB_URI")
+client = AsyncIOMotorClient(MONGO_URI)
+db = client["hager"]
+session_message_counts = db["session_message_counts"]
 
 @router.get("/api/model-info")
-def model_info():
+async def model_info():
     return {
         "model_name": MODEL_NAME,
         "secondary_model": SECONDARY_MODEL_NAME,
@@ -63,11 +67,19 @@ async def chat_endpoint(
     if not user and not session_id:
         session_id = str(uuid.uuid4())
         request.session["session_id"] = session_id
-        session_message_counts[session_id] = 0
+        await session_message_counts.insert_one({"session_id": session_id, "message_count": 0})
 
     if not user:
-        session_message_counts[session_id] = session_message_counts.get(session_id, 0) + 1
-        if session_message_counts[session_id] > 4:
+        session_doc = await session_message_counts.find_one({"session_id": session_id})
+        if not session_doc:
+            session_doc = {"session_id": session_id, "message_count": 0}
+            await session_message_counts.insert_one(session_doc)
+        message_count = session_doc["message_count"] + 1
+        await session_message_counts.update_one(
+            {"session_id": session_id},
+            {"$set": {"message_count": message_count}}
+        )
+        if message_count > 4:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Message limit reached. Please log in to continue."
@@ -104,11 +116,19 @@ async def audio_transcription_endpoint(
     if not user and not session_id:
         session_id = str(uuid.uuid4())
         request.session["session_id"] = session_id
-        session_message_counts[session_id] = 0
+        await session_message_counts.insert_one({"session_id": session_id, "message_count": 0})
 
     if not user:
-        session_message_counts[session_id] = session_message_counts.get(session_id, 0) + 1
-        if session_message_counts[session_id] > 4:
+        session_doc = await session_message_counts.find_one({"session_id": session_id})
+        if not session_doc:
+            session_doc = {"session_id": session_id, "message_count": 0}
+            await session_message_counts.insert_one(session_doc)
+        message_count = session_doc["message_count"] + 1
+        await session_message_counts.update_one(
+            {"session_id": session_id},
+            {"$set": {"message_count": message_count}}
+        )
+        if message_count > 4:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Message limit reached. Please log in to continue."
@@ -142,11 +162,19 @@ async def text_to_speech_endpoint(
     if not user and not session_id:
         session_id = str(uuid.uuid4())
         request.session["session_id"] = session_id
-        session_message_counts[session_id] = 0
+        await session_message_counts.insert_one({"session_id": session_id, "message_count": 0})
 
     if not user:
-        session_message_counts[session_id] = session_message_counts.get(session_id, 0) + 1
-        if session_message_counts[session_id] > 4:
+        session_doc = await session_message_counts.find_one({"session_id": session_id})
+        if not session_doc:
+            session_doc = {"session_id": session_id, "message_count": 0}
+            await session_message_counts.insert_one(session_doc)
+        message_count = session_doc["message_count"] + 1
+        await session_message_counts.update_one(
+            {"session_id": session_id},
+            {"$set": {"message_count": message_count}}
+        )
+        if message_count > 4:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Message limit reached. Please log in to continue."
@@ -179,11 +207,19 @@ async def code_endpoint(
     if not user and not session_id:
         session_id = str(uuid.uuid4())
         request.session["session_id"] = session_id
-        session_message_counts[session_id] = 0
+        await session_message_counts.insert_one({"session_id": session_id, "message_count": 0})
 
     if not user:
-        session_message_counts[session_id] = session_message_counts.get(session_id, 0) + 1
-        if session_message_counts[session_id] > 4:
+        session_doc = await session_message_counts.find_one({"session_id": session_id})
+        if not session_doc:
+            session_doc = {"session_id": session_id, "message_count": 0}
+            await session_message_counts.insert_one(session_doc)
+        message_count = session_doc["message_count"] + 1
+        await session_message_counts.update_one(
+            {"session_id": session_id},
+            {"$set": {"message_count": message_count}}
+        )
+        if message_count > 4:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Message limit reached. Please log in to continue."
@@ -223,11 +259,19 @@ async def analysis_endpoint(
     if not user and not session_id:
         session_id = str(uuid.uuid4())
         request.session["session_id"] = session_id
-        session_message_counts[session_id] = 0
+        await session_message_counts.insert_one({"session_id": session_id, "message_count": 0})
 
     if not user:
-        session_message_counts[session_id] = session_message_counts.get(session_id, 0) + 1
-        if session_message_counts[session_id] > 4:
+        session_doc = await session_message_counts.find_one({"session_id": session_id})
+        if not session_doc:
+            session_doc = {"session_id": session_id, "message_count": 0}
+            await session_message_counts.insert_one(session_doc)
+        message_count = session_doc["message_count"] + 1
+        await session_message_counts.update_one(
+            {"session_id": session_id},
+            {"$set": {"message_count": message_count}}
+        )
+        if message_count > 4:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Message limit reached. Please log in to continue."
@@ -265,11 +309,19 @@ async def image_analysis_endpoint(
     if not user and not session_id:
         session_id = str(uuid.uuid4())
         request.session["session_id"] = session_id
-        session_message_counts[session_id] = 0
+        await session_message_counts.insert_one({"session_id": session_id, "message_count": 0})
 
     if not user:
-        session_message_counts[session_id] = session_message_counts.get(session_id, 0) + 1
-        if session_message_counts[session_id] > 4:
+        session_doc = await session_message_counts.find_one({"session_id": session_id})
+        if not session_doc:
+            session_doc = {"session_id": session_id, "message_count": 0}
+            await session_message_counts.insert_one(session_doc)
+        message_count = session_doc["message_count"] + 1
+        await session_message_counts.update_one(
+            {"session_id": session_id},
+            {"$set": {"message_count": message_count}}
+        )
+        if message_count > 4:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Message limit reached. Please log in to continue."
