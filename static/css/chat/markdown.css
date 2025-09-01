@@ -1,0 +1,163 @@
+/*
+ * SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+.md-content {
+  color: inherit;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.md-content p {
+  margin: 0.5rem 0;
+}
+
+.md-content pre {
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin: 0.75rem 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.md-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+  font-size: 0.85em;
+  word-break: break-word;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.2em 0.4em;
+  border-radius: 0.3rem;
+}
+
+.md-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.md-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+.table-wrapper {
+  overflow: auto;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 0.5rem 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.md-content th, .md-content td {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+  max-width: 200px;
+}
+
+.md-content th, tbody tr:nth-child(odd) td {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.md-content ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.md-content ul ul {
+  list-style-type: none;
+  padding-left: 2em;
+}
+
+.md-content ul ul ul {
+  list-style-type: none;
+  padding-left: 2em;
+}
+
+.md-content ol {
+  list-style-type: none;
+  padding-left: 0;
+  counter-reset: list-counter;
+}
+
+.md-content ol ol {
+  list-style-type: none;
+  padding-left: 2em;
+}
+
+.md-content ol ol ol {
+  list-style-type: none;
+  padding-left: 2em;
+}
+
+.md-content ul > li, .md-content ol > li {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+  padding-left: 2.8em;
+}
+
+.md-content ul > li::before {
+  content: "•";
+  position: absolute;
+  left: 1em;
+  top: 0;
+  font-size: 1.2em;
+}
+
+.md-content ol > li {
+  counter-increment: list-counter;
+}
+
+.md-content ol > li::before {
+  content: counter(list-counter) ".";
+  position: absolute;
+  left: 0;
+  top: 0;
+  min-width: 2.5em;
+  text-align: right;
+  padding-right: 0.5em;
+  font-weight: 500;
+}
+
+.md-content hr {
+  border: 0;
+  height: 2px;
+  background: #ffffff;
+  margin: 1.2rem 0;
+  border-radius: 2px;
+}
+
+.md-content blockquote {
+  border-left: 4px solid rgba(59, 130, 246, 0.5);
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 0.5rem;
+  overflow-wrap: break-word;
+}
+
+.md-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0.75rem auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.md-content table td pre, .md-content table th pre {
+  overflow: auto;
+}

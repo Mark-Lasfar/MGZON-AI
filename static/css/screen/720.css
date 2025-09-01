@@ -1,0 +1,88 @@
+/*
+ * SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+@media (max-width: 767px) {
+  :root {
+    --header-height: 3rem;
+    --footer-height: 4.5rem;
+    --border-radius: 0.875rem;
+    --bubble-radius: 0.875rem;
+    --prompt-radius: 0.875rem;
+  }
+
+  .main-header, .chat-header {
+    padding: 0.5rem 0.75rem;
+  }
+
+  #chatBox {
+    padding: 0.6rem 0.75rem calc(var(--footer-height) + 0.75rem) 0.75rem;
+  }
+
+  #footerForm {
+    padding: 0.6rem 0.75rem;
+  }
+
+  #inputContainer {
+    padding: 0.2rem;
+  }
+
+  #userInput {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.95rem;
+  }
+
+  #sendBtn, #stopBtn {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .title {
+    font-size: clamp(1.3rem, 5vw, 2rem);
+    margin-bottom: 1.2rem;
+  }
+
+  .prompts {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .prompt-item {
+    padding: 0.8rem 1rem;
+    gap: 0.7rem;
+  }
+
+  .icon {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .system {
+    font-size: 0.75rem;
+    margin-top: 1.2rem;
+    line-height: 1.5;
+  }
+
+  .bubble {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 0.875rem;
+    margin: 0.6rem 0;
+  }
+
+  .chat-title {
+    font-size: 0.95rem;
+  }
+
+  .chat-controls {
+    gap: 0.4rem;
+  }
+
+  .icon-btn {
+    padding: 0.4rem;
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}

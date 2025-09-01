@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+@media (min-width: 1200px) {
+  .prompts {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    max-width: 1200px;
+  }
+
+  .title {
+    font-size: clamp(2rem, 3vw, 3rem);
+  }
+}

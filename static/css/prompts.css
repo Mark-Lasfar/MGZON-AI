@@ -1,0 +1,46 @@
+/*
+ * SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+.prompts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.prompt-item {
+  background: linear-gradient(145deg, #1a1a1a, #141414);
+  padding: 1rem 1.25rem;
+  border-radius: var(--prompt-radius);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  word-break: break-word;
+  overflow-wrap: break-word;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.5s ease-out forwards;
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+.prompt-item:nth-child(1) { animation-delay: 0.1s; }
+.prompt-item:nth-child(2) { animation-delay: 0.2s; }
+.prompt-item:nth-child(3) { animation-delay: 0.3s; }
+.prompt-item:nth-child(4) { animation-delay: 0.4s; }
+
+.prompt-item:hover {
+  background: linear-gradient(145deg, #1f1f1f, #1a1a1a);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.prompt-item:active {
+  transform: translateY(0) scale(0.98);
+}
