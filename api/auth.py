@@ -6,6 +6,7 @@ from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from api.database import SessionLocal
 from api.models import User
+from fastapi_users_db_sqlalchemy import OAuthAccount
 import os
 
 # إعداد Cookie Transport
