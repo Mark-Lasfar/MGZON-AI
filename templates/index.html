@@ -1,22 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MGZon Chatbot – AI-powered assistant for code generation, web search, and e-commerce solutions by Mark Al-Asfar from Alexandria, Egypt.">
+  <meta name="keywords" content="MGZon Chatbot, AI assistant, code generation, e-commerce, Mark Al-Asfar, 
+United States, FastAPI, Gradio">
+  <meta name="author" content="Mark Al-Asfar">
+  <meta name="robots" content="index, follow">
   <title>MGZon Chatbot – Powered by AI</title>
-
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="apple-touch-icon" href="static/images/mg.svg">
+  <!-- Open Graph -->
+  <meta property="og:title" content="MGZon Chatbot – AI-Powered Solutions">
+  <meta property="og:description" content="Explore MGZon Chatbot for code generation, web search, and e-commerce solutions by Mark Al-Asfar.">
+  <meta property="og:image" content="static/images/mg.svg">
+  <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/">
+  <meta property="og:type" content="website">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MGZon Chatbot – AI-Powered Solutions">
+  <meta name="twitter:description" content="Explore MGZon Chatbot for code generation, web search, and e-commerce solutions by Mark Al-Asfar.">
+  <meta name="twitter:image" content="static/images/mg.svg">
+  <!-- JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "MGZon Chatbot",
+  "url": "https://mgzon-mgzon-app.hf.space/",
+  "description": "MGZon Chatbot by Mark Al-Asfar: Your AI assistant for code generation, real-time web search, and e-commerce solutions.",
+  "keywords": ["MGZon Chatbot", "AI chatbot", "Code generation AI", "E-commerce AI solutions", "Mark Al-Asfar", "AI assistant for developers", "FastAPI chatbot", "Real-time web search AI", "MGZon AI", "Python AI chatbot", "AI for coding", "E-commerce automation", "Hugging Face AI", "2025 AI trends", "chatgpt", "grok", "deepseek", "text generation"],
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MGZon AI",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "static/images/mg.svg"
+    }
+  }
+}
+</script>
   <!-- Tailwind (v3) -->
   <script src="https://cdn.tailwindcss.com"></script>
-
   <!-- Boxicons -->
-  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-
+  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <!-- Prism (for code highlighting) -->
-  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-
   <style>
-    /* Animated gradient background */
     @keyframes gradientShift {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
@@ -28,8 +65,6 @@
       animation: gradientShift 15s ease infinite;
       font-family: system-ui, sans-serif;
     }
-
-    /* Glass-morphism helpers */
     .glass {
       background: rgba(255, 255, 255, 0.07);
       border-radius: 1rem;
@@ -37,24 +72,16 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
-
-    /* Sidebar transition */
     .sidebar {
       transition: transform 0.3s ease-in-out;
     }
-
-    /* Hide logo when sidebar is collapsed */
     .sidebar.collapsed .logo {
       opacity: 0;
       transition: opacity 0.2s ease;
     }
-
-    /* Prevent sidebar from covering the footer */
     .main-content {
-      min-height: calc(100vh - 4rem); /* footer height approx. */
+      min-height: calc(100vh - 4rem);
     }
-
-    /* Loading spinner for button */
     .loading {
       display: inline-block;
       width: 1rem;
@@ -68,15 +95,11 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-
-    /* Card hover and transition effects */
     .glass:hover {
       transform: scale(1.05);
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
       background: rgba(255, 255, 255, 0.15);
     }
-
-    /* Responsive adjustments */
     @media (max-width: 768px) {
       .sidebar {
         transform: translateX(-100%);
@@ -87,166 +110,141 @@
     }
   </style>
 </head>
-
 <body class="text-white flex flex-col min-h-screen">
   <!-- Mobile toggle button -->
-  <button
-    id="sidebarToggle"
-    class="md:hidden fixed top-4 left-4 z-50 p-2 text-2xl text-white rounded bg-gray-800/60 hover:bg-gray-700/80 transition"
-    aria-label="Toggle navigation"
-  >
+  <button id="sidebarToggle" class="md:hidden fixed top-4 left-4 z-50 p-2 text-2xl text-white rounded bg-gray-800/60 hover:bg-gray-700/80 transition" aria-label="Toggle navigation">
     <i class="bx bx-menu"></i>
   </button>
-
   <!-- Sidebar -->
-  <aside
-    id="sidebar"
-    class="sidebar fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-teal-800 to-emerald-900 p-6 flex flex-col overflow-y-auto z-40"
-  >
-    <!-- Close button for mobile -->
-    <button
-      id="closeSidebar"
-      class="md:hidden text-white text-2xl absolute top-4 right-4"
-      aria-label="Close sidebar"
-    >
-      ✕
-    </button>
-    <!-- Logo (optional: hidden in homepage) -->
-    <img
-      src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg"
-      alt="MGZon Logo"
-      class="logo w-20 h-20 mx-auto mb-8 animate-pulse"
-    />
+  <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-teal-800 to-emerald-900 p-6 flex flex-col overflow-y-auto z-40">
+    <button id="closeSidebar" class="md:hidden text-white text-2xl absolute top-4 right-4" aria-label="Close sidebar">✕</button>
+    <img src="static/images/mg.svg" alt="MGZon Logo" class="logo w-20 h-20 mx-auto mb-8 animate-pulse">
     <nav class="flex flex-col gap-3">
-      <a href="/" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition active:bg-emerald-600">Home</a>
+      <a href="/" class="px-4 py-2 rounded-lg bg-emerald-600">Home</a>
       <a href="/docs" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">API Documentation</a>
-      <a href="https://hager-zon.vercel.app/about" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">About MGZon</a>
+      <a href="/about" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">About MGZon</a>
+      <a href="/login" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Login</a>
+      <a href="/register" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Register</a>
       <a href="https://hager-zon.vercel.app/community" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Community</a>
       <a href="https://mark-elasfar.web.app/" target="_blank" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Mark Al-Asfar</a>
     </nav>
   </aside>
-
   <!-- Main content -->
   <main class="flex-1 md:ml-64 p-6 main-content">
     <section class="container max-w-6xl mx-auto">
       <!-- Hero -->
       <div class="text-center py-12">
-        <img
-          src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg"
-          alt="MGZon Logo"
-          class="w-32 h-32 mx-auto mb-6 animate-bounce"
-        />
+        <img src="static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
         <h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">
           Welcome to MGZon Chatbot 🚀
         </h1>
         <p class="text-lg max-w-2xl mx-auto mb-8">
-          MGZon Chatbot is an AI-powered assistant for code generation, analysis, and MGZon-specific queries. Built with Gradio and FastAPI, it supports multiple frameworks and languages. Ready to explore?
+          MGZon Chatbot is an AI-powered assistant for code generation, web search, and e-commerce solutions. Built with Gradio and FastAPI by Mark Al-Asfar from 
+United States. Ready to code smarter and shop better?
+  Discover MGZon Chatbot, an AI-powered assistant by Mark Al-Asfar for code generation, real-time web search, and e-commerce automation. Built with FastAPI and Hugging Face AI, MGZon rivals tools like ChatGPT, Grok, and DeepSeek.
         </p>
-        <a
-          href="/gradio"
-          id="launchBtn"
-          class="inline-flex items-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl"
-        >
-          Launch Chatbot <i class="bx bx-rocket ml-2"></i>
-          <span id="spinner" class="loading hidden"></span>
-        </a>
+        {% if user %}
+          <div class="flex justify-center gap-4">
+            <a href="/chat" id="launchBtn" class="inline-flex items-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl">
+              Launch Chatbot <i class="bx bx-rocket ml-2"></i>
+              <span id="spinner" class="loading hidden"></span>
+            </a>
+            <a href="/auth/jwt/logout" class="inline-flex items-center bg-gradient-to-r from-red-500 to-orange-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl">
+              Logout <i class="bx bx-log-out ml-2"></i>
+            </a>
+          </div>
+        {% else %}
+          <div class="flex justify-center gap-4">
+            <a href="/login" class="inline-flex items-center bg-gradient-to-r from-blue-500 to-cyan-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl">
+              Login <i class="bx bx-log-in ml-2"></i>
+            </a>
+            <a href="/register" class="inline-flex items-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl">
+              Sign Up <i class="bx bx-user-plus ml-2"></i>
+            </a>
+          </div>
+        {% endif %}
       </div>
-
       <!-- Features -->
       <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Features</h2>
+        <h2 class="text-3xl font-bold text-center mb-8">Why Choose MGZon?</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="glass p-6 relative group cursor-pointer" onclick="showCardDetails('code-generation')">
-            <button
-              class="absolute top-2 right-2 text-gray-300 hover:text-white transition"
-              onclick="event.stopPropagation(); closeCardDetails('code-generation')"
-              aria-label="Close card"
-            >
-              &times;
-            </button>
+            <button class="absolute top-2 right-2 text-gray-300 hover:text-white transition" onclick="event.stopPropagation(); closeCardDetails('code-generation')" aria-label="Close card">&times;</button>
             <i class="bx bx-code-alt text-4xl text-emerald-300 mb-4"></i>
             <h3 class="text-xl font-semibold mb-2">Code Generation</h3>
-            <p>Generate code for React, Django, Flask, and more.</p>
+            <p>Generate clean, well-commented code for React, Django, Flask, Node.js, and more.</p>
             <div id="code-generation-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-              <p>Supports multiple frameworks including React, Django, Flask, and Node.js. Generate clean, well-commented code with examples.</p>
+              <p>Supports multiple frameworks with examples and best practices for seamless integration.</p>
               <button onclick="closeCardDetails('code-generation')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
             </div>
           </div>
           <div class="glass p-6 relative group cursor-pointer" onclick="showCardDetails('web-search')">
-            <button
-              class="absolute top-2 right-2 text-gray-300 hover:text-white transition"
-              onclick="event.stopPropagation(); closeCardDetails('web-search')"
-              aria-label="Close card"
-            >
-              &times;
-            </button>
+            <button class="absolute top-2 right-2 text-gray-300 hover:text-white transition" onclick="event.stopPropagation(); closeCardDetails('web-search')" aria-label="Close card">&times;</button>
             <i class="bx bx-search text-4xl text-emerald-300 mb-4"></i>
             <h3 class="text-xl font-semibold mb-2">Web Search</h3>
-            <p>Integrated web search for MGZon-related queries.</p>
+            <p>Real-time web search for MGZon queries and industry insights.</p>
             <div id="web-search-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-              <p>Search the web for up-to-date information and MGZon-specific answers.</p>
+              <p>Get up-to-date answers and insights tailored to your needs.</p>
               <button onclick="closeCardDetails('web-search')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
             </div>
           </div>
-          <div class="glass p-6 relative group cursor-pointer" onclick="showCardDetails('analysis')">
-            <button
-              class="absolute top-2 right-2 text-gray-300 hover:text-white transition"
-              onclick="event.stopPropagation(); closeCardDetails('analysis')"
-              aria-label="Close card"
-            >
-              &times;
-            </button>
-            <i class="bx bx-analyse text-4xl text-emerald-300 mb-4"></i>
-            <h3 class="text-xl font-semibold mb-2">Analysis & Review</h3>
-            <p>Detailed code and data analysis with insights.</p>
-            <div id="analysis-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-              <p>Provides in-depth code reviews and data analysis with actionable insights.</p>
-              <button onclick="closeCardDetails('analysis')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+          <div class="glass p-6 relative group cursor-pointer" onclick="showCardDetails('ecommerce')">
+            <button class="absolute top-2 right-2 text-gray-300 hover:text-white transition" onclick="event.stopPropagation(); closeCardDetails('ecommerce')" aria-label="Close card">&times;</button>
+            <i class="bx bx-cart text-4xl text-emerald-300 mb-4"></i>
+            <h3 class="text-xl font-semibold mb-2">E-commerce Solutions</h3>
+            <p>AI-driven tools to optimize your online store and boost sales.</p>
+            <div id="ecommerce-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
+              <p>From product recommendations to inventory management, MGZon enhances your e-commerce experience.</p>
+              <button onclick="closeCardDetails('ecommerce')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
             </div>
           </div>
         </div>
       </section>
-
       <!-- News -->
       <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Latest MGZon News</h2>
+        <h2 class="text-3xl font-bold text-center mb-8">Latest MGZon Updates</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="glass p-6">
-            <h3 class="text-xl font-semibold mb-2">New API Features</h3>
-            <p>Explore our updated API with OAuth 2.0 support.</p>
+            <h3 class="text-xl font-semibold mb-2">New AI Features</h3>
+            <p>Explore our latest AI updates for smarter code and e-commerce tools.</p>
             <a href="https://hager-zon.vercel.app/blog" target="_blank" class="text-emerald-300 hover:underline">Read More →</a>
           </div>
           <div class="glass p-6">
-            <h3 class="text-xl font-semibold mb-2">Community Meetup</h3>
-            <p>Join our next virtual meetup on e-commerce trends.</p>
-            <a href="https://hager-zon.vercel.app/community" target="_blank" class="text-emerald-300 hover:underline">Join Now →</a>
+            <h3 class="text-xl font-semibold mb-2">Global Expansion</h3>
+            <p>New warehouses in the USA, Canada, and China to serve you better.</p>
+            <a href="https://hager-zon.vercel.app/community" target="_blank" class="text-emerald-300 hover:underline">Learn More →</a>
+          </div>
+        </div>
+      </section>
+      <!-- Testimonials -->
+      <section class="my-12">
+        <h2 class="text-3xl font-bold text-center mb-8">What Our Users Say</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass p-6">
+            <p class="mb-4">"MGZon Chatbot transformed how I code. The AI-generated snippets are accurate and save hours!"</p>
+            <p class="font-semibold">– Ahmed, Developer</p>
+          </div>
+          <div class="glass p-6">
+            <p class="mb-4">"The e-commerce tools helped me optimize my store and boost sales by 30%."</p>
+            <p class="font-semibold">– Sarah, Store Owner</p>
           </div>
         </div>
       </section>
     </section>
   </main>
-
   <!-- Footer -->
   <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 mt-8">
     <div class="container max-w-6xl mx-auto text-center">
-      <img
-        src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg"
-        alt="MGZon Logo"
-        class="w-24 h-24 mx-auto mb-6 animate-pulse"
-      />
+     <img src="static/images/mg.svg" alt="MGZon Chatbot Logo by Mark Al-Asfar" class="w-32 h-32 mx-auto mb-6 animate-bounce">
       <p class="mb-4">
-        Developed by
-        <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
-        | Powered by
-        <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
+        Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
+        | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
       </p>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('email')">
           <i class="bx bx-mail-send text-3xl text-emerald-300 mb-2"></i>
           <h4 class="font-semibold mb-1">Email Us</h4>
-          <p>
-            <a href="mailto:support@mgzon.com" class="text-emerald-300 hover:underline">support@mgzon.com</a>
-          </p>
+          <p><a href="mailto:support@mgzon.com" class="text-emerald-300 hover:underline">support@mgzon.com</a></p>
           <div id="email-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Reach out to our support team for any inquiries or assistance.</p>
             <button onclick="closeCardDetails('email')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
@@ -264,9 +262,7 @@
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('community')">
           <i class="bx bx-group text-3xl text-emerald-300 mb-2"></i>
           <h4 class="font-semibold mb-1">Community</h4>
-          <p>
-            <a href="https://hager-zon.vercel.app/community" class="text-emerald-300 hover:underline">Join us</a>
-          </p>
+          <p><a href="https://hager-zon.vercel.app/community" class="text-emerald-300 hover:underline">Join us</a></p>
           <div id="community-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Join our vibrant community to share ideas and collaborate.</p>
             <button onclick="closeCardDetails('community')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
@@ -275,9 +271,7 @@
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('api-docs')">
           <i class="bx bx-code-alt text-3xl text-emerald-300 mb-2"></i>
           <h4 class="font-semibold mb-1">API Docs</h4>
-          <p>
-            <a href="/docs" class="text-emerald-300 hover:underline">Explore Docs</a>
-          </p>
+          <p><a href="/docs" class="text-emerald-300 hover:underline">Explore Docs</a></p>
           <div id="api-docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Explore our API documentation for seamless integration.</p>
             <button onclick="closeCardDetails('api-docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
@@ -286,9 +280,7 @@
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('faq')">
           <i class="bx bx-help-circle text-3xl text-emerald-300 mb-2"></i>
           <h4 class="font-semibold mb-1">FAQ</h4>
-          <p>
-            <a href="https://hager-zon.vercel.app/faq" target="_blank" class="text-emerald-300 hover:underline">Read FAQ</a>
-          </p>
+          <p><a href="https://hager-zon.vercel.app/faq" target="_blank" class="text-emerald-300 hover:underline">Read FAQ</a></p>
           <div id="faq-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Find answers to common questions in our FAQ section.</p>
             <button onclick="closeCardDetails('faq')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
@@ -297,78 +289,54 @@
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('docs')">
           <i class="bx bx-book text-3xl text-emerald-300 mb-2"></i>
           <h4 class="font-semibold mb-1">Documentation</h4>
-          <p>
-            <a href="/docs" class="text-emerald-300 hover:underline">Full Docs</a>
-          </p>
+          <p><a href="/docs" class="text-emerald-300 hover:underline">Full Docs</a></p>
           <div id="docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Access comprehensive documentation for MGZon Chatbot.</p>
             <button onclick="closeCardDetails('docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
           </div>
         </div>
       </div>
-      <!-- Social icons -->
       <div class="flex justify-center gap-6 mt-6">
-        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-emerald-300 transition">
-          <i class="bx bxl-github"></i>
-        </a>
-        <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-emerald-300 transition">
-          <i class="bx bxl-twitter"></i>
-        </a>
-        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-emerald-300 transition">
-          <i class="bx bxl-facebook"></i>
-        </a>
+        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-github"></i></a>
+        <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-twitter"></i></a>
+        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-facebook"></i></a>
       </div>
       <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
     </div>
   </footer>
-
-  <!-- Scripts -->
   <script>
-    // Sidebar toggle for mobile
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebarToggle');
     const closeSidebarBtn = document.getElementById('closeSidebar');
-
     toggleBtn.addEventListener('click', () => {
       sidebar.classList.toggle('active');
       sidebar.classList.toggle('-translate-x-full');
       sidebar.classList.toggle('translate-x-0');
     });
-
     closeSidebarBtn.addEventListener('click', () => {
       sidebar.classList.remove('active');
       sidebar.classList.add('-translate-x-full');
       sidebar.classList.remove('translate-x-0');
     });
-
-    // Close sidebar when clicking outside
     document.addEventListener('click', (e) => {
-      if (
-        !sidebar.contains(e.target) &&
-        !toggleBtn.contains(e.target) &&
-        window.innerWidth < 768
-      ) {
+      if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target) && window.innerWidth < 768) {
         sidebar.classList.remove('active');
         sidebar.classList.add('-translate-x-full');
         sidebar.classList.remove('translate-x-0');
       }
     });
-
-    // Launch button spinner
-    const launchBtn = document.getElementById('launchBtn');
-    const spinner = document.getElementById('spinner');
-    launchBtn.addEventListener('click', (e) => {
-      spinner.classList.remove('hidden');
-      setTimeout(() => spinner.classList.add('hidden'), 2000); // Simulate loading
-    });
-
-    // Card details toggle
     function showCardDetails(cardId) {
       document.getElementById(`${cardId}-details`).classList.remove('hidden');
     }
     function closeCardDetails(cardId) {
       document.getElementById(`${cardId}-details`).classList.add('hidden');
     }
+    const launchBtn = document.getElementById('launchBtn');
+    const spinner = document.getElementById('spinner');
+    launchBtn.addEventListener('click', (e) => {
+      spinner.classList.remove('hidden');
+      setTimeout(() => spinner.classList.add('hidden'), 2000);
+    });
   </script>
 </body>
 </html>

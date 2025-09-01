@@ -35,13 +35,13 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
-SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mistral-7B-Instruct-v0.2")
-TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-20b:cerebras")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:together")
+SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mistral-7B-Instruct-v0.2:featherless-ai")
+TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-20b:together")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
 CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
 ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
-TTS_MODEL = os.getenv("TTS_MODEL", "espnet/kan-bayashi_arabic_vits")
+TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
 
 def check_model_availability(model_name: str, api_base: str, api_key: str) -> tuple[bool, str]:
     try:
@@ -165,23 +165,23 @@ def request_generation(
             return
 
     # معالجة تحويل النص إلى صوت (TTS)
-    if model_name == TTS_MODEL or output_format == "audio":
-        task_type = "text_to_speech"
-        try:
-            model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
-            processor = AutoProcessor.from_pretrained(TTS_MODEL)
-            inputs = processor(text=message, return_tensors="pt")
-            audio = model.generate(**inputs)
-            audio_file = io.BytesIO()
-            torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
-            audio_file.seek(0)
-            yield audio_file.read()
-            cache[cache_key] = [audio_file.read()]
-            return
-        except Exception as e:
-            logger.error(f"Text-to-speech failed: {e}")
-            yield f"Error: Text-to-speech failed: {e}"
-            return
+if model_name == TTS_MODEL or output_format == "audio":
+    task_type = "text_to_speech"
+    try:
+        model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
+        processor = AutoProcessor.from_pretrained(TTS_MODEL)
+        inputs = processor(text=message, return_tensors="pt")
+        audio = model.generate(**inputs)
+        audio_file = io.BytesIO()
+        torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
+        audio_file.seek(0)
+        yield audio_file.read()
+        cache[cache_key] = [audio_file.read()]
+        return
+    except Exception as e:
+        logger.error(f"Text-to-speech failed: {e}")
+        yield f"Error: Text-to-speech failed: {e}"
+        return
 
     # معالجة الصور
     if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:

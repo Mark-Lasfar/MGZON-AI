@@ -3,37 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.">
-  <meta name="keywords" content="MGZon Chatbot, API documentation, code generation, e-commerce, FastAPI, Mark Al-Asfar">
+  <meta name="description" content="Learn about MGZon AI, founded by Mark Al-Asfar in Alexandria, Egypt. Discover our mission, team, and achievements in AI and e-commerce.">
+  <meta name="keywords" content="MGZon AI, Mark Al-Asfar, AI chatbot, e-commerce, code generation, Alexandria, technology, team, achievements">
   <meta name="author" content="Mark Al-Asfar">
   <meta name="robots" content="index, follow">
-  <title>API Documentation - MGZon Chatbot</title>
+  <title>About MGZon AI – Our Story</title>
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
   <link rel="apple-touch-icon" href="static/images/mg.svg">
   <!-- Open Graph -->
-  <meta property="og:title" content="API Documentation - MGZon Chatbot">
-  <meta property="og:description" content="Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.">
+  <meta property="og:title" content="About MGZon AI – Our Story">
+  <meta property="og:description" content="Learn about MGZon AI, its founder Mark Al-Asfar, and our mission to innovate in AI and e-commerce.">
   <meta property="og:image" content="static/images/mg.svg">
-  <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/docs">
+  <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/about">
   <meta property="og:type" content="website">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="API Documentation - MGZon Chatbot">
-  <meta name="twitter:description" content="Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.">
-  <meta name="twitter:image" content="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg">
+  <meta name="twitter:title" content="About MGZon AI – Our Story">
+  <meta name="twitter:description" content="Learn about MGZon AI, its founder Mark Al-Asfar, and our mission to innovate in AI and e-commerce.">
+  <meta name="twitter:image" content="static/images/mg.svg">
   <!-- JSON-LD -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "WebPage",
-  "name": "API Documentation - MGZon Chatbot",
-  "url": "https://mgzon-mgzon-app.hf.space/docs",
-  "description": "Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.",
-  "keywords": ["MGZon Chatbot", "API documentation", "code generation", "e-commerce", "FastAPI", "Mark Al-Asfar", "MGZon", "MGZon AI", "AI chatbot", "Code generation bot", "Python AI chatbot", "FastAPI integration", "AI for coding", "AI developer tools", "text generation"],
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "MGZon Chatbot",
-    "url": "https://mgzon-mgzon-app.hf.space/"
+  "@type": "Organization",
+  "name": "MGZon AI",
+  "url": "https://mgzon-mgzon-app.hf.space",
+  "logo": "static/images/mg.svg",
+  "founder": {
+    "@type": "Person",
+    "name": "Mark Al-Asfar",
+    "sameAs": "https://mark-elasfar.web.app/"
+  },
+  "description": "MGZon AI develops AI-powered solutions for e-commerce and coding, founded by Mark Al-Asfar from Alexandria, Egypt.",
+  "keywords": ["MGZon AI", "Mark Al-Asfar", "AI chatbot", "e-commerce", "code generation", "Alexandria", "technology", "team", "MGZon", "MGZon chatbot", "E-commerce chatbot", "5G", "6G", "2025 AI trends"],
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Alexandria",
+    "addressCountry": "Egypt"
   }
 }
 </script>
@@ -41,9 +47,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Boxicons -->
   <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  <!-- Prism (for code highlighting) -->
-  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
   <style>
     @keyframes gradientShift {
       0% { background-position: 0% 50%; }
@@ -99,8 +102,8 @@
     <img src="static/images/mg.svg" alt="MGZon Logo" class="logo w-20 h-20 mx-auto mb-8 animate-pulse">
     <nav class="flex flex-col gap-3">
       <a href="/" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Home</a>
-      <a href="/docs" class="px-4 py-2 rounded-lg bg-emerald-600">API Documentation</a>
-      <a href="/about" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">About MGZon</a>
+      <a href="/docs" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">API Documentation</a>
+      <a href="/about" class="px-4 py-2 rounded-lg bg-emerald-600">About MGZon</a>
       <a href="/login" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Login</a>
       <a href="/register" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Register</a>
       <a href="https://hager-zon.vercel.app/community" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Community</a>
@@ -112,70 +115,62 @@
     <section class="container max-w-6xl mx-auto">
       <div class="text-center py-12">
         <img src="static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
-<h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">About MGZon AI by Mark Al-Asfar</h1>
-          MGZon Chatbot API Documentation
-        </h1>
-        <p class="text-lg max-w-2xl mx-auto mb-8">
-          Integrate MGZon Chatbot's AI-powered features into your applications. Learn how to use our APIs for code generation, web search, and e-commerce solutions.
-        </p>
-        <p>Explore the MGZon Chatbot API for seamless integration of AI-powered code generation, text generation, and e-commerce automation. Built by Mark Al-Asfar using FastAPI and Hugging Face AI.</p>
-        <a href="https://x.ai/api" target="_blank" class="inline-flex items-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl">
-          Get API Key <i class="bx bx-key ml-2"></i>
-        </a>
+        <h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">About MGZon AI</h1>
+        <p class="text-lg max-w-2xl mx-auto mb-8">Founded by Mark Al-Asfar in Alexandria, Egypt, MGZon AI is revolutionizing e-commerce and coding with AI-driven solutions.</p>
       </div>
-      <!-- API Overview -->
+      <!-- Story Section -->
       <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">API Overview</h2>
+        <h2 class="text-3xl font-bold text-center mb-8">Our Story</h2>
         <div class="glass p-6">
-          <p class="mb-4">The MGZon Chatbot API provides endpoints for code generation, real-time web search, and e-commerce functionalities. Built with FastAPI, it offers secure and scalable integration.</p>
-          <p>Base URL: <code class="bg-gray-800/60 p-1 rounded">https://mgzon-mgzon-app.hf.space/api</code></p>
+<p class="mb-4">MGZon AI was founded in 2023 in Alexandria, Egypt, by Mark Al-Asfar with a vision to empower developers and businesses through AI-driven solutions like MGZon Chatbot. We leverage technologies like DeepSeek, FastAPI, and 5G/6G innovations to deliver cutting-edge e-commerce and code generation tools.</p>
+          <p>From a small startup to a global player, we now operate warehouses in the USA, Canada, and China, serving thousands of users worldwide.</p>
         </div>
       </section>
-      <!-- Authentication -->
+      <!-- Founder Section -->
       <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Authentication</h2>
-        <div class="glass p-6">
-          <p class="mb-4">Use JWT tokens for authentication. Register or login to obtain a token.</p>
-          <pre><code class="language-bash">
-curl -X POST "https://mgzon-mgzon-app.hf.space/auth/jwt/login" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=your_email&password=your_password"
-          </code></pre>
+        <h2 class="text-3xl font-bold text-center mb-8">Meet Our Founder</h2>
+        <div class="glass p-6 text-center">
+          <img src="static/images/mg.svg" alt="Mark Al-Asfar" class="w-24 h-24 mx-auto mb-4 rounded-full">
+          <h3 class="text-xl font-semibold mb-2">Mark Al-Asfar</h3>
+          <p class="mb-4">A visionary developer from Alexandria, Mark Al-Asfar founded MGZon AI to bridge the gap between AI innovation and practical applications in coding and e-commerce.</p>
+          <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Learn More About Mark</a>
         </div>
       </section>
-      <!-- Endpoints -->
+      <!-- Team Section -->
       <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Endpoints</h2>
+        <h2 class="text-3xl font-bold text-center mb-8">Our Team</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass p-6 text-center">
+            <img src="https://via.placeholder.com/96" alt="Team Member" class="w-24 h-24 mx-auto mb-4 rounded-full">
+            <h3 class="text-xl font-semibold mb-2">Hager Mohamed</h3>
+            <p class="mb-4">Lead AI Engineer, specializing in machine learning and chatbot development.</p>
+          </div>
+          <div class="glass p-6 text-center">
+            <img src="https://via.placeholder.com/96" alt="Team Member" class="w-24 h-24 mx-auto mb-4 rounded-full">
+            <h3 class="text-xl font-semibold mb-2">Ahmed Khaled</h3>
+            <p class="mb-4">E-commerce Specialist, driving innovative solutions for online businesses.</p>
+          </div>
+        </div>
+      </section>
+      <!-- Achievements Section -->
+      <section class="my-12">
+        <h2 class="text-3xl font-bold text-center mb-8">Our Achievements</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="glass p-6">
-            <h3 class="text-xl font-semibold mb-2">/chat (POST)</h3>
-            <p class="mb-4">Interact with the AI chatbot for code generation or queries.</p>
-            <pre><code class="language-bash">
-curl -X POST "https://mgzon-mgzon-app.hf.space/chat" \
-  -H "Authorization: Bearer your_token" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Generate a Python function"}'
-            </code></pre>
+            <h3 class="text-xl font-semibold mb-2">Global Reach</h3>
+            <p>Serving over 10,000 users across 50 countries with our AI tools.</p>
           </div>
           <div class="glass p-6">
-            <h3 class="text-xl font-semibold mb-2">/web_search (POST)</h3>
-            <p class="mb-4">Perform real-time web searches.</p>
-            <pre><code class="language-bash">
-curl -X POST "https://mgzon-mgzon-app.hf.space/web_search" \
-  -H "Authorization: Bearer your_token" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "AI trends 2025"}'
-            </code></pre>
+            <h3 class="text-xl font-semibold mb-2">Award-Winning Innovation</h3>
+            <p>Recognized as a top AI startup in MENA by TechCrunch in 2024.</p>
           </div>
         </div>
       </section>
-      <!-- Getting Started -->
+      <!-- Mission Section -->
       <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Getting Started</h2>
+        <h2 class="text-3xl font-bold text-center mb-8">Our Mission</h2>
         <div class="glass p-6">
-          <p class="mb-4">1. Register at <a href="/register" class="text-emerald-300 hover:underline">/register</a>.</p>
-          <p class="mb-4">2. Obtain your API key from <a href="https://x.ai/api" target="_blank" class="text-emerald-300 hover:underline">xAI API</a>.</p>
-          <p>3. Use the endpoints above to integrate MGZon Chatbot into your application.</p>
+          <p>At MGZon AI, we aim to make AI accessible to developers and businesses, simplifying coding and enhancing e-commerce with cutting-edge technology.</p>
         </div>
       </section>
     </section>
@@ -183,7 +178,7 @@ curl -X POST "https://mgzon-mgzon-app.hf.space/web_search" \
   <!-- Footer -->
   <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 mt-8">
     <div class="container max-w-6xl mx-auto text-center">
-<img src="static/images/mg.svg" alt="MGZon Chatbot Logo by Mark Al-Asfar" class="w-32 h-32 mx-auto mb-6 animate-bounce">
+      <img src="static/images/mg.svg" alt="MGZon Logo" class="w-24 h-24 mx-auto mb-6 animate-pulse">
       <p class="mb-4">
         Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
         | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>

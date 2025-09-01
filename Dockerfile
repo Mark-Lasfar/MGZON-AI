@@ -19,14 +19,17 @@ RUN pip install --upgrade pip
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create /data directory with correct permissions
+RUN mkdir -p /data && chmod -R 755 /data
+
 # Copy all project files
 COPY . .
 
 # Verify files in /app
 RUN ls -R /app
 
-# Expose port 7860 for Gradio
+# Expose port 7860 for FastAPI
 EXPOSE 7860
 
-# Run the Gradio app
+# Run the FastAPI app
 CMD ["python", "main.py"]

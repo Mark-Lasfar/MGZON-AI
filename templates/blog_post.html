@@ -3,33 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.">
-  <meta name="keywords" content="MGZon Chatbot, API documentation, code generation, e-commerce, FastAPI, Mark Al-Asfar">
+  <meta name="description" content="{{ post.title }} - Read about AI, coding, and e-commerce trends from MGZon AI by Mark Al-Asfar.">
+  <meta name="keywords" content="MGZon Chatbot, MGZon AI, blog, AI trends, code generation, e-commerce, Mark Al-Asfar, AI chatbot, code generation bot, e-commerce chatbot, Python AI chatbot, AI for coding, e-commerce automation, 2025 AI trends, chatgpt, grok, deepseek, text generation">
   <meta name="author" content="Mark Al-Asfar">
   <meta name="robots" content="index, follow">
-  <title>API Documentation - MGZon Chatbot</title>
+  <title>{{ post.title }} - MGZon AI</title>
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-  <link rel="apple-touch-icon" href="static/images/mg.svg">
+<link rel="apple-touch-icon" href="/static/images/mg.svg">
   <!-- Open Graph -->
-  <meta property="og:title" content="API Documentation - MGZon Chatbot">
-  <meta property="og:description" content="Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.">
-  <meta property="og:image" content="static/images/mg.svg">
-  <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/docs">
-  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ post.title }} - MGZon AI">
+  <meta property="og:description" content="{{ post.content | truncate(150) }}">
+<meta property="og:image" content="/static/images/mg.svg">
+  <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/blog/{{ post.id }}">
+  <meta property="og:type" content="article">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="API Documentation - MGZon Chatbot">
-  <meta name="twitter:description" content="Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.">
-  <meta name="twitter:image" content="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg">
+  <meta name="twitter:title" content="{{ post.title }} - MGZon AI">
+  <meta name="twitter:description" content="{{ post.content | truncate(150) }}">
+<meta name="twitter:image" content="/static/images/mg.svg">
   <!-- JSON-LD -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "WebPage",
-  "name": "API Documentation - MGZon Chatbot",
-  "url": "https://mgzon-mgzon-app.hf.space/docs",
-  "description": "Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.",
-  "keywords": ["MGZon Chatbot", "API documentation", "code generation", "e-commerce", "FastAPI", "Mark Al-Asfar", "MGZon", "MGZon AI", "AI chatbot", "Code generation bot", "Python AI chatbot", "FastAPI integration", "AI for coding", "AI developer tools", "text generation"],
+  "@type": "BlogPosting",
+  "headline": "{{ post.title }}",
+  "url": "https://mgzon-mgzon-app.hf.space/blog/{{ post.id }}",
+  "description": "{{ post.content | truncate(150) }}",
+  "keywords": ["MGZon Chatbot", "MGZon AI", "blog", "AI trends", "code generation", "e-commerce", "Mark Al-Asfar", "AI chatbot", "code generation bot", "e-commerce chatbot", "Python AI chatbot", "AI for coding", "e-commerce automation", "2025 AI trends", "chatgpt", "grok", "deepseek", "text generation"],
+  "author": {
+    "@type": "Person",
+    "name": "Mark Al-Asfar",
+    "url": "https://mark-elasfar.web.app/"
+  },
+  "datePublished": "{{ post.date }}",
+  "publisher": {
+    "@type": "Organization",
+    "name": "MGZon AI",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/static/images/mg.svg"
+    }
+  },
   "isPartOf": {
     "@type": "WebSite",
     "name": "MGZon Chatbot",
@@ -41,9 +55,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Boxicons -->
   <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  <!-- Prism (for code highlighting) -->
-  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
   <style>
     @keyframes gradientShift {
       0% { background-position: 0% 50%; }
@@ -86,6 +97,30 @@
         transform: translateX(0);
       }
     }
+    .markdown-content img {
+      max-width: 100%;
+      height: auto;
+      margin: 1rem 0;
+    }
+    .markdown-content h2 {
+      font-size: 1.875rem;
+      font-weight: bold;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+    .markdown-content p {
+      margin-bottom: 1rem;
+    }
+    .markdown-content a {
+      color: #34d399;
+      text-decoration: underline;
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid #34d399;
+      padding-left: 1rem;
+      margin: 1rem 0;
+      color: #d1d5db;
+    }
   </style>
 </head>
 <body class="text-white flex flex-col min-h-screen">
@@ -96,13 +131,14 @@
   <!-- Sidebar -->
   <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-teal-800 to-emerald-900 p-6 flex flex-col overflow-y-auto z-40">
     <button id="closeSidebar" class="md:hidden text-white text-2xl absolute top-4 right-4" aria-label="Close sidebar">✕</button>
-    <img src="static/images/mg.svg" alt="MGZon Logo" class="logo w-20 h-20 mx-auto mb-8 animate-pulse">
+<img src="/static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
     <nav class="flex flex-col gap-3">
       <a href="/" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Home</a>
-      <a href="/docs" class="px-4 py-2 rounded-lg bg-emerald-600">API Documentation</a>
+      <a href="/docs" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">API Documentation</a>
       <a href="/about" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">About MGZon</a>
       <a href="/login" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Login</a>
       <a href="/register" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Register</a>
+      <a href="/blog" class="px-4 py-2 rounded-lg bg-emerald-600">Blog</a>
       <a href="https://hager-zon.vercel.app/community" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Community</a>
       <a href="https://mark-elasfar.web.app/" target="_blank" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Mark Al-Asfar</a>
     </nav>
@@ -111,79 +147,22 @@
   <main class="flex-1 md:ml-64 p-6 main-content">
     <section class="container max-w-6xl mx-auto">
       <div class="text-center py-12">
-        <img src="static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
-<h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">About MGZon AI by Mark Al-Asfar</h1>
-          MGZon Chatbot API Documentation
+<img src="/static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
+        <h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">
+          {{ post.title }}
         </h1>
-        <p class="text-lg max-w-2xl mx-auto mb-8">
-          Integrate MGZon Chatbot's AI-powered features into your applications. Learn how to use our APIs for code generation, web search, and e-commerce solutions.
-        </p>
-        <p>Explore the MGZon Chatbot API for seamless integration of AI-powered code generation, text generation, and e-commerce automation. Built by Mark Al-Asfar using FastAPI and Hugging Face AI.</p>
-        <a href="https://x.ai/api" target="_blank" class="inline-flex items-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl">
-          Get API Key <i class="bx bx-key ml-2"></i>
-        </a>
+        <p class="text-sm text-gray-300">By {{ post.author }} | {{ post.date }}</p>
       </div>
-      <!-- API Overview -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">API Overview</h2>
-        <div class="glass p-6">
-          <p class="mb-4">The MGZon Chatbot API provides endpoints for code generation, real-time web search, and e-commerce functionalities. Built with FastAPI, it offers secure and scalable integration.</p>
-          <p>Base URL: <code class="bg-gray-800/60 p-1 rounded">https://mgzon-mgzon-app.hf.space/api</code></p>
-        </div>
-      </section>
-      <!-- Authentication -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Authentication</h2>
-        <div class="glass p-6">
-          <p class="mb-4">Use JWT tokens for authentication. Register or login to obtain a token.</p>
-          <pre><code class="language-bash">
-curl -X POST "https://mgzon-mgzon-app.hf.space/auth/jwt/login" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=your_email&password=your_password"
-          </code></pre>
-        </div>
-      </section>
-      <!-- Endpoints -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Endpoints</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="glass p-6">
-            <h3 class="text-xl font-semibold mb-2">/chat (POST)</h3>
-            <p class="mb-4">Interact with the AI chatbot for code generation or queries.</p>
-            <pre><code class="language-bash">
-curl -X POST "https://mgzon-mgzon-app.hf.space/chat" \
-  -H "Authorization: Bearer your_token" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Generate a Python function"}'
-            </code></pre>
-          </div>
-          <div class="glass p-6">
-            <h3 class="text-xl font-semibold mb-2">/web_search (POST)</h3>
-            <p class="mb-4">Perform real-time web searches.</p>
-            <pre><code class="language-bash">
-curl -X POST "https://mgzon-mgzon-app.hf.space/web_search" \
-  -H "Authorization: Bearer your_token" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "AI trends 2025"}'
-            </code></pre>
-          </div>
-        </div>
-      </section>
-      <!-- Getting Started -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Getting Started</h2>
-        <div class="glass p-6">
-          <p class="mb-4">1. Register at <a href="/register" class="text-emerald-300 hover:underline">/register</a>.</p>
-          <p class="mb-4">2. Obtain your API key from <a href="https://x.ai/api" target="_blank" class="text-emerald-300 hover:underline">xAI API</a>.</p>
-          <p>3. Use the endpoints above to integrate MGZon Chatbot into your application.</p>
-        </div>
+      <!-- Blog Post Content -->
+      <section class="my-12 glass p-8 markdown-content">
+{{ post.content | markdown | safe }}
       </section>
     </section>
   </main>
   <!-- Footer -->
   <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 mt-8">
     <div class="container max-w-6xl mx-auto text-center">
-<img src="static/images/mg.svg" alt="MGZon Chatbot Logo by Mark Al-Asfar" class="w-32 h-32 mx-auto mb-6 animate-bounce">
+<img src="/static/images/mg.svg" alt="MGZon Chatbot Logo by Mark Al-Asfar" class="w-32 h-32 mx-auto mb-6 animate-bounce">
       <p class="mb-4">
         Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
         | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
