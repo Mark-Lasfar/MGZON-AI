@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 # Update pip
 RUN pip install --upgrade pip
 
-RUN pip install packaging
+RUN pip install packaging torch==2.4.1
 
 # Copy requirements.txt and install dependencies
 COPY requirements.txt .
