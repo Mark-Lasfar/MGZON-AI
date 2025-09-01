@@ -5,15 +5,15 @@
 
 #inputContainer {
   display: flex;
-  align-items: center;
+  align-items: flex-end; /* Align items to the bottom for better textarea expansion */
   flex: 1;
   background: linear-gradient(145deg, #1a1a1a, #141414);
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.25rem;
+  padding: 0.5rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   max-width: 800px;
-  margin: 0 auto;
+  margin: 0 auto 1rem auto; /* Reduced bottom margin */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
 }
@@ -38,24 +38,29 @@
   word-break: break-word;
   overflow-wrap: break-word;
   min-height: 40px;
-  max-height: 120px;
-  resize: vertical;
+  max-height: 200px; /* Increased max-height for more expansion */
+  resize: none; /* Disable manual resize */
   font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  overflow-y: auto;
 }
 
 #rightIconGroup {
   position: absolute;
   right: 0.5rem;
+  bottom: 0.5rem;
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
 @media (max-width: 768px) {
   #inputContainer {
     max-width: 100%;
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem;
   }
   #userInput {
     padding: 0.5rem 2.5rem 0.5rem 0.5rem;
+    font-size: 0.9rem;
   }
 }

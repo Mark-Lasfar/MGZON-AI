@@ -15,7 +15,6 @@ const btn = document.getElementById('sendBtn');
 const stopBtn = document.getElementById('stopBtn');
 const fileBtn = document.getElementById('fileBtn');
 const audioBtn = document.getElementById('audioBtn');
-const voiceBtn = document.getElementById('voiceBtn');
 const fileInput = document.getElementById('fileInput');
 const audioInput = document.getElementById('audioInput');
 const filePreview = document.getElementById('filePreview');
@@ -36,6 +35,14 @@ let isRequestActive = false;
 let abortController = null;
 let mediaRecorder = null;
 let audioChunks = [];
+let isRecording = false;
+let pressTimer = null;
+
+// Auto-resize textarea
+function autoResizeTextarea() {
+  input.style.height = 'auto';
+  input.style.height = `${Math.min(input.scrollHeight, 200)}px`; // Max height is 200px as per CSS
+}
 
 // تحميل المحادثة عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', () => {
@@ -51,6 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
       addMsg(msg.role, msg.content);
     });
   }
+  // Initialize textarea height
+  autoResizeTextarea();
+  // Enable send button based on input
+  btn.disabled = input.value.trim() === '' && fileInput.files.length === 0 && audioInput.files.length === 0;
 });
 
 // تحقق من الـ token
@@ -143,6 +154,7 @@ function clearAllMessages() {
   audioPreview.style.display = 'none';
   messageLimitWarning.classList.add('hidden');
   enterChatView();
+  autoResizeTextarea();
 }
 
 // File preview.
@@ -155,6 +167,7 @@ function previewFile() {
         filePreview.innerHTML = `<img src="${e.target.result}" class="upload-preview">`;
         filePreview.style.display = 'block';
         audioPreview.style.display = 'none';
+        btn.disabled = false; // Enable send button when file is selected
       };
       reader.readAsDataURL(file);
     }
@@ -167,6 +180,7 @@ function previewFile() {
         audioPreview.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
         audioPreview.style.display = 'block';
         filePreview.style.display = 'none';
+        btn.disabled = false; // Enable send button when audio is selected
       };
       reader.readAsDataURL(file);
     }
@@ -175,24 +189,29 @@ function previewFile() {
 
 // Voice recording.
 function startVoiceRecording() {
+  if (isRequestActive || isRecording) return;
+  isRecording = true;
+  btn.classList.add('recording');
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
     mediaRecorder.start();
-    voiceBtn.classList.add('recording');
     mediaRecorder.addEventListener('dataavailable', event => {
       audioChunks.push(event.data);
     });
   }).catch(err => {
     console.error('Error accessing microphone:', err);
     alert('Failed to access microphone. Please check permissions.');
+    isRecording = false;
+    btn.classList.remove('recording');
   });
 }
 
 function stopVoiceRecording() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
-    voiceBtn.classList.remove('recording');
+    btn.classList.remove('recording');
+    isRecording = false;
     mediaRecorder.addEventListener('stop', async () => {
       const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
       const formData = new FormData();
@@ -285,7 +304,7 @@ async function submitAudioMessage(formData) {
 
 // Send user message.
 async function submitMessage() {
-  if (isRequestActive) return;
+  if (isRequestActive || isRecording) return;
   let message = input.value.trim();
   let formData = new FormData();
   let endpoint = '/api/chat';
@@ -335,6 +354,7 @@ async function submitMessage() {
   btn.disabled = true;
   filePreview.style.display = 'none';
   audioPreview.style.display = 'none';
+  autoResizeTextarea();
 
   isRequestActive = true;
   abortController = new AbortController();
@@ -431,7 +451,10 @@ async function submitMessage() {
 
 // Stop streaming and cancel the ongoing request.
 function stopStream(forceCancel = false) {
-  if (!isRequestActive) return;
+  if (!isRequestActive && !isRecording) return;
+  if (isRecording) {
+    stopVoiceRecording();
+  }
   isRequestActive = false;
   if (abortController) {
     abortController.abort();
@@ -455,6 +478,8 @@ promptItems.forEach(p => {
   p.addEventListener('click', e => {
     e.preventDefault();
     input.value = p.dataset.prompt;
+    autoResizeTextarea();
+    btn.disabled = false;
     submitMessage();
   });
 });
@@ -469,30 +494,56 @@ audioBtn.addEventListener('click', () => {
 fileInput.addEventListener('change', previewFile);
 audioInput.addEventListener('change', previewFile);
 
-// Voice recording events.
-voiceBtn.addEventListener('mousedown', startVoiceRecording);
-voiceBtn.addEventListener('touchstart', e => {
-  e.preventDefault();
-  startVoiceRecording();
+// Send button events for send and voice recording.
+btn.addEventListener('mousedown', e => {
+  if (btn.disabled || isRequestActive) return;
+  pressTimer = setTimeout(() => {
+    startVoiceRecording();
+  }, 500); // 500ms for long press
 });
-voiceBtn.addEventListener('mouseup', stopVoiceRecording);
-voiceBtn.addEventListener('touchend', e => {
+btn.addEventListener('mouseup', e => {
+  clearTimeout(pressTimer);
+  if (isRecording) {
+    stopVoiceRecording();
+  }
+});
+btn.addEventListener('touchstart', e => {
   e.preventDefault();
-  stopVoiceRecording();
+  if (btn.disabled || isRequestActive) return;
+  pressTimer = setTimeout(() => {
+    startVoiceRecording();
+  }, 500);
+});
+btn.addEventListener('touchend', e => {
+  e.preventDefault();
+  clearTimeout(pressTimer);
+  if (isRecording) {
+    stopVoiceRecording();
+  }
 });
 
 // Submit.
 form.addEventListener('submit', e => {
   e.preventDefault();
-  submitMessage();
+  if (!isRecording) {
+    submitMessage();
+  }
 });
 
 // Handle Enter key to submit without adding new line.
 input.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    submitMessage();
+    if (!isRecording && !btn.disabled) {
+      submitMessage();
+    }
   }
+});
+
+// Auto-resize textarea on input.
+input.addEventListener('input', () => {
+  autoResizeTextarea();
+  btn.disabled = input.value.trim() === '' && fileInput.files.length === 0 && audioInput.files.length === 0;
 });
 
 // Stop.
@@ -517,8 +568,3 @@ if (loginBtn) {
     window.location.href = '/login';
   });
 }
-
-// Enable send button only if input has text or files.
-input.addEventListener('input', () => {
-  btn.disabled = input.value.trim() === '' && fileInput.files.length === 0 && audioInput.files.length === 0;
-});

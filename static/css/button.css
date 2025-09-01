@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#sendBtn, #stopBtn, #voiceBtn, #fileBtn, #audioBtn {
+#sendBtn, #stopBtn, #fileBtn, #audioBtn {
   width: 2.75rem;
   height: 2.75rem;
   border: none;
@@ -22,12 +22,17 @@
   color: white;
 }
 
-#sendBtn:hover:not(:disabled) {
+#sendBtn.recording {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  transform: scale(1.1);
+}
+
+#sendBtn:hover:not(:disabled):not(.recording) {
   transform: translateY(-2px) scale(1.05);
   box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
 
-#sendBtn:active:not(:disabled) {
+#sendBtn:active:not(:disabled):not(.recording) {
   transform: translateY(0) scale(0.98);
 }
 
@@ -53,25 +58,6 @@
   transform: translateY(0) scale(0.98);
 }
 
-#voiceBtn {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-}
-
-#voiceBtn.recording {
-  background: linear-gradient(135deg, #f87171, #ef4444);
-  transform: scale(1.1);
-}
-
-#voiceBtn:hover:not(.recording) {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
-}
-
-#voiceBtn:active:not(.recording) {
-  transform: translateY(0) scale(0.98);
-}
-
 #fileBtn, #audioBtn {
   background: linear-gradient(135deg, #6b7280, #4b5563);
   color: white;
@@ -93,6 +79,18 @@
   transition: transform 0.2s ease;
 }
 
-#sendBtn:hover:not(:disabled) #sendIcon {
+#sendBtn:hover:not(:disabled):not(.recording) #sendIcon {
   transform: translateX(2px);
+}
+
+#sendBtn.recording #sendIcon {
+  display: none;
+}
+
+#sendBtn.recording::after {
+  content: '';
+  width: 1rem;
+  height: 1rem;
+  background: url('/static/images/mic.svg') no-repeat center;
+  background-size: contain;
 }

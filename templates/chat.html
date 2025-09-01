@@ -119,7 +119,7 @@
       </div>
       <p class="system text-gray-300 mb-4">
         A versatile chatbot powered by DeepSeek, GPT-OSS, CLIP, Whisper, and TTS.<br>
-        Type your query, upload images/files, or record audio!
+        Type your query, upload images/files, or hold the send button to record audio!
       </p>
       <!-- Prompts -->
       <div class="prompts w-full max-w-md mx-auto grid gap-2">
@@ -176,14 +176,7 @@
             </svg>
           </button>
           <input type="file" id="audioInput" accept="audio/*" style="display: none;" />
-          <button type="button" id="voiceBtn" class="icon-btn" aria-label="Record Voice" title="Hold to Record Voice">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <path d="M12 19v4" />
-            </svg>
-          </button>
-          <button type="submit" id="sendBtn" class="icon-btn" disabled aria-label="Send" title="Send">
+          <button type="submit" id="sendBtn" class="icon-btn" disabled aria-label="Send or Hold to Record" title="Click to Send or Hold to Record Voice">
             <svg id="sendIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7M3 12h11" />
             </svg>
