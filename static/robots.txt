@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /utils/
+Disallow: /api/
+Disallow: /main.py
+Disallow: /mgzon_users.db
+Disallow: /data/
+Disallow: /Dockerfile
+Disallow: /space.yaml
+Disallow: /requirements.txt
+Allow: /static/robots.txt
+Allow: /static/sitemap.xml
+Allow: /static/google97468ef1f6b6e804.html
+Allow: /static/favicon.ico
+Allow: /static/css/
+Allow: /static/js/
+Sitemap: https://mgzon-mgzon-app.hf.space/static/sitemap.xml

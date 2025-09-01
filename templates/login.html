@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools. Sign in with email, Google, or GitHub.">
+  <meta name="keywords" content="MGZon Chatbot, login, AI assistant, code generation, e-commerce, Mark Al-Asfar">
+  <meta name="author" content="Mark Al-Asfar">
+  <meta name="robots" content="index, follow">
+  <title>Login - MGZon Chatbot</title>
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="apple-touch-icon" href="static/images/mg.svg">
+  <!-- Open Graph -->
+  <meta property="og:title" content="Login - MGZon Chatbot">
+  <meta property="og:description" content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools.">
+  <meta property="og:image" content="static/images/mg.svg">
+  <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/login">
+  <meta property="og:type" content="website">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Login - MGZon Chatbot">
+  <meta name="twitter:description" content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools.">
+  <meta name="twitter:image" content="static/images/mg.svg">
+  <!-- JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Login - MGZon Chatbot",
+  "url": "https://mgzon-mgzon-app.hf.space/login",
+  "description": "Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools. Sign in with email, Google, or GitHub.",
+  "keywords": ["MGZon Chatbot", "login", "AI chatbot", "code generation", "e-commerce", "Mark Al-Asfar", "MGZon", "MGZon AI", "E-commerce chatbot", "Python AI chatbot", "FastAPI integration"],
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "MGZon Chatbot",
+    "url": "https://mgzon-mgzon-app.hf.space/"
+  }
+}
+</script>
+  <!-- Tailwind (v3) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Boxicons -->
+  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <style>
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    body {
+      background: linear-gradient(135deg, #0f172a, #0e7490, #065f46, #064e3b);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+      font-family: system-ui, sans-serif;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .loading {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-left: 0.5rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .glass:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body class="text-white min-h-screen flex flex-col justify-center items-center">
+  <div class="container max-w-md mx-auto text-center py-12">
+    <img src="static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
+    <h1 class="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">
+      Login to MGZon Chatbot
+    </h1>
+    <div class="glass p-8">
+      <form id="loginForm" action="/auth/jwt/login" method="POST" class="flex flex-col gap-4">
+        <input type="email" name="username" id="email" placeholder="Email" class="p-3 rounded-lg bg-gray-800/60 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+        <input type="password" name="password" id="password" placeholder="Password" class="p-3 rounded-lg bg-gray-800/60 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+        <button type="submit" id="loginBtn" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+          Login <i class="bx bx-log-in ml-2"></i>
+          <span id="spinner" class="loading hidden"></span>
+        </button>
+      </form>
+      <div class="flex justify-center gap-4 mt-4 flex-wrap">
+        <a href="/auth/google/login" class="inline-flex items-center bg-gradient-to-r from-white to-gray-200 text-gray-800 px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+          Login with Google <i class="bx bxl-google ml-2"></i>
+        </a>
+        <a href="/auth/github/login" class="inline-flex items-center bg-gradient-to-r from-gray-800 to-black text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+          Login with GitHub <i class="bx bxl-github ml-2"></i>
+        </a>
+      </div>
+      <p class="mt-4">Don't have an account? <a href="/register" class="text-emerald-300 hover:underline">Register</a></p>
+      <p id="errorMsg" class="text-red-500 mt-4 hidden"></p>
+    </div>
+  </div>
+  <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 mt-8 w-full">
+    <div class="container max-w-6xl mx-auto text-center">
+      <img src="static/images/mg.svg" alt="MGZon Logo" class="w-24 h-24 mx-auto mb-6 animate-pulse">
+      <p class="mb-4">
+        Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
+        | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('email')">
+          <i class="bx bx-mail-send text-3xl text-emerald-300 mb-2"></i>
+          <h4 class="font-semibold mb-1">Email Us</h4>
+          <p><a href="mailto:support@mgzon.com" class="text-emerald-300 hover:underline">support@mgzon.com</a></p>
+          <div id="email-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
+            <p>Reach out to our support team for any inquiries or assistance.</p>
+            <button onclick="closeCardDetails('email')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+          </div>
+        </div>
+        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('phone')">
+          <i class="bx bx-phone text-3xl text-emerald-300 mb-2"></i>
+          <h4 class="font-semibold mb-1">Phone Support</h4>
+          <p>+1-800-123-4567</p>
+          <div id="phone-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
+            <p>Contact our support team via phone for immediate assistance.</p>
+            <button onclick="closeCardDetails('phone')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+          </div>
+        </div>
+        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('community')">
+          <i class="bx bx-group text-3xl text-emerald-300 mb-2"></i>
+          <h4 class="font-semibold mb-1">Community</h4>
+          <p><a href="https://hager-zon.vercel.app/community" class="text-emerald-300 hover:underline">Join us</a></p>
+          <div id="community-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
+            <p>Join our vibrant community to share ideas and collaborate.</p>
+            <button onclick="closeCardDetails('community')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+          </div>
+        </div>
+        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('api-docs')">
+          <i class="bx bx-code-alt text-3xl text-emerald-300 mb-2"></i>
+          <h4 class="font-semibold mb-1">API Docs</h4>
+          <p><a href="/docs" class="text-emerald-300 hover:underline">Explore Docs</a></p>
+          <div id="api-docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
+            <p>Explore our API documentation for seamless integration.</p>
+            <button onclick="closeCardDetails('api-docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+          </div>
+        </div>
+        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('faq')">
+          <i class="bx bx-help-circle text-3xl text-emerald-300 mb-2"></i>
+          <h4 class="font-semibold mb-1">FAQ</h4>
+          <p><a href="https://hager-zon.vercel.app/faq" target="_blank" class="text-emerald-300 hover:underline">Read FAQ</a></p>
+          <div id="faq-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
+            <p>Find answers to common questions in our FAQ section.</p>
+            <button onclick="closeCardDetails('faq')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+          </div>
+        </div>
+        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('docs')">
+          <i class="bx bx-book text-3xl text-emerald-300 mb-2"></i>
+          <h4 class="font-semibold mb-1">Documentation</h4>
+          <p><a href="/docs" class="text-emerald-300 hover:underline">Full Docs</a></p>
+          <div id="docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
+            <p>Access comprehensive documentation for MGZon Chatbot.</p>
+            <button onclick="closeCardDetails('docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-center gap-6 mt-6">
+        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-github"></i></a>
+        <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-twitter"></i></a>
+        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-facebook"></i></a>
+      </div>
+      <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
+    </div>
+  </footer>
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const spinner = document.getElementById('spinner');
+    const errorMsg = document.getElementById('errorMsg');
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      spinner.classList.remove('hidden');
+      errorMsg.classList.add('hidden');
+      const formData = new FormData(loginForm);
+      try {
+        const response = await fetch('/auth/jwt/login', {
+          method: 'POST',
+          body: formData
+        });
+        spinner.classList.add('hidden');
+        if (response.ok) {
+          window.location.href = '/chat';
+        } else {
+          const error = await response.json();
+          errorMsg.textContent = error.detail || 'Login failed. Please try again.';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (error) {
+        spinner.classList.add('hidden');
+        errorMsg.textContent = 'An error occurred. Please try again.';
+        errorMsg.classList.remove('hidden');
+      }
+    });
+    function showCardDetails(cardId) {
+      document.getElementById(`${cardId}-details`).classList.remove('hidden');
+    }
+    function closeCardDetails(cardId) {
+      document.getElementById(`${cardId}-details`).classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

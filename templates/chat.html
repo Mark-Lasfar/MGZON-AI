@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chat with MGZon Chatbot, an AI-powered tool for coding, analysis, and e-commerce queries. Supports text, image, and audio inputs." />
+  <meta name="keywords" content="MGZon Chatbot, AI chatbot, code generation, DeepSeek, Gradio, FastAPI, e-commerce, programming, Mark Al-Asfar" />
+  <meta name="author" content="Mark Al-Asfar" />
+  <meta name="robots" content="index, follow" />
+  <title>MGZon Chatbot – AI Assistant</title>
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="apple-touch-icon" href="static/images/mg.svg" />
+  <!-- Open Graph -->
+  <meta property="og:title" content="MGZon Chatbot – AI Assistant" />
+  <meta property="og:description" content="Chat with MGZon Chatbot for coding, analysis, and e-commerce queries with text, image, and audio support." />
+  <meta property="og:image" content="static/images/mg.svg" />
+  <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/chat" />
+  <meta property="og:type" content="website" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="MGZon Chatbot – AI Assistant" />
+  <meta name="twitter:description" content="Chat with MGZon Chatbot for coding, analysis, and e-commerce queries with text, image, and audio support." />
+  <meta name="twitter:image" content="static/images/mg.svg
+
+" />
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "MGZon Chatbot",
+    "url": "https://mgzon-mgzon-app.hf.space/chat",
+    "description": "An AI-powered chatbot for coding, analysis, and e-commerce queries."
+  }
+  </script>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+</head>
+<body>
+  <div id="mainHeader" style="display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <img src="static/images/mg.svg" alt="MGZon Logo" style="width: 100px; margin-bottom: 10px;">
+    <h1>MGZon Chatbot</h1>
+  </div>
+  <div id="chatHeader" style="display: none;" aria-hidden="true">
+    <div class="chat-title">MGZon Chatbot</div>
+    <div class="chat-controls">
+      <button id="homeBtn" aria-label="Home">🏠</button>
+      <button id="clearBtn" aria-label="Clear Chat">🗑️</button>
+      {% if not user %}
+        <button id="loginBtn" class="bg-gradient-to-r from-blue-500 to-cyan-600 text-white px-4 py-2 rounded" aria-label="Login">Login</button>
+      {% endif %}
+    </div>
+  </div>
+  <div id="initialContent" style="text-align: center; padding: 20px;">
+    <p>A versatile chatbot powered by DeepSeek, GPT-OSS, CLIP, Whisper, and TTS. Type your query, upload images/files, or record audio!</p>
+    <div class="prompt-item" data-prompt="What's the capital of France?">Capital of France</div>
+    <div class="prompt-item" data-prompt="Generate a Python script for a simple web server">Python Web Server</div>
+  </div>
+  <div class="chat-section">
+    <div id="chatArea">
+      <div id="chatBox" class="flex-col" aria-live="polite"></div>
+      <div id="messageLimitWarning" class="text-red-500 text-center hidden">You have reached the message limit. Please <a href="/login" class="text-blue-300 underline">login</a> to continue.</div>
+    </div>
+    <form id="footerForm" class="flex p-3 bg-transparent" autocomplete="off" style="position: relative; margin-top: auto; width: 100%;">
+      <div id="inputContainer">
+        <input type="text" id="userInput" placeholder="Ask anything..." required style="word-break:break-word;" />
+        <div id="rightIconGroup">
+          <button type="button" id="fileBtn" aria-label="Upload File">📎</button>
+          <input type="file" id="fileInput" accept="image/*,.mp3,.wav" style="display: none;" />
+          <button type="button" id="audioBtn" aria-label="Record Audio">🎤</button>
+          <input type="file" id="audioInput" accept="audio/*" style="display: none;" />
+          <button type="submit" id="sendBtn" disabled aria-label="Send">
+            <svg id="sendIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7M3 12h11" />
+            </svg>
+          </button>
+          <button id="stopBtn" class="icon-btn" aria-label="Stop" title="Stop" style="display: none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="12" height="12" rx="2" fill="white" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </form>
+    <div id="filePreview" class="upload-preview" style="display: none;"></div>
+    <div id="audioPreview" class="audio-preview" style="display: none;"></div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.0/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script src="/static/js/chat.js"></script>
+</body>
+</html>
