@@ -123,26 +123,26 @@
       </p>
       <!-- Prompts -->
       <div class="prompts w-full max-w-md mx-auto grid gap-2">
-        <div class="prompt-item" data-prompt="What's the capital of France?" style="word-break: break-word;">
+        <div class="prompt-item" data-prompt="What's the capital of France?">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M18.66 18.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M18.66 5.34l1.41-1.41" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             <circle cx="12" cy="12" r="4" stroke-width="2" />
           </svg>
           <span>What's the capital of France?</span>
         </div>
-        <div class="prompt-item" data-prompt="Generate a Python script for a simple web server" style="word-break: break-word;">
+        <div class="prompt-item" data-prompt="Generate a Python script for a simple web server">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M4 7h16M4 12h16M4 17h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           <span>Generate a Python script for a simple web server</span>
         </div>
-        <div class="prompt-item" data-prompt="Analyze this image for me" style="word-break: break-word;">
+        <div class="prompt-item" data-prompt="Analyze this image for me">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M3 12h18M12 3v18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           <span>Analyze this image for me</span>
         </div>
-        <div class="prompt-item" data-prompt="Convert this text to audio" style="word-break: break-word;">
+        <div class="prompt-item" data-prompt="Convert this text to audio">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M12 3v18M7 12h10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
@@ -157,9 +157,9 @@
       <div id="chatBox" class="flex-col" aria-live="polite"></div>
     </div>
     <!-- Footer Form -->
-    <form id="footerForm" class="flex p-3 bg-transparent" autocomplete="off" style="position: relative; margin-top: auto; width: 100%;">
+    <form id="footerForm" class="flex" autocomplete="off">
       <div id="inputContainer" class="w-full">
-        <input type="text" id="userInput" placeholder="Ask anything..." required style="word-break: break-word;" />
+        <textarea id="userInput" placeholder="Ask anything..." required></textarea>
         <div id="rightIconGroup" class="flex gap-2">
           <button type="button" id="fileBtn" class="icon-btn" aria-label="Upload File" title="Upload File">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
@@ -168,7 +168,7 @@
             </svg>
           </button>
           <input type="file" id="fileInput" accept="image/*,.mp3,.wav" style="display: none;" />
-          <button type="button" id="audioBtn" class="icon-btn" aria-label="Record Audio" title="Record Audio">
+          <button type="button" id="audioBtn" class="icon-btn" aria-label="Upload Audio File" title="Upload Audio File">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
@@ -176,6 +176,13 @@
             </svg>
           </button>
           <input type="file" id="audioInput" accept="audio/*" style="display: none;" />
+          <button type="button" id="voiceBtn" class="icon-btn" aria-label="Record Voice" title="Hold to Record Voice">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <path d="M12 19v4" />
+            </svg>
+          </button>
           <button type="submit" id="sendBtn" class="icon-btn" disabled aria-label="Send" title="Send">
             <svg id="sendIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7M3 12h11" />
@@ -194,48 +201,48 @@
   </main>
 
   <!-- Footer -->
-  <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 w-full">
+  <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 w-full">
     <div class="container max-w-6xl mx-auto text-center">
-      <img src="/static/images/mg.svg" alt="MGZon Logo" class="w-24 h-24 mx-auto mb-6 animate-pulse">
-      <p class="mb-4">
+      <img src="/static/images/mg.svg" alt="MGZon Logo" class="w-16 h-16 mx-auto mb-4 animate-pulse">
+      <p class="mb-2 text-sm">
         Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
         | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
       </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('email')">
-          <i class="bx bx-mail-send text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Email Us</h4>
-          <p><a href="mailto:support@mgzon.com" class="text-emerald-300 hover:underline">support@mgzon.com</a></p>
-          <div id="email-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Reach out to our support team for any inquiries or assistance.</p>
-            <button onclick="closeCardDetails('email')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div class="glass p-3 cursor-pointer" onclick="showCardDetails('email')">
+          <i class="bx bx-mail-send text-2xl text-emerald-300 mb-1"></i>
+          <h4 class="font-semibold mb-1 text-sm">Email Us</h4>
+          <p class="text-xs"><a href="mailto:support@mgzon.com" class="text-emerald-300 hover:underline">support@mgzon.com</a></p>
+          <div id="email-details" class="hidden mt-2 p-3 bg-gray-700/80 rounded-lg">
+            <p class="text-xs">Reach out to our support team for any inquiries or assistance.</p>
+            <button onclick="closeCardDetails('email')" class="bg-emerald-500 text-white px-3 py-1 rounded-lg mt-2 text-xs">Close</button>
           </div>
         </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('phone')">
-          <i class="bx bx-phone text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Phone Support</h4>
-          <p>+1-800-123-4567</p>
-          <div id="phone-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Contact our support team via phone for immediate assistance.</p>
-            <button onclick="closeCardDetails('phone')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+        <div class="glass p-3 cursor-pointer" onclick="showCardDetails('phone')">
+          <i class="bx bx-phone text-2xl text-emerald-300 mb-1"></i>
+          <h4 class="font-semibold mb-1 text-sm">Phone Support</h4>
+          <p class="text-xs">+1-800-123-4567</p>
+          <div id="phone-details" class="hidden mt-2 p-3 bg-gray-700/80 rounded-lg">
+            <p class="text-xs">Contact our support team via phone for immediate assistance.</p>
+            <button onclick="closeCardDetails('phone')" class="bg-emerald-500 text-white px-3 py-1 rounded-lg mt-2 text-xs">Close</button>
           </div>
         </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('community')">
-          <i class="bx bx-group text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Community</h4>
-          <p><a href="https://hager-zon.vercel.app/community" class="text-emerald-300 hover:underline">Join us</a></p>
-          <div id="community-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Join our vibrant community to share ideas and collaborate.</p>
-            <button onclick="closeCardDetails('community')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+        <div class="glass p-3 cursor-pointer" onclick="showCardDetails('community')">
+          <i class="bx bx-group text-2xl text-emerald-300 mb-1"></i>
+          <h4 class="font-semibold mb-1 text-sm">Community</h4>
+          <p class="text-xs"><a href="https://hager-zon.vercel.app/community" class="text-emerald-300 hover:underline">Join us</a></p>
+          <div id="community-details" class="hidden mt-2 p-3 bg-gray-700/80 rounded-lg">
+            <p class="text-xs">Join our vibrant community to share ideas and collaborate.</p>
+            <button onclick="closeCardDetails('community')" class="bg-emerald-500 text-white px-3 py-1 rounded-lg mt-2 text-xs">Close</button>
           </div>
         </div>
       </div>
-      <div class="flex justify-center gap-6 mt-6">
-        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-github"></i></a>
-        <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-twitter"></i></a>
-        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-facebook"></i></a>
+      <div class="flex justify-center gap-4 mt-4">
+        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-xl text-white hover:text-emerald-300 transition"><i class="bx bxl-github"></i></a>
+        <a href="https://x.com/MGZon" class="text-xl text-white hover:text-emerald-300 transition"><i class="bx bxl-twitter"></i></a>
+        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-xl text-white hover:text-emerald-300 transition"><i class="bx bxl-facebook"></i></a>
       </div>
-      <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
+      <p class="mt-4 text-xs">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
     </div>
   </footer>
 
@@ -244,40 +251,12 @@
   <script src="/static/js/chat.js"></script>
   <script>
     AOS.init();
-    document.addEventListener('DOMContentLoaded', () => {
-      const prompts = document.querySelectorAll('.prompt-item');
-      prompts.forEach(prompt => {
-        prompt.addEventListener('click', () => {
-          document.getElementById('userInput').value = prompt.getAttribute('data-prompt');
-          document.getElementById('footerForm').dispatchEvent(new Event('submit'));
-        });
-      });
-      document.getElementById('homeBtn').addEventListener('click', () => {
-        window.location.href = '/';
-      });
-      document.getElementById('clearBtn').addEventListener('click', () => {
-        document.getElementById('chatBox').innerHTML = '';
-        document.getElementById('initialContent').classList.remove('hidden');
-        document.getElementById('chatArea').classList.add('hidden');
-      });
-      document.getElementById('fileBtn').addEventListener('click', () => {
-        document.getElementById('fileInput').click();
-      });
-      document.getElementById('audioBtn').addEventListener('click', () => {
-        document.getElementById('audioInput').click();
-      });
-      {% if not user %}
-        document.getElementById('loginBtn').addEventListener('click', () => {
-          window.location.href = '/login';
-        });
-      {% endif %}
-      function showCardDetails(cardId) {
-        document.getElementById(`${cardId}-details`).classList.remove('hidden');
-      }
-      function closeCardDetails(cardId) {
-        document.getElementById(`${cardId}-details`).classList.add('hidden');
-      }
-    });
+    function showCardDetails(cardId) {
+      document.getElementById(`${cardId}-details`).classList.remove('hidden');
+    }
+    function closeCardDetails(cardId) {
+      document.getElementById(`${cardId}-details`).classList.add('hidden');
+    }
   </script>
 </body>
 </html>
