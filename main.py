@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
 from api.auth import fastapi_users, auth_backend, current_active_user, google_oauth_client, github_oauth_client
 from api.database import get_db, engine, Base
-from api.models import User
+from api.models import User, UserRead, UserCreate
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from typing import List
@@ -85,12 +85,12 @@ app.include_router(
     tags=["auth"],
 )
 app.include_router(
-    fastapi_users.get_register_router(),
+    fastapi_users.get_register_router(UserRead, UserCreate),
     prefix="/auth",
     tags=["auth"],
 )
 app.include_router(
-    fastapi_users.get_users_router(),
+    fastapi_users.get_users_router(UserRead, UserCreate),
     prefix="/users",
     tags=["users"],
 )

@@ -1,10 +1,10 @@
-# api/models.py
 from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyBaseOAuthAccountTable
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from fastapi_users import schemas
 
 Base = declarative_base()
 
@@ -13,6 +13,7 @@ class OAuthAccount(SQLAlchemyBaseOAuthAccountTable, Base):
     __tablename__ = "oauth_accounts"
     id = Column(Integer, primary_key=True)
     user = relationship("User", back_populates="oauth_accounts")
+
 # نموذج المستخدم
 class User(SQLAlchemyBaseUserTable, Base):
     __tablename__ = "users"
@@ -23,7 +24,20 @@ class User(SQLAlchemyBaseUserTable, Base):
     is_superuser = Column(Boolean, default=False)
     oauth_accounts = relationship("OAuthAccount", back_populates="user")
 
-# نموذج طلب الاستعلام (كما هو)
+# Pydantic schemas for fastapi-users
+class UserRead(schemas.BaseUser[int]):
+    id: int
+    email: str
+    is_active: bool = True
+    is_superuser: bool = False
+
+class UserCreate(schemas.BaseUserCreate):
+    email: str
+    password: str
+    is_active: Optional[bool] = True
+    is_superuser: Optional[bool] = False
+
+# نموذج طلب الاستعلام
 class QueryRequest(BaseModel):
     message: str
     system_prompt: Optional[str] = "You are an expert assistant providing detailed, comprehensive, and well-structured responses."
