@@ -8,12 +8,14 @@
   align-items: center;
   flex: 1;
   background: linear-gradient(145deg, #1a1a1a, #141414);
-  border-radius: 2rem;
+  border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.25rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  max-width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 #inputContainer:focus-within {
@@ -25,8 +27,8 @@
 
 #userInput {
   flex: 1;
-  padding: 0.75rem 0.75rem;
-  border-radius: 2rem;
+  padding: 0.75rem 3rem 0.75rem 0.75rem;
+  border-radius: 1rem;
   border: 1px solid transparent;
   background-color: transparent;
   color: #e0e0e0;
@@ -35,7 +37,25 @@
   transition: border-color 0.2s, background-color 0.2s;
   word-break: break-word;
   overflow-wrap: break-word;
-  max-width: 100%;
-  min-width: 0;
+  min-height: 40px;
+  max-height: 120px;
+  resize: vertical;
   font-family: 'Inter', sans-serif;
+}
+
+#rightIconGroup {
+  position: absolute;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  #inputContainer {
+    max-width: 100%;
+    padding: 0.25rem 0.5rem;
+  }
+  #userInput {
+    padding: 0.5rem 2.5rem 0.5rem 0.5rem;
+  }
 }
