@@ -38,5 +38,5 @@ fastapi_users = FastAPIUsers[User, int](
     [auth_backend],
 )
 
-# Dependency للحصول على المستخدم الحالي
-current_active_user = fastapi_users.current_user(active=True)
+# Dependency للحصول على المستخدم الحالي (اختياري)
+current_active_user = fastapi_users.current_user(active=True, optional=True)  # ← تغيير هنا

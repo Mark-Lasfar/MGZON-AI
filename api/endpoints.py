@@ -3,12 +3,11 @@ import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File
 from fastapi.responses import StreamingResponse
-from api.models import QueryRequest
+from api.models import QueryRequest, User
 from api.auth import current_active_user
 from api.database import get_db
 from sqlalchemy.orm import Session
 from utils.generation import request_generation, select_model
-from utils.web_search import web_search
 import io
 from openai import OpenAI
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -29,6 +28,8 @@ TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
 
 # إعداد MongoDB
 MONGO_URI = os.getenv("MONGODB_URI")
+if not MONGO_URI:
+    raise ValueError("MONGODB_URI is not set in environment variables.")
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["hager"]
 session_message_counts = db["session_message_counts"]
@@ -60,7 +61,7 @@ async def performance_stats():
 async def chat_endpoint(
     request: Request,
     req: QueryRequest,
-    user: str = Depends(current_active_user, use_cache=False),
+    user: User = Depends(current_active_user),
     db: Session = Depends(get_db)
 ):
     session_id = request.session.get("session_id")
@@ -109,7 +110,7 @@ async def chat_endpoint(
 async def audio_transcription_endpoint(
     request: Request,
     file: UploadFile = File(...),
-    user: str = Depends(current_active_user, use_cache=False),
+    user: User = Depends(current_active_user),
     db: Session = Depends(get_db)
 ):
     session_id = request.session.get("session_id")
@@ -155,7 +156,7 @@ async def audio_transcription_endpoint(
 async def text_to_speech_endpoint(
     request: Request,
     req: dict,
-    user: str = Depends(current_active_user, use_cache=False),
+    user: User = Depends(current_active_user),
     db: Session = Depends(get_db)
 ):
     session_id = request.session.get("session_id")
@@ -200,7 +201,7 @@ async def text_to_speech_endpoint(
 async def code_endpoint(
     request: Request,
     req: dict,
-    user: str = Depends(current_active_user, use_cache=False),
+    user: User = Depends(current_active_user),
     db: Session = Depends(get_db)
 ):
     session_id = request.session.get("session_id")
@@ -252,7 +253,7 @@ async def code_endpoint(
 async def analysis_endpoint(
     request: Request,
     req: dict,
-    user: str = Depends(current_active_user, use_cache=False),
+    user: User = Depends(current_active_user),
     db: Session = Depends(get_db)
 ):
     session_id = request.session.get("session_id")
@@ -302,7 +303,7 @@ async def image_analysis_endpoint(
     request: Request,
     file: UploadFile = File(...),
     output_format: str = "text",
-    user: str = Depends(current_active_user, use_cache=False),
+    user: User = Depends(current_active_user),
     db: Session = Depends(get_db)
 ):
     session_id = request.session.get("session_id")
