@@ -1,4 +1,3 @@
-# main.py
 import os
 import logging
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Query
@@ -62,7 +61,7 @@ CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 app = FastAPI(title="MGZon Chatbot API")
 
 # إضافة SessionMiddleware
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("JWT_SECRET"), cookie_secure=True)
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("JWT_SECRET"))
 
 # إنشاء الجداول تلقائيًا
 Base.metadata.create_all(bind=engine)
@@ -123,31 +122,31 @@ app.add_middleware(NotFoundMiddleware)
 
 # Root endpoint
 @app.get("/", response_class=HTMLResponse)
-async def root(request: Request, user: User = Depends(current_active_user)):
+async def root(request: Request, user: User = Depends(fastapi_users.current_user(optional=True))):
     return templates.TemplateResponse("index.html", {"request": request, "user": user})
 
 # Login page
 @app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request, user: User = Depends(current_active_user)):
+async def login_page(request: Request, user: User = Depends(fastapi_users.current_user(optional=True))):
     if user:
         return RedirectResponse(url="/chat", status_code=302)
     return templates.TemplateResponse("login.html", {"request": request})
 
 # Register page
 @app.get("/register", response_class=HTMLResponse)
-async def register_page(request: Request, user: User = Depends(current_active_user)):
+async def register_page(request: Request, user: User = Depends(fastapi_users.current_user(optional=True))):
     if user:
         return RedirectResponse(url="/chat", status_code=302)
     return templates.TemplateResponse("register.html", {"request": request})
 
 # Chat endpoint
 @app.get("/chat", response_class=HTMLResponse)
-async def chat(request: Request, user: User = Depends(current_active_user)):
+async def chat(request: Request, user: User = Depends(fastapi_users.current_user(optional=True))):
     return templates.TemplateResponse("chat.html", {"request": request, "user": user})
 
 # About endpoint
 @app.get("/about", response_class=HTMLResponse)
-async def about(request: Request, user: User = Depends(current_active_user)):
+async def about(request: Request, user: User = Depends(fastapi_users.current_user(optional=True))):
     return templates.TemplateResponse("about.html", {"request": request, "user": user})
 
 # Blog endpoint (قائمة المقالات)
