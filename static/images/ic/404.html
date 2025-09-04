@@ -1,21 +1,17 @@
-<!-- templates/500.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>500 - Server Error</title>
+    <title>404 - Page Not Found</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <link rel="icon" href="/static/images/icons/mg-192.png" sizes="192x192">
-<link rel="manifest" href="/static/manifest.json">
-
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col">
     <div class="container max-w-6xl mx-auto text-center py-12 flex-1">
         <img src="https://raw.githubusercontent.com/Mark-Lasfar/MGZon/main/public/icons/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
-        <h1 class="text-5xl font-bold mb-4">500 - Server Error 😓</h1>
-        <p class="text-lg mb-8">Something went wrong on our end. Please try again later or contact support.</p>
+        <h1 class="text-5xl font-bold mb-4">404 - Page Not Found 😕</h1>
+        <p class="text-lg mb-8">Oops! Looks like you wandered into the wrong corner of the internet.</p>
         <a href="/" class="inline-block bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition transform">Back to Home</a>
     </div>
     <footer class="bg-gradient-to-r from-blue-900 to-gray-900 py-12">
@@ -31,15 +27,5 @@
         </div>
     </footer>
     <script src="/static/js/scripts.js"></script>
-      <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/static/js/sw.js')
-        .then(function(reg) {
-          console.log('✅ Service Worker Registered', reg);
-        }).catch(function(err) {
-          console.error('❌ Service Worker registration failed', err);
-        });
-    }
-  </script>
 </body>
 </html>
