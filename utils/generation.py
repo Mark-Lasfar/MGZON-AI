@@ -35,13 +35,24 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:together")
-SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mistral-7B-Instruct-v0.2:featherless-ai")
-TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-20b:together")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")
+SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mistral-7B-Instruct-v0.2")
+TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-20b")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
 CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
 ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
 TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
+
+# Model alias mapping
+MODEL_ALIASES = {
+    "advanced": MODEL_NAME,
+    "standard": SECONDARY_MODEL_NAME,
+    "light": TERTIARY_MODEL_NAME,
+    "image_base": CLIP_BASE_MODEL,
+    "image_advanced": CLIP_LARGE_MODEL,
+    "audio": ASR_MODEL,
+    "tts": TTS_MODEL
+}
 
 def check_model_availability(model_name: str, api_base: str, api_key: str) -> tuple[bool, str]:
     try:
@@ -64,7 +75,16 @@ def check_model_availability(model_name: str, api_base: str, api_key: str) -> tu
             return check_model_availability(model_name, api_base, BACKUP_HF_TOKEN)
         return False, api_key
 
-def select_model(query: str, input_type: str = "text") -> tuple[str, str]:
+def select_model(query: str, input_type: str = "text", preferred_model: Optional[str] = None) -> tuple[str, str]:
+    # If user has a preferred model, use it unless the input type requires a specific model
+    if preferred_model and preferred_model in MODEL_ALIASES:
+        model_name = MODEL_ALIASES[preferred_model]
+        api_endpoint = API_ENDPOINT if model_name in [MODEL_NAME, TERTIARY_MODEL_NAME] else FALLBACK_API_ENDPOINT
+        is_available, _ = check_model_availability(model_name, api_endpoint, HF_TOKEN)
+        if is_available:
+            logger.info(f"Selected preferred model {model_name} with endpoint {api_endpoint} for query: {query}")
+            return model_name, api_endpoint
+
     query_lower = query.lower()
     # دعم الصوت
     if input_type == "audio" or any(keyword in query_lower for keyword in ["voice", "audio", "speech", "صوت", "تحويل صوت"]):
@@ -106,7 +126,7 @@ def request_generation(
     model_name: str,
     chat_history: Optional[List[dict]] = None,
     temperature: float = 0.7,
-    max_new_tokens: int = 128000,
+    max_new_tokens: int = 2048,
     reasoning_effort: str = "off",
     tools: Optional[List[dict]] = None,
     tool_choice: Optional[str] = None,
@@ -176,7 +196,7 @@ def request_generation(
             torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
             audio_file.seek(0)
             audio_data = audio_file.read()
-            yield audio_data  # ← تصحيح: استخدام yield مع البيانات مباشرة
+            yield audio_data
             cache[cache_key] = [audio_data]
             return
         except Exception as e:

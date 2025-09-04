@@ -3,44 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools. Sign in with email, Google, or GitHub.">
-  <meta name="keywords" content="MGZon Chatbot, login, AI assistant, code generation, e-commerce, Mark Al-Asfar">
+  <meta name="description" content="Read the latest blog posts from MGZon AI about AI, coding, and e-commerce trends.">
+  <meta name="keywords" content="MGZon AI, blog, AI trends, code generation, e-commerce, Mark Al-Asfar">
   <meta name="author" content="Mark Al-Asfar">
   <meta name="robots" content="index, follow">
-  <title>Login - MGZon Chatbot</title>
-  <!-- manifest for Android/Chrome -->
-<link rel="manifest" href="/static/manifest.json">
-
-<!-- iOS Web App Support -->
-<link rel="apple-touch-icon" sizes="180x180" href="/static/images/icons/mg-180.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="MGZon">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- General Theme -->
-<meta name="theme-color" content="#2d3748">
-
+  <title>Blog - MGZon AI</title>
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+<link rel="apple-touch-icon" href="/static/images/mg.svg">
   <!-- Open Graph -->
-  <meta property="og:title" content="Login - MGZon Chatbot">
-  <meta property="og:description" content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools.">
-  <meta property="og:image" content="/static/images/mg.svg">
-  <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/login">
+  <meta property="og:title" content="Blog - MGZon AI">
+  <meta property="og:description" content="Read the latest blog posts from MGZon AI about AI, coding, and e-commerce trends.">
+<meta property="og:image" content="/static/images/mg.svg">
+  <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/blog">
   <meta property="og:type" content="website">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Login - MGZon Chatbot">
-  <meta name="twitter:description" content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools.">
-  <meta name="twitter:image" content="/static/images/mg.svg">
+  <meta name="twitter:title" content="Blog - MGZon AI">
+  <meta name="twitter:description" content="Read the latest blog posts from MGZon AI about AI, coding, and e-commerce trends.">
+<meta name="twitter:image" content="/static/images/mg.svg">
   <!-- JSON-LD -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "WebPage",
-  "name": "Login - MGZon Chatbot",
-  "url": "https://mgzon-mgzon-app.hf.space/login",
-  "description": "Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools. Sign in with email, Google, or GitHub.",
-  "keywords": ["MGZon Chatbot", "login", "AI chatbot", "code generation", "e-commerce", "Mark Al-Asfar", "MGZon", "MGZon AI", "E-commerce chatbot", "Python AI chatbot", "FastAPI integration"],
+  "@type": "Blog",
+  "name": "MGZon AI Blog",
+  "url": "https://mgzon-mgzon-app.hf.space/blog",
+  "description": "Read the latest blog posts from MGZon AI about AI, coding, and e-commerce trends.",
+  "keywords": ["MGZon Chatbot", "blog", "AI trends", "code generation", "e-commerce", "Mark Al-Asfar", "MGZon", "MGZon AI", "AI chatbot", "Code generation bot", "E-commerce chatbot", "Python AI chatbot", "AI for coding", "E-commerce automation", "2025 AI trends", "chatgpt", "grok", "deepseek", "text generation"],
   "isPartOf": {
     "@type": "WebSite",
     "name": "MGZon Chatbot",
@@ -71,56 +60,83 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
-    .loading {
-      display: inline-block;
-      width: 1rem;
-      height: 1rem;
-      border: 2px solid currentColor;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-left: 0.5rem;
+    .sidebar {
+      transition: transform 0.3s ease-in-out;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .sidebar.collapsed .logo {
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .main-content {
+      min-height: calc(100vh - 4rem);
     }
     .glass:hover {
       transform: scale(1.05);
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
       background: rgba(255, 255, 255, 0.15);
     }
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.active {
+        transform: translateX(0);
+      }
+    }
   </style>
 </head>
-<body class="text-white min-h-screen flex flex-col justify-center items-center">
-  <div class="container max-w-md mx-auto text-center py-12">
-    <img src="/static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
-    <h1 class="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">
-      Login to MGZon Chatbot
-    </h1>
-    <div class="glass p-8">
-      <form id="loginForm" action="/auth/jwt/login" method="POST" class="flex flex-col gap-4">
-        <input type="email" name="username" id="email" placeholder="Email" class="p-3 rounded-lg bg-gray-800/60 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-        <input type="password" name="password" id="password" placeholder="Password" class="p-3 rounded-lg bg-gray-800/60 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-        <button type="submit" id="loginBtn" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
-          Login <i class="bx bx-log-in ml-2"></i>
-          <span id="spinner" class="loading hidden"></span>
-        </button>
-      </form>
-      <div class="flex justify-center gap-4 mt-4 flex-wrap">
-        <a href="/auth/google/authorize" class="inline-flex items-center bg-gradient-to-r from-white to-gray-200 text-gray-800 px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
-          Login with Google <i class="bx bxl-google ml-2"></i>
-        </a>
-        <a href="/auth/github/authorize" class="inline-flex items-center bg-gradient-to-r from-gray-800 to-black text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
-          Login with GitHub <i class="bx bxl-github ml-2"></i>
-        </a>
+<body class="text-white flex flex-col min-h-screen">
+  <!-- Mobile toggle button -->
+  <button id="sidebarToggle" class="md:hidden fixed top-4 left-4 z-50 p-2 text-2xl text-white rounded bg-gray-800/60 hover:bg-gray-700/80 transition" aria-label="Toggle navigation">
+    <i class="bx bx-menu"></i>
+  </button>
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-teal-800 to-emerald-900 p-6 flex flex-col overflow-y-auto z-40">
+    <button id="closeSidebar" class="md:hidden text-white text-2xl absolute top-4 right-4" aria-label="Close sidebar">✕</button>
+<img src="/static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
+    <nav class="flex flex-col gap-3">
+      <a href="/" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Home</a>
+      <a href="/docs" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">API Documentation</a>
+      <a href="/about" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">About MGZon</a>
+      <a href="/login" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Login</a>
+      <a href="/register" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Register</a>
+      <a href="/blog" class="px-4 py-2 rounded-lg bg-emerald-600">Blog</a>
+      <a href="https://hager-zon.vercel.app/community" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Community</a>
+      <a href="https://mark-elasfar.web.app/" target="_blank" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Mark Al-Asfar</a>
+    </nav>
+  </aside>
+  <!-- Main content -->
+  <main class="flex-1 md:ml-64 p-6 main-content">
+    <section class="container max-w-6xl mx-auto">
+      <div class="text-center py-12">
+<img src="/static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
+        <h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">
+          MGZon AI Blog
+        </h1>
+        <p class="text-lg max-w-2xl mx-auto mb-8">
+  Stay updated with the latest trends in AI, coding, and e-commerce from MGZon AI. Explore topics like text generation, Python AI chatbots, and 2025 AI trends with insights from Mark Al-Asfar.
+        </p>
       </div>
-      <p class="mt-4">Don't have an account? <a href="/register" class="text-emerald-300 hover:underline">Register</a></p>
-      <p id="errorMsg" class="text-red-500 mt-4 hidden"></p>
+      <!-- Blog Posts -->
+<section class="my-12">
+  <h2 class="text-3xl font-bold text-center mb-8">Latest Posts</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% for post in posts %}
+    <div class="glass p-6">
+      <h3 class="text-xl font-semibold mb-2">{{ post.title }}</h3>
+      <p class="mb-4">{{ post.content | truncate(100) }}</p>
+      <p class="text-sm text-gray-300">By {{ post.author }} | {{ post.date }}</p>
+      <a href="/blog/{{ post.id }}" class="text-emerald-300 hover:underline">Read More →</a>
     </div>
+    {% endfor %}
   </div>
-  <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 mt-8 w-full">
+</section>
+    </section>
+  </main>
+  <!-- Footer -->
+  <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 mt-8">
     <div class="container max-w-6xl mx-auto text-center">
-      <img src="/static/images/mg.svg" alt="MGZon Logo" class="w-24 h-24 mx-auto mb-6 animate-pulse">
+<img src="/static/images/mg.svg" alt="MGZon Chatbot Logo by Mark Al-Asfar" class="w-32 h-32 mx-auto mb-6 animate-bounce">
       <p class="mb-4">
         Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
         | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
@@ -188,37 +204,26 @@
       </div>
       <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
     </div>
-    <button id="installAppBtn" style="display: none;" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
-      📲 Install MG Chat
-    </button>
   </footer>
   <script>
-    const loginForm = document.getElementById('loginForm');
-    const loginBtn = document.getElementById('loginBtn');
-    const spinner = document.getElementById('spinner');
-    const errorMsg = document.getElementById('errorMsg');
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      spinner.classList.remove('hidden');
-      errorMsg.classList.add('hidden');
-      const formData = new FormData(loginForm);
-      try {
-        const response = await fetch('/auth/jwt/login', {
-          method: 'POST',
-          body: formData
-        });
-        spinner.classList.add('hidden');
-        if (response.ok) {
-          window.location.href = '/chat';
-        } else {
-          const error = await response.json();
-          errorMsg.textContent = error.detail || 'Login failed. Please try again.';
-          errorMsg.classList.remove('hidden');
-        }
-      } catch (error) {
-        spinner.classList.add('hidden');
-        errorMsg.textContent = 'An error occurred. Please try again.';
-        errorMsg.classList.remove('hidden');
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const closeSidebarBtn = document.getElementById('closeSidebar');
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+      sidebar.classList.toggle('-translate-x-full');
+      sidebar.classList.toggle('translate-x-0');
+    });
+    closeSidebarBtn.addEventListener('click', () => {
+      sidebar.classList.remove('active');
+      sidebar.classList.add('-translate-x-full');
+      sidebar.classList.remove('translate-x-0');
+    });
+    document.addEventListener('click', (e) => {
+      if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target) && window.innerWidth < 768) {
+        sidebar.classList.remove('active');
+        sidebar.classList.add('-translate-x-full');
+        sidebar.classList.remove('translate-x-0');
       }
     });
     function showCardDetails(cardId) {
@@ -227,39 +232,6 @@
     function closeCardDetails(cardId) {
       document.getElementById(`${cardId}-details`).classList.add('hidden');
     }
-
-  // تسجيل Service Worker لتفعيل الـ PWA
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/js/sw.js')
-      .then(function(reg) {
-        console.log('✅ Service Worker Registered', reg);
-      }).catch(function(err) {
-        console.error('❌ Service Worker registration failed', err);
-      });
-  }
-
-  // التعامل مع حدث beforeinstallprompt لتثبيت التطبيق
-  let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const installBtn = document.getElementById('installAppBtn');
-    if (installBtn) {
-      installBtn.style.display = 'block';
-
-      installBtn.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(choice => {
-          if (choice.outcome === 'accepted') {
-            console.log('✅ User accepted the install prompt');
-          } else {
-            console.log('❌ User dismissed the install prompt');
-          }
-          deferredPrompt = null;
-        });
-      });
-    }
-  });
   </script>
 </body>
 </html>

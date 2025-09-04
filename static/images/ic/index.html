@@ -10,18 +10,7 @@ United States, FastAPI, Gradio">
   <meta name="robots" content="index, follow">
   <title>MGZon Chatbot – Powered by AI</title>
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-<!-- manifest for Android/Chrome -->
-<link rel="manifest" href="/static/manifest.json">
-
-<!-- iOS Web App Support -->
-<link rel="apple-touch-icon" sizes="180x180" href="/static/images/icons/mg-180.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="MGZon">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- General Theme -->
-<meta name="theme-color" content="#2d3748">
-
+  <link rel="apple-touch-icon" href="/static/images/mg.svg">
   <!-- Open Graph -->
   <meta property="og:title" content="MGZon Chatbot – AI-Powered Solutions">
   <meta property="og:description" content="Explore MGZon Chatbot for code generation, web search, and e-commerce solutions by Mark Al-Asfar.">
@@ -314,9 +303,6 @@ United States. Ready to code smarter and shop better?
       </div>
       <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
     </div>
-        <button id="installAppBtn" style="display: none;" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
-      📲 Install MG Chat
-    </button>
   </footer>
   <script>
     const sidebar = document.getElementById('sidebar');
@@ -351,38 +337,6 @@ United States. Ready to code smarter and shop better?
       spinner.classList.remove('hidden');
       setTimeout(() => spinner.classList.add('hidden'), 2000);
     });
-    
-    if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/js/sw.js')
-      .then(function(reg) {
-        console.log('✅ Service Worker Registered', reg);
-      }).catch(function(err) {
-        console.error('❌ Service Worker registration failed', err);
-      });
-  }
-
-  // التعامل مع حدث beforeinstallprompt لتثبيت التطبيق
-  let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const installBtn = document.getElementById('installAppBtn');
-    if (installBtn) {
-      installBtn.style.display = 'block';
-
-      installBtn.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(choice => {
-          if (choice.outcome === 'accepted') {
-            console.log('✅ User accepted the install prompt');
-          } else {
-            console.log('❌ User dismissed the install prompt');
-          }
-          deferredPrompt = null;
-        });
-      });
-    }
-  });
   </script>
 </body>
 </html>

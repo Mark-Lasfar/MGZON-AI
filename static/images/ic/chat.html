@@ -13,18 +13,6 @@
   <link rel="apple-touch-icon" href="/static/images/mg.svg" />
   <!-- Open Graph -->
   <meta property="og:title" content="MGZon Chatbot – AI Assistant" />
-<!-- manifest for Android/Chrome -->
-<link rel="manifest" href="/static/manifest.json">
-
-<!-- iOS Web App Support -->
-<link rel="apple-touch-icon" sizes="180x180" href="/static/images/icons/mg-180.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="MGZon">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- General Theme -->
-<meta name="theme-color" content="#2d3748">
-
   <meta property="og:description" content="Chat with MGZon Chatbot for coding, analysis, and e-commerce queries with text, image, and audio support." />
   <meta property="og:image" content="/static/images/mg.svg" />
   <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/chat" />
@@ -139,14 +127,6 @@
         </li>
         {% if user %}
         <li>
-          <button id="settingsBtn" class="flex items-center text-white hover:bg-gray-700 p-2 rounded transition-colors w-full text-left">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-            </svg>
-            Settings
-          </button>
-        </li>
-        <li>
           <a href="/auth/jwt/logout" class="flex items-center text-white hover:bg-gray-700 p-2 rounded transition-colors">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
@@ -175,13 +155,7 @@
             </svg>
           </button>
         </div>
-        <button id="historyToggle" class="md:hidden flex items-center text-white hover:bg-gray-700 p-2 rounded transition-colors w-full text-left">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          Show History
-        </button>
-        <ul id="conversationList" class="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto hidden md:block">
+        <ul id="conversationList" class="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
           <!-- Conversations will be populated by JavaScript -->
         </ul>
       </div>
@@ -296,123 +270,25 @@
       </form>
     </main>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-      <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-white">User Settings</h2>
-          <button id="closeSettingsBtn" class="text-gray-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-        <form id="settingsForm" class="space-y-4">
-          <div>
-            <label for="display_name" class="block text-sm text-gray-300">Display Name</label>
-            <input type="text" id="display_name" name="display_name" class="w-full p-2 bg-gray-700 text-white rounded">
-          </div>
-          <div>
-            <label for="preferred_model" class="block text-sm text-gray-300">Preferred Model</label>
-            <select id="preferred_model" name="preferred_model" class="w-full p-2 bg-gray-700 text-white rounded">
-              <option value="">Default</option>
-              <option value="advanced">Advanced (High-performance)</option>
-              <option value="standard">Standard (Balanced)</option>
-              <option value="light">Light (Quick)</option>
-            </select>
-          </div>
-          <div>
-            <label for="job_title" class="block text-sm text-gray-300">Job Title</label>
-            <input type="text" id="job_title" name="job_title" class="w-full p-2 bg-gray-700 text-white rounded">
-          </div>
-          <div>
-            <label for="education" class="block text-sm text-gray-300">Education</label>
-            <input type="text" id="education" name="education" class="w-full p-2 bg-gray-700 text-white rounded">
-          </div>
-          <div>
-            <label for="interests" class="block text-sm text-gray-300">Interests</label>
-            <textarea id="interests" name="interests" class="w-full p-2 bg-gray-700 text-white rounded"></textarea>
-          </div>
-          <div>
-            <label for="additional_info" class="block text-sm text-gray-300">Additional Info</label>
-            <textarea id="additional_info" name="additional_info" class="w-full p-2 bg-gray-700 text-white rounded"></textarea>
-          </div>
-          <div>
-            <label for="conversation_style" class="block text-sm text-gray-300">Conversation Style</label>
-            <select id="conversation_style" name="conversation_style" class="w-full p-2 bg-gray-700 text-white rounded">
-              <option value="default">Default</option>
-              <option value="concise">Concise</option>
-              <option value="analytical">Analytical</option>
-              <option value="creative">Creative</option>
-            </select>
-          </div>
-          <div class="flex justify-end gap-2">
-            <button type="button" id="closeSettingsBtn" class="px-4 py-2 bg-gray-600 text-white rounded">Cancel</button>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
     <!-- Copyright -->
     <div class="text-center text-xs text-gray-400 py-2">
       © 2025 Mark Al-Asfar & MGZon AI. All rights reserved.
     </div>
-    <button id="installAppBtn" style="display: none;" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
-      📲 Install MG Chat
-    </button>
   </div>
 
   <!-- Scripts -->
-  <script src="/static/js/chat.js?v=1.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-  // تهيئة مكتبة AOS
-  AOS.init();
-
-  // تمرير conversation_id و conversation_title إذا كانا موجودين
-  {% if conversation_id %}
-    window.conversationId = "{{ conversation_id }}";
-    window.conversationTitle = "{{ conversation_title }}";
-    if (window.loadConversation) {
-      window.loadConversation("{{ conversation_id }}");
-    }
-  {% endif %}
-
-  // تسجيل Service Worker لتفعيل الـ PWA
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/js/sw.js')
-      .then(function(reg) {
-        console.log('✅ Service Worker Registered', reg);
-      }).catch(function(err) {
-        console.error('❌ Service Worker registration failed', err);
-      });
-  }
-
-  // التعامل مع حدث beforeinstallprompt لتثبيت التطبيق
-  let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const installBtn = document.getElementById('installAppBtn');
-    if (installBtn) {
-      installBtn.style.display = 'block';
-
-      installBtn.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(choice => {
-          if (choice.outcome === 'accepted') {
-            console.log('✅ User accepted the install prompt');
-          } else {
-            console.log('❌ User dismissed the install prompt');
-          }
-          deferredPrompt = null;
-        });
-      });
-    }
-  });
-</script>
-
+  <script src="/static/js/chat.js"></script>
+  <script>
+    AOS.init();
+    // تمرير conversation_id و conversation_title إذا كانا موجودين
+    {% if conversation_id %}
+      window.conversationId = "{{ conversation_id }}";
+      window.conversationTitle = "{{ conversation_title }}";
+      if (window.loadConversation) {
+        window.loadConversation("{{ conversation_id }}");
+      }
+    {% endif %}
+  </script>
 </body>
 </html>
