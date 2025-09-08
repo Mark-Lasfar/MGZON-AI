@@ -9,17 +9,14 @@
   <meta name="robots" content="index, follow">
   <title>Login - MGZon Chatbot</title>
   <!-- manifest for Android/Chrome -->
-<link rel="manifest" href="/static/manifest.json">
-
-<!-- iOS Web App Support -->
-<link rel="apple-touch-icon" sizes="180x180" href="/static/images/icons/mg-180.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="MGZon">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- General Theme -->
-<meta name="theme-color" content="#2d3748">
-
+  <link rel="manifest" href="/static/manifest.json">
+  <!-- iOS Web App Support -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/images/mg-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MGZon">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- General Theme -->
+  <meta name="theme-color" content="#2d3748">
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
   <!-- Open Graph -->
   <meta property="og:title" content="Login - MGZon Chatbot">
@@ -33,21 +30,21 @@
   <meta name="twitter:description" content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools.">
   <meta name="twitter:image" content="/static/images/mg.svg">
   <!-- JSON-LD -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebPage",
-  "name": "Login - MGZon Chatbot",
-  "url": "https://mgzon-mgzon-app.hf.space/login",
-  "description": "Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools. Sign in with email, Google, or GitHub.",
-  "keywords": ["MGZon Chatbot", "login", "AI chatbot", "code generation", "e-commerce", "Mark Al-Asfar", "MGZon", "MGZon AI", "E-commerce chatbot", "Python AI chatbot", "FastAPI integration"],
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "MGZon Chatbot",
-    "url": "https://mgzon-mgzon-app.hf.space/"
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Login - MGZon Chatbot",
+    "url": "https://mgzon-mgzon-app.hf.space/login",
+    "description": "Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools. Sign in with email, Google, or GitHub.",
+    "keywords": ["MGZon Chatbot", "login", "AI chatbot", "code generation", "e-commerce", "Mark Al-Asfar", "MGZon", "MGZon AI", "E-commerce chatbot", "Python AI chatbot", "FastAPI integration"],
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "MGZon Chatbot",
+      "url": "https://mgzon-mgzon-app.hf.space/"
+    }
   }
-}
-</script>
+  </script>
   <!-- Tailwind (v3) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Boxicons -->
@@ -107,12 +104,12 @@
         </button>
       </form>
       <div class="flex justify-center gap-4 mt-4 flex-wrap">
-        <a href="/auth/google/authorize" class="inline-flex items-center bg-gradient-to-r from-white to-gray-200 text-gray-800 px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+        <button id="googleLoginBtn" class="inline-flex items-center bg-gradient-to-r from-white to-gray-200 text-gray-800 px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
           Login with Google <i class="bx bxl-google ml-2"></i>
-        </a>
-        <a href="/auth/github/authorize" class="inline-flex items-center bg-gradient-to-r from-gray-800 to-black text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+        </button>
+        <button id="githubLoginBtn" class="inline-flex items-center bg-gradient-to-r from-gray-800 to-black text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
           Login with GitHub <i class="bx bxl-github ml-2"></i>
-        </a>
+        </button>
       </div>
       <p class="mt-4">Don't have an account? <a href="/register" class="text-emerald-300 hover:underline">Register</a></p>
       <p id="errorMsg" class="text-red-500 mt-4 hidden"></p>
@@ -227,39 +224,72 @@
     function closeCardDetails(cardId) {
       document.getElementById(`${cardId}-details`).classList.add('hidden');
     }
-
-  // تسجيل Service Worker لتفعيل الـ PWA
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/js/sw.js')
-      .then(function(reg) {
-        console.log('✅ Service Worker Registered', reg);
-      }).catch(function(err) {
-        console.error('❌ Service Worker registration failed', err);
-      });
-  }
-
-  // التعامل مع حدث beforeinstallprompt لتثبيت التطبيق
-  let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const installBtn = document.getElementById('installAppBtn');
-    if (installBtn) {
-      installBtn.style.display = 'block';
-
-      installBtn.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(choice => {
-          if (choice.outcome === 'accepted') {
-            console.log('✅ User accepted the install prompt');
-          } else {
-            console.log('❌ User dismissed the install prompt');
-          }
-          deferredPrompt = null;
+    // Google Login
+    document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/auth/google/authorize');
+        const data = await response.json();
+        if (data.authorization_url) {
+          window.location.href = data.authorization_url;
+        } else {
+          console.error('No authorization URL received');
+          errorMsg.textContent = 'Error starting Google login. Try again.';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error initiating Google login:', error);
+        errorMsg.textContent = 'Error starting Google login. Try again.';
+        errorMsg.classList.remove('hidden');
+      }
+    });
+    // GitHub Login
+    document.getElementById('githubLoginBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/auth/github/authorize');
+        const data = await response.json();
+        if (data.authorization_url) {
+          window.location.href = data.authorization_url;
+        } else {
+          console.error('No authorization URL received');
+          errorMsg.textContent = 'Error starting GitHub login. Try again.';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error initiating GitHub login:', error);
+        errorMsg.textContent = 'Error starting GitHub login. Try again.';
+        errorMsg.classList.remove('hidden');
+      }
+    });
+    // تسجيل Service Worker لتفعيل الـ PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/js/sw.js')
+        .then(function(reg) {
+          console.log('✅ Service Worker Registered', reg);
+        }).catch(function(err) {
+          console.error('❌ Service Worker registration failed', err);
         });
-      });
     }
-  });
+    // التعامل مع حدث beforeinstallprompt لتثبيت التطبيق
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('installAppBtn');
+      if (installBtn) {
+        installBtn.style.display = 'block';
+        installBtn.addEventListener('click', () => {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(choice => {
+            if (choice.outcome === 'accepted') {
+              console.log('✅ User accepted the install prompt');
+            } else {
+              console.log('❌ User dismissed the install prompt');
+            }
+            deferredPrompt = null;
+          });
+        });
+      }
+    });
   </script>
 </body>
 </html>
