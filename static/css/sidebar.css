@@ -1,23 +1,17 @@
-/* sidebar.css */
-
-/* تنسيق السايدبار الأساسي */
+/* Sidebar styles */
 #sidebar {
-  width: 256px; /* عرض ثابت للسايدبار */
-  background: linear-gradient(to bottom, rgba(31, 41, 55, 0.9), rgba(20, 78, 85, 0.9)); /* تدرج لوني */
-  backdrop-filter: blur(10px); /* تأثير البلور */
-  -webkit-backdrop-filter: blur(10px); /* دعم WebKit */
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3); /* ظل خفيف */
-  transition: transform 0.3s ease-in-out; /* حركة سلسة */
-  z-index: 50; /* التأكد إن السايدبار فوق العناصر الأخرى */
+  background: linear-gradient(to bottom, rgba(31, 41, 55, 0.9), rgba(20, 78, 85, 0.9));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease-in-out;
 }
 
-/* تنسيق روابط التنقل */
 #sidebar nav ul li a {
   display: flex;
   align-items: center;
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
-  color: white;
   transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -26,19 +20,12 @@
   transform: translateX(4px);
 }
 
-/* تنسيق قائمة المحادثات */
-#conversationList {
-  max-height: calc(100vh - 300px); /* تحديد الارتفاع */
-  overflow-y: auto; /* شريط تمرير إذا لزم الأمر */
-}
-
 #conversationList li {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
-  color: white;
   transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -54,7 +41,6 @@
   white-space: nowrap;
 }
 
-/* تنسيق زر الحذف */
 .delete-conversation-btn {
   opacity: 0;
   transition: opacity 0.2s ease;
@@ -64,88 +50,30 @@
   opacity: 1;
 }
 
-/* تنسيق زر التبديل */
-#sidebarToggle {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: white;
-}
-
-/* تنسيق زر History Toggle */
-#historyToggle {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 0.5rem 1rem;
-  color: white;
-  background: none;
-  border: none;
-  border-radius: 0.375rem;
-  text-align: left;
-  transition: background-color 0.2s ease;
-}
-
-#historyToggle:hover {
-  background-color: rgba(55, 65, 81, 0.8);
-}
-
-/* تنسيق تلميح السحب */
 #swipeHint {
-  position: fixed;
-  top: 50%;
-  left: 1rem;
-  z-index: 50;
-  animation: swipe 2s infinite; /* استخدام swipe بدل pulse */
+  animation: pulse 2s infinite;
 }
 
-#swipeHint img {
-  width: 32px;
-  height: 32px;
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.7; }
 }
 
-/* الرسوم المتحركة */
-@keyframes swipe {
-  0% { transform: translateX(0); opacity: 0.7; }
-  50% { transform: translateX(10px); opacity: 1; }
-  100% { transform: translateX(0); opacity: 0.7; }
-}
 
-/* التصميم المتجاوب */
-@media (min-width: 768px) {
-  #sidebar {
-    transform: translateX(0); /* السايدبار مرئي دايمًا */
-  }
-  #sidebarToggle {
-    display: none; /* إخفاء زر التبديل على الشاشات الكبيرة */
-  }
-  #swipeHint {
-    display: none; /* إخفاء تلميح السحب على الشاشات الكبيرة */
-  }
-  #conversationList {
-    display: block; /* قائمة المحادثات مرئية دايمًا */
-  }
-  #historyToggle {
-    display: none; /* إخفاء زر History Toggle على الشاشات الكبيرة */
-  }
-}
 
-@media (max-width: 767px) {
+/* Responsive adjustments */
+@media (max-width: 768px) {
   #sidebar {
     width: 80%;
     max-width: 280px;
-    transform: translateX(-100%); /* السايدبار مخفي افتراضيًا */
-  }
-  #sidebar.open {
-    transform: translateX(0); /* إظهار السايدبار عند الفتح */
   }
   .md\:ml-64 {
-    margin-left: 0 !important; /* إزالة الهامش على الموبايل */
+    margin-left: 0 !important;
   }
-  #conversationList {
-    display: none; /* إخفاء قائمة المحادثات افتراضيًا */
-  }
-  #conversationList:not(.hidden) {
-    display: block; /* إظهار القائمة عند الضغط على History Toggle */
+  #sidebarToggleMobile {
+    display: none !important;
   }
 }
+
+

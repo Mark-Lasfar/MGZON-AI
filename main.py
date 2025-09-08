@@ -25,7 +25,7 @@ from pathlib import Path
 from hashlib import md5
 from datetime import datetime
 import re
-
+from httpx_oauth.clients.google import GoogleOAuth2
 # Setup logging for debugging and monitoring
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -89,12 +89,15 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # CORS setup to allow requests from specific origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://mgzon-mgzon-app.hf.space",  # Production domain
-        "http://localhost:7860",  # Local development
-        "https://mgzon-mgzon-app.hf.space/users/me",  # For user settings endpoint
+    #allow_origins=[
+        #"https://mgzon-mgzon-app.hf.space",  # Production domain
+       # "http://localhost:7860",  # Local development
+      #  "https://mgzon-mgzon-app.hf.space/users/me",  # For user settings endpoint
         # Add staging domain here if needed, e.g., "https://staging.mgzon-mgzon-app.hf.space"
-    ],
+     #   "http://localhost:3000",
+    #    "https://mgchat.vercel.app",
+   # ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -144,6 +147,25 @@ class NotFoundMiddleware(BaseHTTPMiddleware):
             return templates.TemplateResponse("500.html", {"request": request, "error": str(e)}, status_code=500)
 
 app.add_middleware(NotFoundMiddleware)
+# Manual OAuth authorize endpoints (to ensure they work even if router fails)
+@app.get("/auth/google/authorize")
+async def google_authorize():
+    redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/google/callback"
+    authorization_url = await google_oauth_client.get_authorization_url(
+        redirect_uri=redirect_uri,
+        scope=["openid", "email", "profile"],
+    )
+    return RedirectResponse(authorization_url)
+
+@app.get("/auth/github/authorize")
+async def github_authorize():
+    redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/github/callback"
+    authorization_url = await github_oauth_client.get_authorization_url(
+        redirect_uri=redirect_uri,
+        scope=["user", "user:email"],
+    )
+    return RedirectResponse(authorization_url)
+    
 
 # Root endpoint for homepage
 @app.get("/", response_class=HTMLResponse)
