@@ -157,21 +157,20 @@ async def debug_routes():
 @app.get("/auth/google/callback", response_class=RedirectResponse)
 async def google_oauth_callback(
     request: Request,
-    token: str = Query(...),
+    code: str = Query(...),
     state: str = Query(...),
     db: Session = Depends(get_db)
 ):
     try:
         logger.info("Processing Google OAuth callback")
         # Exchange code for access token
-        token_data = await google_oauth_client.get_access_token(token, "https://mgzon-mgzon-app.hf.space/auth/google/callback")
+        token_data = await google_oauth_client.get_access_token(code, "https://mgzon-mgzon-app.hf.space/auth/google/callback")
         logger.info(f"Google OAuth token received: {token_data}")
         # Get user info
         user_info = await google_oauth_client.get_id_email(token_data["access_token"])
         logger.info(f"Google user info: {user_info}")
         # Create or update user
-        user_manager = fastapi_users.user_manager
-        user = await user_manager.oauth_callback(
+        user = await fastapi_users.oauth_callback(
             oauth_name="google",
             access_token=token_data["access_token"],
             account_id=user_info["id"],
@@ -195,21 +194,20 @@ async def google_oauth_callback(
 @app.get("/auth/github/callback", response_class=RedirectResponse)
 async def github_oauth_callback(
     request: Request,
-    token: str = Query(...),
+    code: str = Query(...),
     state: str = Query(...),
     db: Session = Depends(get_db)
 ):
     try:
         logger.info("Processing GitHub OAuth callback")
         # Exchange code for access token
-        token_data = await github_oauth_client.get_access_token(token, "https://mgzon-mgzon-app.hf.space/auth/github/callback")
+        token_data = await github_oauth_client.get_access_token(code, "https://mgzon-mgzon-app.hf.space/auth/github/callback")
         logger.info(f"GitHub OAuth token received: {token_data}")
         # Get user info
         user_info = await github_oauth_client.get_id_email(token_data["access_token"])
         logger.info(f"GitHub user info: {user_info}")
         # Create or update user
-        user_manager = fastapi_users.user_manager
-        user = await user_manager.oauth_callback(
+        user = await fastapi_users.oauth_callback(
             oauth_name="github",
             access_token=token_data["access_token"],
             account_id=user_info["id"],
