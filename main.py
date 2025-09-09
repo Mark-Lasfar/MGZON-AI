@@ -27,7 +27,7 @@ from hashlib import md5
 from datetime import datetime
 import re
 from httpx_oauth.exceptions import GetIdEmailError
-current_active_user = fastapi_users.current_user(active=True)
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
