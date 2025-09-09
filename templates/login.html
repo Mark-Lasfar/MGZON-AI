@@ -104,12 +104,12 @@
         </button>
       </form>
       <div class="flex justify-center gap-4 mt-4 flex-wrap">
-        <button id="googleLoginBtn" class="inline-flex items-center bg-gradient-to-r from-white to-gray-200 text-gray-800 px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+        <a id="googleLoginBtn" href="/auth/google" class="inline-flex items-center bg-gradient-to-r from-white to-gray-200 text-gray-800 px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
           Login with Google <i class="bx bxl-google ml-2"></i>
-        </button>
-        <button id="githubLoginBtn" class="inline-flex items-center bg-gradient-to-r from-gray-800 to-black text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+        </a>
+        <a id="githubLoginBtn" href="/auth/github" class="inline-flex items-center bg-gradient-to-r from-gray-800 to-black text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
           Login with GitHub <i class="bx bxl-github ml-2"></i>
-        </button>
+        </a>
       </div>
       <p class="mt-4">Don't have an account? <a href="/register" class="text-emerald-300 hover:underline">Register</a></p>
       <p id="errorMsg" class="text-red-500 mt-4 hidden"></p>
@@ -189,107 +189,88 @@
       📲 Install MG Chat
     </button>
   </footer>
+  
   <script>
-    const loginForm = document.getElementById('loginForm');
-    const loginBtn = document.getElementById('loginBtn');
-    const spinner = document.getElementById('spinner');
-    const errorMsg = document.getElementById('errorMsg');
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      spinner.classList.remove('hidden');
-      errorMsg.classList.add('hidden');
-      const formData = new FormData(loginForm);
-      try {
-        const response = await fetch('/auth/jwt/login', {
-          method: 'POST',
-          body: formData
-        });
-        spinner.classList.add('hidden');
-        if (response.ok) {
-          window.location.href = '/chat';
-        } else {
-          const error = await response.json();
-          errorMsg.textContent = error.detail || 'Login failed. Please try again.';
-          errorMsg.classList.remove('hidden');
-        }
-      } catch (error) {
-        spinner.classList.add('hidden');
-        errorMsg.textContent = 'An error occurred. Please try again.';
+  const loginForm = document.getElementById('loginForm');
+  const loginBtn = document.getElementById('loginBtn');
+  const spinner = document.getElementById('spinner');
+  const errorMsg = document.getElementById('errorMsg');
+
+  // Handle email/password login
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    spinner.classList.remove('hidden');
+    errorMsg.classList.add('hidden');
+    const formData = new FormData(loginForm);
+    try {
+      const response = await fetch('/auth/jwt/login', {
+        method: 'POST',
+        body: formData
+      });
+      spinner.classList.add('hidden');
+      if (response.ok) {
+        window.location.href = '/chat';
+      } else {
+        const error = await response.json();
+        errorMsg.textContent = error.detail || 'Login failed. Please try again.';
         errorMsg.classList.remove('hidden');
       }
-    });
-    function showCardDetails(cardId) {
-      document.getElementById(`${cardId}-details`).classList.remove('hidden');
+    } catch (error) {
+      spinner.classList.add('hidden');
+      errorMsg.textContent = 'An error occurred. Please try again.';
+      errorMsg.classList.remove('hidden');
+      console.error('Error during login:', error);
     }
-    function closeCardDetails(cardId) {
-      document.getElementById(`${cardId}-details`).classList.add('hidden');
+  });
+
+  // Check for error query parameters on page load (for OAuth errors)
+  window.addEventListener('load', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    if (error) {
+      errorMsg.textContent = decodeURIComponent(error);
+      errorMsg.classList.remove('hidden');
     }
-    // Google Login
-    document.getElementById('googleLoginBtn').addEventListener('click', async () => {
-      try {
-        const response = await fetch('/auth/google/authorize');
-        const data = await response.json();
-        if (data.authorization_url) {
-          window.location.href = data.authorization_url;
-        } else {
-          console.error('No authorization URL received');
-          errorMsg.textContent = 'Error starting Google login. Try again.';
-          errorMsg.classList.remove('hidden');
-        }
-      } catch (error) {
-        console.error('Error initiating Google login:', error);
-        errorMsg.textContent = 'Error starting Google login. Try again.';
-        errorMsg.classList.remove('hidden');
-      }
-    });
-    // GitHub Login
-    document.getElementById('githubLoginBtn').addEventListener('click', async () => {
-      try {
-        const response = await fetch('/auth/github/authorize');
-        const data = await response.json();
-        if (data.authorization_url) {
-          window.location.href = data.authorization_url;
-        } else {
-          console.error('No authorization URL received');
-          errorMsg.textContent = 'Error starting GitHub login. Try again.';
-          errorMsg.classList.remove('hidden');
-        }
-      } catch (error) {
-        console.error('Error initiating GitHub login:', error);
-        errorMsg.textContent = 'Error starting GitHub login. Try again.';
-        errorMsg.classList.remove('hidden');
-      }
-    });
-    // تسجيل Service Worker لتفعيل الـ PWA
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/static/js/sw.js')
-        .then(function(reg) {
-          console.log('✅ Service Worker Registered', reg);
-        }).catch(function(err) {
-          console.error('❌ Service Worker registration failed', err);
+  });
+
+  // Handle card details toggle
+  function showCardDetails(cardId) {
+    document.getElementById(`${cardId}-details`).classList.remove('hidden');
+  }
+
+  function closeCardDetails(cardId) {
+    document.getElementById(`${cardId}-details`).classList.add('hidden');
+  }
+
+  // Service Worker for PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/js/sw.js')
+      .then(reg => console.log('✅ Service Worker Registered', reg))
+      .catch(err => console.error('❌ Service Worker registration failed', err));
+  }
+
+  // Handle PWA install prompt
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('installAppBtn');
+    if (installBtn) {
+      installBtn.style.display = 'block';
+      installBtn.addEventListener('click', () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(choice => {
+          if (choice.outcome === 'accepted') {
+            console.log('✅ User accepted the install prompt');
+          } else {
+            console.log('❌ User dismissed the install prompt');
+          }
+          deferredPrompt = null;
         });
+      });
     }
-    // التعامل مع حدث beforeinstallprompt لتثبيت التطبيق
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const installBtn = document.getElementById('installAppBtn');
-      if (installBtn) {
-        installBtn.style.display = 'block';
-        installBtn.addEventListener('click', () => {
-          deferredPrompt.prompt();
-          deferredPrompt.userChoice.then(choice => {
-            if (choice.outcome === 'accepted') {
-              console.log('✅ User accepted the install prompt');
-            } else {
-              console.log('❌ User dismissed the install prompt');
-            }
-            deferredPrompt = null;
-          });
-        });
-      }
-    });
-  </script>
+  });
+</script>
+  
 </body>
 </html>
