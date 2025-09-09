@@ -12,7 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
-from api.auth import fastapi_users, auth_backend, google_oauth_client, github_oauth_client
+from api.auth import fastapi_users, auth_backend, current_active_user, google_oauth_client, github_oauth_client
 from api.database import get_db, engine, Base
 from api.models import User, UserRead, UserCreate, Conversation
 from motor.motor_asyncio import AsyncIOMotorClient
