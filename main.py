@@ -12,7 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
-from api.auth import fastapi_users, auth_backend, current_active_user, google_oauth_client, github_oauth_client
+from api.auth import fastapi_users, auth_backend, google_oauth_client, github_oauth_client
 from api.database import get_db, engine, Base
 from api.models import User, UserRead, UserCreate, Conversation
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -27,7 +27,6 @@ from hashlib import md5
 from datetime import datetime
 import re
 from httpx_oauth.exceptions import GetIdEmailError
-from fastapi_users.router.oauth import OAuth2AuthorizeCallback
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -97,10 +96,13 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # CORS setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://mgzon-mgzon-app.hf.space",
+        "http://localhost:7860",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Accept", "Content-Type", "Authorization"],
 )
 
 # Include routers
@@ -155,24 +157,37 @@ async def debug_routes():
 @app.get("/auth/google/callback", response_class=RedirectResponse)
 async def google_oauth_callback(
     request: Request,
-    callback: OAuth2AuthorizeCallback = Depends(
-        OAuth2AuthorizeCallback(google_oauth_client, redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback")
-    ),
+    token: str = Query(...),
+    state: str = Query(...),
+    db: Session = Depends(get_db)
 ):
     try:
         logger.info("Processing Google OAuth callback")
-        token, state = await callback
-        logger.info(f"Google OAuth token received: {token}")
-        user_info = await google_oauth_client.get_id_email(token["access_token"])
+        # Exchange code for access token
+        token_data = await google_oauth_client.get_access_token(token, "https://mgzon-mgzon-app.hf.space/auth/google/callback")
+        logger.info(f"Google OAuth token received: {token_data}")
+        # Get user info
+        user_info = await google_oauth_client.get_id_email(token_data["access_token"])
         logger.info(f"Google user info: {user_info}")
-        user = await fastapi_users.get_oauth_user_account(
-            oauth_client=google_oauth_client,
-            token=token,
-            backend=auth_backend,
-            request=request
+        # Create or update user
+        user_manager = fastapi_users.user_manager
+        user = await user_manager.oauth_callback(
+            oauth_name="google",
+            access_token=token_data["access_token"],
+            account_id=user_info["id"],
+            account_email=user_info["email"],
+            expires_at=token_data.get("expires_at"),
+            refresh_token=token_data.get("refresh_token"),
+            request=request,
+            db=db
         )
+        logger.info("Google OAuth user processed, creating session")
+        # Create JWT token
+        token = await auth_backend.get_login_response(user, request)
         logger.info("Google OAuth callback processed, redirecting to /chat")
-        return RedirectResponse(url="/chat", status_code=302)
+        response = RedirectResponse(url="/chat", status_code=302)
+        response.set_cookie("Authorization", f"Bearer {token.access_token}", httponly=True)
+        return response
     except Exception as e:
         logger.error(f"Google OAuth callback error: {str(e)}")
         return RedirectResponse(url=f"/login?error=Google%20OAuth%20failed:%20{str(e)}", status_code=302)
@@ -180,24 +195,37 @@ async def google_oauth_callback(
 @app.get("/auth/github/callback", response_class=RedirectResponse)
 async def github_oauth_callback(
     request: Request,
-    callback: OAuth2AuthorizeCallback = Depends(
-        OAuth2AuthorizeCallback(github_oauth_client, redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback")
-    ),
+    token: str = Query(...),
+    state: str = Query(...),
+    db: Session = Depends(get_db)
 ):
     try:
         logger.info("Processing GitHub OAuth callback")
-        token, state = await callback
-        logger.info(f"GitHub OAuth token received: {token}")
-        user_info = await github_oauth_client.get_id_email(token["access_token"])
+        # Exchange code for access token
+        token_data = await github_oauth_client.get_access_token(token, "https://mgzon-mgzon-app.hf.space/auth/github/callback")
+        logger.info(f"GitHub OAuth token received: {token_data}")
+        # Get user info
+        user_info = await github_oauth_client.get_id_email(token_data["access_token"])
         logger.info(f"GitHub user info: {user_info}")
-        user = await fastapi_users.get_oauth_user_account(
-            oauth_client=github_oauth_client,
-            token=token,
-            backend=auth_backend,
-            request=request
+        # Create or update user
+        user_manager = fastapi_users.user_manager
+        user = await user_manager.oauth_callback(
+            oauth_name="github",
+            access_token=token_data["access_token"],
+            account_id=user_info["id"],
+            account_email=user_info["email"],
+            expires_at=token_data.get("expires_at"),
+            refresh_token=token_data.get("refresh_token"),
+            request=request,
+            db=db
         )
+        logger.info("GitHub OAuth user processed, creating session")
+        # Create JWT token
+        token = await auth_backend.get_login_response(user, request)
         logger.info("GitHub OAuth callback processed, redirecting to /chat")
-        return RedirectResponse(url="/chat", status_code=302)
+        response = RedirectResponse(url="/chat", status_code=302)
+        response.set_cookie("Authorization", f"Bearer {token.access_token}", httponly=True)
+        return response
     except Exception as e:
         logger.error(f"GitHub OAuth callback error: {str(e)}")
         return RedirectResponse(url=f"/login?error=GitHub%20OAuth%20failed:%20{str(e)}", status_code=302)
