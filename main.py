@@ -26,6 +26,8 @@ from hashlib import md5
 from datetime import datetime
 import re
 from httpx_oauth.clients.google import GoogleOAuth2
+from httpx_oauth.exceptions import GetIdEmailError
+
 # Setup logging for debugging and monitoring
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -89,20 +91,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # CORS setup to allow requests from specific origins
 app.add_middleware(
     CORSMiddleware,
-    #allow_origins=[
-        #"https://mgzon-mgzon-app.hf.space",  # Production domain
-       # "http://localhost:7860",  # Local development
-      #  "https://mgzon-mgzon-app.hf.space/users/me",  # For user settings endpoint
-        # Add staging domain here if needed, e.g., "https://staging.mgzon-mgzon-app.hf.space"
-     #   "http://localhost:3000",
-    #    "https://mgchat.vercel.app",
-   # ],
-    allow_origins=["*"],
+    allow_origins=["*"],  # Kept as wildcard for multiple projects as per request
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    # Optional: Uncomment to support subdomains dynamically
-    # allow_origin_regex=r"https?://.*\.mgzon-mgzon-app\.hf\.space|http://localhost:7860",
 )
 
 # Include routers for authentication, user management, and API endpoints
@@ -147,6 +139,21 @@ class NotFoundMiddleware(BaseHTTPMiddleware):
             return templates.TemplateResponse("500.html", {"request": request, "error": str(e)}, status_code=500)
 
 app.add_middleware(NotFoundMiddleware)
+
+# Exception handler for OAuth errors
+@app.exception_handler(GetIdEmailError)
+async def handle_oauth_error(request: Request, exc: GetIdEmailError):
+    logger.error(f"OAuth error: {exc}")
+    return RedirectResponse(url="/login?error=oauth_failed", status_code=302)
+
+# Custom Google OAuth callback to redirect to /chat
+@app.get("/auth/google/callback")
+async def google_oauth_callback(request: Request, user=Depends(fastapi_users.get_oauth_callback(auth_backend))):
+    if user:
+        return RedirectResponse(url="/chat", status_code=302)
+    else:
+        return RedirectResponse(url="/login?error=oauth_failed", status_code=302)
+
 # Manual OAuth authorize endpoints (to ensure they work even if router fails)
 @app.get("/auth/google/authorize")
 async def google_authorize():
@@ -165,7 +172,6 @@ async def github_authorize():
         scope=["user", "user:email"],
     )
     return RedirectResponse(authorization_url)
-    
 
 # Root endpoint for homepage
 @app.get("/", response_class=HTMLResponse)
