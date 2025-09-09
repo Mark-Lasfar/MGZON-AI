@@ -26,9 +26,8 @@ from pathlib import Path
 from hashlib import md5
 from datetime import datetime
 import re
-from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.exceptions import GetIdEmailError
-from httpx_oauth.oauth2 import OAuth2Token
+from fastapi_users.router.oauth import OAuth2AuthorizeCallback
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -154,30 +153,50 @@ async def debug_routes():
 
 # OAuth callbacks
 @app.get("/auth/google/callback", response_class=RedirectResponse)
-async def google_oauth_callback(request: Request, code: str = Query(...)):
+async def google_oauth_callback(
+    request: Request,
+    callback: OAuth2AuthorizeCallback = Depends(
+        OAuth2AuthorizeCallback(google_oauth_client, redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback")
+    ),
+):
     try:
-        logger.info(f"Processing Google OAuth callback with code: {code}")
-        token = await google_oauth_client.get_access_token(code, "https://mgzon-mgzon-app.hf.space/auth/google/callback")
+        logger.info("Processing Google OAuth callback")
+        token, state = await callback
         logger.info(f"Google OAuth token received: {token}")
         user_info = await google_oauth_client.get_id_email(token["access_token"])
         logger.info(f"Google user info: {user_info}")
-        oauth_response = await fastapi_users.oauth_callback(google_oauth_client, token, auth_backend, request)
-        logger.info(f"Google OAuth callback processed, redirecting to /chat")
+        user = await fastapi_users.get_oauth_user_account(
+            oauth_client=google_oauth_client,
+            token=token,
+            backend=auth_backend,
+            request=request
+        )
+        logger.info("Google OAuth callback processed, redirecting to /chat")
         return RedirectResponse(url="/chat", status_code=302)
     except Exception as e:
         logger.error(f"Google OAuth callback error: {str(e)}")
         return RedirectResponse(url=f"/login?error=Google%20OAuth%20failed:%20{str(e)}", status_code=302)
 
 @app.get("/auth/github/callback", response_class=RedirectResponse)
-async def github_oauth_callback(request: Request, code: str = Query(...)):
+async def github_oauth_callback(
+    request: Request,
+    callback: OAuth2AuthorizeCallback = Depends(
+        OAuth2AuthorizeCallback(github_oauth_client, redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback")
+    ),
+):
     try:
-        logger.info(f"Processing GitHub OAuth callback with code: {code}")
-        token = await github_oauth_client.get_access_token(code, "https://mgzon-mgzon-app.hf.space/auth/github/callback")
+        logger.info("Processing GitHub OAuth callback")
+        token, state = await callback
         logger.info(f"GitHub OAuth token received: {token}")
         user_info = await github_oauth_client.get_id_email(token["access_token"])
         logger.info(f"GitHub user info: {user_info}")
-        oauth_response = await fastapi_users.oauth_callback(github_oauth_client, token, auth_backend, request)
-        logger.info(f"GitHub OAuth callback processed, redirecting to /chat")
+        user = await fastapi_users.get_oauth_user_account(
+            oauth_client=github_oauth_client,
+            token=token,
+            backend=auth_backend,
+            request=request
+        )
+        logger.info("GitHub OAuth callback processed, redirecting to /chat")
         return RedirectResponse(url="/chat", status_code=302)
     except Exception as e:
         logger.error(f"GitHub OAuth callback error: {str(e)}")
