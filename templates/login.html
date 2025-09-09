@@ -104,12 +104,12 @@
         </button>
       </form>
       <div class="flex justify-center gap-4 mt-4 flex-wrap">
-        <a id="googleLoginBtn" href="#" class="inline-flex items-center bg-gradient-to-r from-white to-gray-200 text-gray-800 px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+        <button id="googleLoginBtn" class="inline-flex items-center bg-gradient-to-r from-white to-gray-200 text-gray-800 px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
           Login with Google <i class="bx bxl-google ml-2"></i>
-        </a>
-        <a id="githubLoginBtn" href="#" class="inline-flex items-center bg-gradient-to-r from-gray-800 to-black text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+        </button>
+        <button id="githubLoginBtn" class="inline-flex items-center bg-gradient-to-r from-gray-800 to-black text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
           Login with GitHub <i class="bx bxl-github ml-2"></i>
-        </a>
+        </button>
       </div>
       <p class="mt-4">Don't have an account? <a href="/register" class="text-emerald-300 hover:underline">Register</a></p>
       <p id="errorMsg" class="text-red-500 mt-4 hidden"></p>
@@ -191,6 +191,8 @@
   </footer>
   
   <script>
+  console.log('Login page script loaded'); // Debugging: Ensure script is running
+
   const loginForm = document.getElementById('loginForm');
   const loginBtn = document.getElementById('loginBtn');
   const spinner = document.getElementById('spinner');
@@ -201,6 +203,7 @@
   // Handle email/password login
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('Login form submitted'); // Debugging
     spinner.classList.remove('hidden');
     errorMsg.classList.add('hidden');
     const formData = new FormData(loginForm);
@@ -211,29 +214,41 @@
       });
       spinner.classList.add('hidden');
       if (response.ok) {
+        console.log('Login successful, redirecting to /chat'); // Debugging
         window.location.href = '/chat';
       } else {
         const error = await response.json();
         errorMsg.textContent = error.detail || 'Login failed. Please try again.';
         errorMsg.classList.remove('hidden');
+        console.error('Login failed:', error); // Debugging
       }
     } catch (error) {
       spinner.classList.add('hidden');
       errorMsg.textContent = 'An error occurred. Please try again.';
       errorMsg.classList.remove('hidden');
-      console.error('Error during login:', error);
+      console.error('Error during login:', error); // Debugging
     }
   });
 
   // Handle Google OAuth login
   googleLoginBtn.addEventListener('click', async (e) => {
     e.preventDefault();
+    console.log('Google login button clicked'); // Debugging
     spinner.classList.remove('hidden');
     errorMsg.classList.add('hidden');
     try {
-      const response = await fetch('/auth/google/authorize');
+      const response = await fetch('https://mgzon-mgzon-app.hf.space/auth/google/authorize', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      console.log('Google authorize response:', response); // Debugging
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
       const data = await response.json();
+      console.log('Google authorize data:', data); // Debugging
       if (data.authorization_url) {
+        console.log('Redirecting to Google:', data.authorization_url); // Debugging
         window.location.href = data.authorization_url;
       } else {
         throw new Error('No authorization URL received');
@@ -242,19 +257,29 @@
       spinner.classList.add('hidden');
       errorMsg.textContent = 'Failed to initiate Google login. Please try again.';
       errorMsg.classList.remove('hidden');
-      console.error('Error initiating Google login:', error);
+      console.error('Error initiating Google login:', error); // Debugging
     }
   });
 
   // Handle GitHub OAuth login
   githubLoginBtn.addEventListener('click', async (e) => {
     e.preventDefault();
+    console.log('GitHub login button clicked'); // Debugging
     spinner.classList.remove('hidden');
     errorMsg.classList.add('hidden');
     try {
-      const response = await fetch('/auth/github/authorize');
+      const response = await fetch('https://mgzon-mgzon-app.hf.space/auth/github/authorize', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      console.log('GitHub authorize response:', response); // Debugging
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
       const data = await response.json();
+      console.log('GitHub authorize data:', data); // Debugging
       if (data.authorization_url) {
+        console.log('Redirecting to GitHub:', data.authorization_url); // Debugging
         window.location.href = data.authorization_url;
       } else {
         throw new Error('No authorization URL received');
@@ -263,31 +288,36 @@
       spinner.classList.add('hidden');
       errorMsg.textContent = 'Failed to initiate GitHub login. Please try again.';
       errorMsg.classList.remove('hidden');
-      console.error('Error initiating GitHub login:', error);
+      console.error('Error initiating GitHub login:', error); // Debugging
     }
   });
 
   // Check for error query parameters on page load (for OAuth errors)
   window.addEventListener('load', () => {
+    console.log('Page loaded, checking for errors'); // Debugging
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get('error');
     if (error) {
       errorMsg.textContent = decodeURIComponent(error);
       errorMsg.classList.remove('hidden');
+      console.error('OAuth error from URL:', error); // Debugging
     }
   });
 
   // Handle card details toggle
   function showCardDetails(cardId) {
+    console.log('Showing card details:', cardId); // Debugging
     document.getElementById(`${cardId}-details`).classList.remove('hidden');
   }
 
   function closeCardDetails(cardId) {
+    console.log('Closing card details:', cardId); // Debugging
     document.getElementById(`${cardId}-details`).classList.add('hidden');
   }
 
   // Service Worker for PWA
   if ('serviceWorker' in navigator) {
+    console.log('Registering service worker'); // Debugging
     navigator.serviceWorker.register('/static/js/sw.js')
       .then(reg => console.log('✅ Service Worker Registered', reg))
       .catch(err => console.error('❌ Service Worker registration failed', err));
@@ -296,12 +326,14 @@
   // Handle PWA install prompt
   let deferredPrompt;
   window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('Before install prompt triggered'); // Debugging
     e.preventDefault();
     deferredPrompt = e;
     const installBtn = document.getElementById('installAppBtn');
     if (installBtn) {
       installBtn.style.display = 'block';
       installBtn.addEventListener('click', () => {
+        console.log('Install button clicked'); // Debugging
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then(choice => {
           if (choice.outcome === 'accepted') {
