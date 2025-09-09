@@ -18,6 +18,7 @@ from api.models import User, UserRead, UserCreate, Conversation
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from typing import List
+from contextlib import asynccontextmanager
 import uvicorn
 import markdown2
 from sqlalchemy.orm import Session
@@ -27,13 +28,14 @@ from datetime import datetime
 import re
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.exceptions import GetIdEmailError
+from httpx_oauth.oauth2 import OAuth2Token
 
-# Setup logging for debugging and monitoring
+# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.info("Files in current dir: %s", os.listdir(os.getcwd()))
 
-# Check environment variables for required configurations
+# Check environment variables
 HF_TOKEN = os.getenv("HF_TOKEN")
 if not HF_TOKEN:
     logger.error("HF_TOKEN is not set in environment variables.")
@@ -49,16 +51,16 @@ if not JWT_SECRET or len(JWT_SECRET) < 32:
     logger.error("JWT_SECRET is not set or too short.")
     raise ValueError("JWT_SECRET is required (at least 32 characters).")
 
-# MongoDB setup for blog posts and session message counts
+# MongoDB setup
 client = AsyncIOMotorClient(MONGO_URI)
 mongo_db = client["hager"]
 session_message_counts = mongo_db["session_message_counts"]
 
-# Create MongoDB index for session_id to ensure uniqueness
+# Create MongoDB index
 async def setup_mongo_index():
     await session_message_counts.create_index("session_id", unique=True)
 
-# Jinja2 setup with Markdown filter for rendering Markdown content
+# Jinja2 setup
 templates = Jinja2Templates(directory="templates")
 templates.env.filters['markdown'] = lambda text: markdown2.markdown(text)
 
@@ -71,33 +73,38 @@ class BlogPost(BaseModel):
     date: str
     created_at: str
 
-# Application settings from environment variables
+# Application settings
 QUEUE_SIZE = int(os.getenv("QUEUE_SIZE", 80))
 CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 
 # Initialize FastAPI app
-app = FastAPI(title="MGZon Chatbot API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await setup_mongo_index()
+    yield
 
-# Add SessionMiddleware for handling non-logged-in user sessions
+app = FastAPI(title="MGZon Chatbot API", lifespan=lifespan)
+
+# Add SessionMiddleware
 app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET)
 
-# Create SQLAlchemy database tables
+# Create SQLAlchemy tables
 Base.metadata.create_all(bind=engine)
 
-# Mount static files directory
+# Mount static files
 os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# CORS setup to allow requests from specific origins
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Kept as wildcard for multiple projects as per request
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers for authentication, user management, and API endpoints
+# Include routers
 app.include_router(
     fastapi_users.get_auth_router(auth_backend),
     prefix="/auth/jwt",
@@ -118,7 +125,7 @@ app.include_router(
         google_oauth_client,
         auth_backend,
         JWT_SECRET,
-        redirect_url="/auth/google/callback"  # Updated to callback endpoint
+        redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback"
     ),
     prefix="/auth/google",
     tags=["auth"],
@@ -128,25 +135,55 @@ app.include_router(
         github_oauth_client,
         auth_backend,
         JWT_SECRET,
-        redirect_url="/auth/github/callback"  # Updated to callback endpoint
+        redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback"
     ),
     prefix="/auth/github",
     tags=["auth"],
 )
 app.include_router(api_router)
 
-# Custom OAuth callbacks to redirect to /chat
+# Debug routes endpoint
+@app.get("/debug/routes", response_class=PlainTextResponse)
+async def debug_routes():
+    routes = []
+    for route in app.routes:
+        methods = getattr(route, "methods", [])
+        path = getattr(route, "path", "Unknown")
+        routes.append(f"{methods} {path}")
+    return "\n".join(sorted(routes))
+
+# OAuth callbacks
 @app.get("/auth/google/callback", response_class=RedirectResponse)
-async def google_oauth_callback(request: Request):
-    logger.info(f"Processing Google OAuth callback: {request.url}")
-    return RedirectResponse(url="/chat", status_code=302)
+async def google_oauth_callback(request: Request, code: str = Query(...)):
+    try:
+        logger.info(f"Processing Google OAuth callback with code: {code}")
+        token = await google_oauth_client.get_access_token(code, "https://mgzon-mgzon-app.hf.space/auth/google/callback")
+        logger.info(f"Google OAuth token received: {token}")
+        user_info = await google_oauth_client.get_id_email(token["access_token"])
+        logger.info(f"Google user info: {user_info}")
+        oauth_response = await fastapi_users.oauth_callback(google_oauth_client, token, auth_backend, request)
+        logger.info(f"Google OAuth callback processed, redirecting to /chat")
+        return RedirectResponse(url="/chat", status_code=302)
+    except Exception as e:
+        logger.error(f"Google OAuth callback error: {str(e)}")
+        return RedirectResponse(url=f"/login?error=Google%20OAuth%20failed:%20{str(e)}", status_code=302)
 
 @app.get("/auth/github/callback", response_class=RedirectResponse)
-async def github_oauth_callback(request: Request):
-    logger.info(f"Processing GitHub OAuth callback: {request.url}")
-    return RedirectResponse(url="/chat", status_code=302)
+async def github_oauth_callback(request: Request, code: str = Query(...)):
+    try:
+        logger.info(f"Processing GitHub OAuth callback with code: {code}")
+        token = await github_oauth_client.get_access_token(code, "https://mgzon-mgzon-app.hf.space/auth/github/callback")
+        logger.info(f"GitHub OAuth token received: {token}")
+        user_info = await github_oauth_client.get_id_email(token["access_token"])
+        logger.info(f"GitHub user info: {user_info}")
+        oauth_response = await fastapi_users.oauth_callback(github_oauth_client, token, auth_backend, request)
+        logger.info(f"GitHub OAuth callback processed, redirecting to /chat")
+        return RedirectResponse(url="/chat", status_code=302)
+    except Exception as e:
+        logger.error(f"GitHub OAuth callback error: {str(e)}")
+        return RedirectResponse(url=f"/login?error=GitHub%20OAuth%20failed:%20{str(e)}", status_code=302)
 
-# Custom middleware for handling 404 and 500 errors
+# Custom middleware for 404 and 500 errors
 class NotFoundMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         try:
@@ -161,23 +198,22 @@ class NotFoundMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(NotFoundMiddleware)
 
-# Exception handler for OAuth errors
+# OAuth error handler
 @app.exception_handler(GetIdEmailError)
 async def handle_oauth_error(request: Request, exc: GetIdEmailError):
     logger.error(f"OAuth error: {exc}")
     error_message = "Failed to authenticate with OAuth. Please try again or contact support."
-    return templates.TemplateResponse(
-        "login.html",
-        {"request": request, "error": error_message},
-        status_code=400
+    return RedirectResponse(
+        url=f"/login?error={error_message}",
+        status_code=302
     )
 
-# Root endpoint for homepage
+# Root endpoint
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, user: User = Depends(current_active_user)):
     return templates.TemplateResponse("index.html", {"request": request, "user": user})
 
-# Google verification endpoint
+# Google verification
 @app.get("/google97468ef1f6b6e804.html", response_class=PlainTextResponse)
 async def google_verification():
     return "google-site-verification: google97468ef1f6b6e804.html"
@@ -232,19 +268,14 @@ async def chat_conversation(
 async def about(request: Request, user: User = Depends(current_active_user)):
     return templates.TemplateResponse("about.html", {"request": request, "user": user})
 
-# Serve static files with caching and ETag support
+# Serve static files
 @app.get("/static/{path:path}")
 async def serve_static(path: str):
-    # Remove query parameters (e.g., ?v=1.0) for versioning
     clean_path = re.sub(r'\?.*', '', path)
     file_path = Path("static") / clean_path
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
-    # Set cache duration: 1 year for images, 1 hour for JS/CSS
-    cache_duration = 31536000  # 1 year
-    if clean_path.endswith(('.js', '.css')):
-        cache_duration = 3600  # 1 hour
-    # Generate ETag and Last-Modified headers
+    cache_duration = 31536000 if not clean_path.endswith(('.js', '.css')) else 3600
     with open(file_path, "rb") as f:
         file_hash = md5(f.read()).hexdigest()
     headers = {
@@ -254,7 +285,7 @@ async def serve_static(path: str):
     }
     return FileResponse(file_path, headers=headers)
 
-# Blog page with pagination
+# Blog page
 @app.get("/blog", response_class=HTMLResponse)
 async def blog(request: Request, skip: int = Query(0, ge=0), limit: int = Query(10, ge=1, le=100)):
     posts = await mongo_db.blog_posts.find().skip(skip).limit(limit).to_list(limit)
@@ -273,19 +304,18 @@ async def blog_post(request: Request, post_id: str):
 async def docs(request: Request):
     return templates.TemplateResponse("docs.html", {"request": request})
 
-# Swagger UI for API documentation
+# Swagger UI
 @app.get("/swagger", response_class=HTMLResponse)
 async def swagger_ui():
     return get_swagger_ui_html(openapi_url="/openapi.json", title="MGZon API Documentation")
 
-# Sitemap with dynamic dates
+# Sitemap
 @app.get("/sitemap.xml", response_class=PlainTextResponse)
 async def sitemap():
     posts = await mongo_db.blog_posts.find().to_list(100)
     current_date = datetime.utcnow().strftime('%Y-%m-%d')
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    # Main pages with dynamic lastmod
     xml += '  <url>\n'
     xml += '    <loc>https://mgzon-mgzon-app.hf.space/</loc>\n'
     xml += f'    <lastmod>{current_date}</lastmod>\n'
@@ -328,7 +358,6 @@ async def sitemap():
     xml += '    <changefreq>daily</changefreq>\n'
     xml += '    <priority>0.9</priority>\n'
     xml += '  </url>\n'
-    # Blog posts from MongoDB
     for post in posts:
         xml += '  <url>\n'
         xml += f'    <loc>https://mgzon-mgzon-app.hf.space/blog/{post["id"]}</loc>\n'
@@ -344,11 +373,5 @@ async def sitemap():
 async def launch_chatbot():
     return RedirectResponse(url="/chat", status_code=302)
 
-# Startup event to initialize MongoDB index
-@app.on_event("startup")
-async def startup_event():
-    await setup_mongo_index()
-
-# Run the app
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 7860)))
