@@ -114,12 +114,12 @@ app.include_router(
     tags=["users"],
 )
 app.include_router(
-    fastapi_users.get_oauth_router(google_oauth_client, auth_backend, JWT_SECRET, redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback"),
+    fastapi_users.get_oauth_router(google_oauth_client, auth_backend, JWT_SECRET, redirect_url="https://mgzon-mgzon-app.hf.space/chat"),
     prefix="/auth/google",
     tags=["auth"],
 )
 app.include_router(
-    fastapi_users.get_oauth_router(github_oauth_client, auth_backend, JWT_SECRET, redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback"),
+    fastapi_users.get_oauth_router(github_oauth_client, auth_backend, JWT_SECRET, redirect_url="https://mgzon-mgzon-app.hf.space/chat"),
     prefix="/auth/github",
     tags=["auth"],
 )
@@ -147,31 +147,9 @@ async def handle_oauth_error(request: Request, exc: GetIdEmailError):
     return RedirectResponse(url="/login?error=oauth_failed", status_code=302)
 
 # Custom Google OAuth callback to redirect to /chat
-@app.get("/auth/google/callback")
-async def google_oauth_callback(request: Request, user=Depends(fastapi_users.get_oauth_callback(auth_backend))):
-    if user:
-        return RedirectResponse(url="/chat", status_code=302)
-    else:
-        return RedirectResponse(url="/login?error=oauth_failed", status_code=302)
+
 
 # Manual OAuth authorize endpoints (to ensure they work even if router fails)
-@app.get("/auth/google/authorize")
-async def google_authorize():
-    redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/google/callback"
-    authorization_url = await google_oauth_client.get_authorization_url(
-        redirect_uri=redirect_uri,
-        scope=["openid", "email", "profile"],
-    )
-    return RedirectResponse(authorization_url)
-
-@app.get("/auth/github/authorize")
-async def github_authorize():
-    redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/github/callback"
-    authorization_url = await github_oauth_client.get_authorization_url(
-        redirect_uri=redirect_uri,
-        scope=["user", "user:email"],
-    )
-    return RedirectResponse(authorization_url)
 
 # Root endpoint for homepage
 @app.get("/", response_class=HTMLResponse)
