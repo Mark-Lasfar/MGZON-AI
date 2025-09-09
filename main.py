@@ -114,16 +114,37 @@ app.include_router(
     tags=["users"],
 )
 app.include_router(
-    fastapi_users.get_oauth_router(google_oauth_client, auth_backend, JWT_SECRET, redirect_url="https://mgzon-mgzon-app.hf.space/chat"),
+    fastapi_users.get_oauth_router(
+        google_oauth_client,
+        auth_backend,
+        JWT_SECRET,
+        redirect_url="/auth/google/callback"  # Updated to callback endpoint
+    ),
     prefix="/auth/google",
     tags=["auth"],
 )
 app.include_router(
-    fastapi_users.get_oauth_router(github_oauth_client, auth_backend, JWT_SECRET, redirect_url="https://mgzon-mgzon-app.hf.space/chat"),
+    fastapi_users.get_oauth_router(
+        github_oauth_client,
+        auth_backend,
+        JWT_SECRET,
+        redirect_url="/auth/github/callback"  # Updated to callback endpoint
+    ),
     prefix="/auth/github",
     tags=["auth"],
 )
 app.include_router(api_router)
+
+# Custom OAuth callbacks to redirect to /chat
+@app.get("/auth/google/callback", response_class=RedirectResponse)
+async def google_oauth_callback(request: Request):
+    logger.info(f"Processing Google OAuth callback: {request.url}")
+    return RedirectResponse(url="/chat", status_code=302)
+
+@app.get("/auth/github/callback", response_class=RedirectResponse)
+async def github_oauth_callback(request: Request):
+    logger.info(f"Processing GitHub OAuth callback: {request.url}")
+    return RedirectResponse(url="/chat", status_code=302)
 
 # Custom middleware for handling 404 and 500 errors
 class NotFoundMiddleware(BaseHTTPMiddleware):
@@ -144,12 +165,12 @@ app.add_middleware(NotFoundMiddleware)
 @app.exception_handler(GetIdEmailError)
 async def handle_oauth_error(request: Request, exc: GetIdEmailError):
     logger.error(f"OAuth error: {exc}")
-    return RedirectResponse(url="/login?error=oauth_failed", status_code=302)
-
-# Custom Google OAuth callback to redirect to /chat
-
-
-# Manual OAuth authorize endpoints (to ensure they work even if router fails)
+    error_message = "Failed to authenticate with OAuth. Please try again or contact support."
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request, "error": error_message},
+        status_code=400
+    )
 
 # Root endpoint for homepage
 @app.get("/", response_class=HTMLResponse)
