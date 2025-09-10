@@ -14,12 +14,13 @@ import os
 import logging
 from api.models import UserRead, UserCreate, UserUpdate
 
-
 # Setup logging
 logger = logging.getLogger(__name__)
 
+# Cookie transport for JWT
 cookie_transport = CookieTransport(cookie_max_age=3600)
 
+# JWT Secret
 SECRET = os.getenv("JWT_SECRET")
 if not SECRET or len(SECRET) < 32:
     logger.error("JWT_SECRET is not set or too short.")
@@ -110,7 +111,7 @@ google_oauth_router = get_oauth_router(
     google_oauth_client,
     auth_backend,
     get_user_manager,
-    state_secret=SECRET,  # أضف هذا السطر
+    state_secret=SECRET,
     associate_by_email=True,
     redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback",
 )
@@ -119,13 +120,13 @@ github_oauth_router = get_oauth_router(
     github_oauth_client,
     auth_backend,
     get_user_manager,
-    state_secret=SECRET,  # أضف هذا السطر
+    state_secret=SECRET,
     associate_by_email=True,
     redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback",
 )
 
 fastapi_users = FastAPIUsers[User, int](
-    get_user_db,
+    get_user_manager,  # تم تصحيح الـ dependency من get_user_db إلى get_user_manager
     [auth_backend],
 )
 

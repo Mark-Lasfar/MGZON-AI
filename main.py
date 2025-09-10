@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
 from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router
 from api.database import get_db, engine, Base
+from api.models import User, UserRead, UserCreate, Conversation, UserUpdate  # استيراد User
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from typing import List
@@ -26,7 +27,7 @@ from pathlib import Path
 from hashlib import md5
 from datetime import datetime
 from httpx_oauth.exceptions import GetIdEmailError
-from api.models import UserRead, UserCreate, Conversation, UserUpdate
+import re
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)

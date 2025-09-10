@@ -1,3 +1,4 @@
+# api/endpoints.py
 import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File
@@ -31,7 +32,7 @@ if not BACKUP_HF_TOKEN:
 ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # Updated to target model
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # بدون :cerebras
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
 TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "gpt2")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
