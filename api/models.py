@@ -1,4 +1,5 @@
-from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyBaseOAuthAccountTable
+# models.py
+from fastapi_users.db import SQLAlchemyBaseUserTable
 from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -11,9 +12,16 @@ import uuid
 Base = declarative_base()
 
 # جدول OAuth Accounts لتخزين بيانات تسجيل الدخول الخارجي
-class OAuthAccount(SQLAlchemyBaseOAuthAccountTable, Base):
+class OAuthAccount(Base):
     __tablename__ = "oauth_accounts"
     id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    oauth_name = Column(String, nullable=False)
+    access_token = Column(String, nullable=False)
+    expires_at = Column(Integer, nullable=True)
+    refresh_token = Column(String, nullable=True)
+    account_id = Column(String, index=True, nullable=False)
+    account_email = Column(String, nullable=False)
     user = relationship("User", back_populates="oauth_accounts")
 
 # نموذج المستخدم
