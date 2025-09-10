@@ -15,8 +15,7 @@ RUN apt-get update && apt-get install -y \
 # Update pip
 RUN pip install --upgrade pip
 
-# Install torch first to avoid dependency conflicts
-RUN pip install packaging torch==2.4.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip install packaging torch==2.4.1
 
 # Copy requirements.txt and install dependencies
 COPY requirements.txt .
@@ -36,3 +35,4 @@ EXPOSE 7860
 
 # Run the FastAPI app
 CMD ["python", "main.py"]
+
