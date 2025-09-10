@@ -1,3 +1,4 @@
+# main.py
 # SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
 # SPDX-License-Identifier: Apache-2.0
 
@@ -12,9 +13,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
-from api.auth import fastapi_users, auth_backend, current_active_user, google_oauth_client, github_oauth_client
+from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router
 from api.database import get_db, engine, Base
-from api.models import User, UserRead, UserCreate, Conversation
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from typing import List
@@ -25,8 +25,8 @@ from sqlalchemy.orm import Session
 from pathlib import Path
 from hashlib import md5
 from datetime import datetime
-import re
 from httpx_oauth.exceptions import GetIdEmailError
+from api.models import UserRead, UserCreate, Conversation, UserUpdate
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -79,15 +79,13 @@ CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await setup_mongo_index()
+    Base.metadata.create_all(bind=engine)  # Create tables on startup
     yield
 
 app = FastAPI(title="MGZon Chatbot API", lifespan=lifespan)
 
 # Add SessionMiddleware
 app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET)
-
-# Create SQLAlchemy tables
-Base.metadata.create_all(bind=engine)
 
 # Mount static files
 os.makedirs("static", exist_ok=True)
@@ -106,42 +104,8 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(
-    fastapi_users.get_auth_router(auth_backend),
-    prefix="/auth/jwt",
-    tags=["auth"],
-)
-app.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
-    prefix="/auth",
-    tags=["auth"],
-)
-app.include_router(
-    fastapi_users.get_users_router(UserRead, UserCreate),
-    prefix="/users",
-    tags=["users"],
-)
-app.include_router(
-    fastapi_users.get_oauth_router(
-        google_oauth_client,
-        auth_backend,
-        JWT_SECRET,
-        redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback"
-    ),
-    prefix="/auth/google",
-    tags=["auth"],
-)
-app.include_router(
-    fastapi_users.get_oauth_router(
-        github_oauth_client,
-        auth_backend,
-        JWT_SECRET,
-        redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback"
-    ),
-    prefix="/auth/github",
-    tags=["auth"],
-)
 app.include_router(api_router)
+get_auth_router(app)  # Add OAuth and auth routers
 
 # Debug routes endpoint
 @app.get("/debug/routes", response_class=PlainTextResponse)
@@ -152,81 +116,6 @@ async def debug_routes():
         path = getattr(route, "path", "Unknown")
         routes.append(f"{methods} {path}")
     return "\n".join(sorted(routes))
-
-# OAuth callbacks
-@app.get("/auth/google/callback", response_class=RedirectResponse)
-async def google_oauth_callback(
-    request: Request,
-    code: str = Query(...),
-    state: str = Query(...),
-    db: Session = Depends(get_db)
-):
-    try:
-        logger.info("Processing Google OAuth callback")
-        # Exchange code for access token
-        token_data = await google_oauth_client.get_access_token(code, "https://mgzon-mgzon-app.hf.space/auth/google/callback")
-        logger.info(f"Google OAuth token received: {token_data}")
-        # Get user info
-        user_info = await google_oauth_client.get_id_email(token_data["access_token"])
-        logger.info(f"Google user info: {user_info}")
-        # Create or update user
-        user = await fastapi_users.oauth_callback(
-            oauth_name="google",
-            access_token=token_data["access_token"],
-            account_id=user_info["id"],
-            account_email=user_info["email"],
-            expires_at=token_data.get("expires_at"),
-            refresh_token=token_data.get("refresh_token"),
-            request=request,
-            db=db
-        )
-        logger.info("Google OAuth user processed, creating session")
-        # Create JWT token
-        token = await auth_backend.get_login_response(user, request)
-        logger.info("Google OAuth callback processed, redirecting to /chat")
-        response = RedirectResponse(url="/chat", status_code=302)
-        response.set_cookie("Authorization", f"Bearer {token.access_token}", httponly=True)
-        return response
-    except Exception as e:
-        logger.error(f"Google OAuth callback error: {str(e)}")
-        return RedirectResponse(url=f"/login?error=Google%20OAuth%20failed:%20{str(e)}", status_code=302)
-
-@app.get("/auth/github/callback", response_class=RedirectResponse)
-async def github_oauth_callback(
-    request: Request,
-    code: str = Query(...),
-    state: str = Query(...),
-    db: Session = Depends(get_db)
-):
-    try:
-        logger.info("Processing GitHub OAuth callback")
-        # Exchange code for access token
-        token_data = await github_oauth_client.get_access_token(code, "https://mgzon-mgzon-app.hf.space/auth/github/callback")
-        logger.info(f"GitHub OAuth token received: {token_data}")
-        # Get user info
-        user_info = await github_oauth_client.get_id_email(token_data["access_token"])
-        logger.info(f"GitHub user info: {user_info}")
-        # Create or update user
-        user = await fastapi_users.oauth_callback(
-            oauth_name="github",
-            access_token=token_data["access_token"],
-            account_id=user_info["id"],
-            account_email=user_info["email"],
-            expires_at=token_data.get("expires_at"),
-            refresh_token=token_data.get("refresh_token"),
-            request=request,
-            db=db
-        )
-        logger.info("GitHub OAuth user processed, creating session")
-        # Create JWT token
-        token = await auth_backend.get_login_response(user, request)
-        logger.info("GitHub OAuth callback processed, redirecting to /chat")
-        response = RedirectResponse(url="/chat", status_code=302)
-        response.set_cookie("Authorization", f"Bearer {token.access_token}", httponly=True)
-        return response
-    except Exception as e:
-        logger.error(f"GitHub OAuth callback error: {str(e)}")
-        return RedirectResponse(url=f"/login?error=GitHub%20OAuth%20failed:%20{str(e)}", status_code=302)
 
 # Custom middleware for 404 and 500 errors
 class NotFoundMiddleware(BaseHTTPMiddleware):
