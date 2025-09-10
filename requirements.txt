@@ -26,7 +26,7 @@ urllib3==2.0.7
 itsdangerous
 protobuf==3.19.6
 fastapi-users[sqlalchemy,oauth2]>=14.0.0  # حدثت من 13.0.0 إلى 14.0.0 للتوافق مع api/auth.py
-flash-attn>=2.0.0
+
 sqlalchemy>=2.0.35  # حدثت من 2.0.0 إلى 2.0.35 للتوافق مع fastapi-users
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
