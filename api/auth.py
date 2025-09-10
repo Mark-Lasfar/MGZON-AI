@@ -7,7 +7,6 @@ from httpx_oauth.clients.github import GitHubOAuth2
 from api.database import User, OAuthAccount, get_user_db
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
 from fastapi import Depends, Request, FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_users.models import UP
 from typing import Optional
 import os
@@ -86,7 +85,8 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         statement = select(OAuthAccount).where(
             (OAuthAccount.oauth_name == oauth_name) & (OAuthAccount.account_id == account_id)
         )
-        result = await self.user_db.session.run_sync(lambda s: s.execute(statement))
+        # Use synchronous session directly
+        result = self.user_db.session.execute(statement)
         existing_oauth_account = result.scalars().first()
 
         if existing_oauth_account is not None:
