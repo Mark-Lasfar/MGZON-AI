@@ -12,6 +12,8 @@ from fastapi_users.models import UP
 from typing import Optional
 import os
 import logging
+from api.models import UserRead, UserCreate, UserUpdate
+
 
 # Setup logging
 logger = logging.getLogger(__name__)
