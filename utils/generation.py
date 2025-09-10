@@ -595,6 +595,16 @@ def format_final(analysis_text: str, visible_text: str) -> str:
         f"{response}" if response else "No final response available."
     )
 
+def make_raw_preview() -> str:
+    return (
+        "```text
+        "Analysis (live):\n"
+        f"{raw_analysis}\n\n"
+        "Response (draft):\n"
+        f"{raw_visible}\n"
+        "```"
+    )
+
 def generate(message, history, system_prompt, temperature, reasoning_effort, enable_browsing, max_new_tokens, input_type="text", audio_data=None, image_data=None, output_format="text"):
     if not message.strip() and not audio_data and not image_data:
         yield "Please enter a prompt or upload a file."
@@ -680,16 +690,6 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
     raw_visible = ""
     raw_started = False
     last_flush_len = 0
-
-    def make_raw_preview() -> str:
-        return (
-            "```text
-            "Analysis (live):\n"
-            f"{raw_analysis}\n\n"
-            "Response (draft):\n"
-            f"{raw_visible}\n"
-            "```"
-        )
 
     try:
         stream = request_generation(
