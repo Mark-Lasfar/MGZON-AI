@@ -1,9 +1,10 @@
-FROM python:3.10-slim
+# استخدام صورة PyTorch مع CUDA
+FROM pytorch/pytorch:2.4.1-cuda12.1-cudnn9-devel
 
-# Set working directory
-WORKDIR /app
+# تحديث pip
+RUN pip install --upgrade pip
 
-# Install system dependencies
+# تثبيت الـ dependencies المطلوبة لـ ffmpeg و chromium-driver
 RUN apt-get update && apt-get install -y \
     chromium-driver \
     git \
@@ -12,27 +13,26 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Update pip
-RUN pip install --upgrade pip
+# تحديد مجلد العمل
+WORKDIR /app
 
-RUN pip install packaging torch==2.4.1
-
-# Copy requirements.txt and install dependencies
+# نسخ requirements.txt
 COPY requirements.txt .
+
+# تثبيت الـ dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create /data directory with correct permissions
+# إنشاء /data مع الصلاحيات
 RUN mkdir -p /data && chmod -R 755 /data
 
-# Copy all project files
+# نسخ باقي الملفات
 COPY . .
 
-# Verify files in /app
+# التحقق من الملفات
 RUN ls -R /app
 
-# Expose port 7860 for FastAPI
+# تعريض المنفذ 7860 لـ FastAPI
 EXPOSE 7860
 
-# Run the FastAPI app
+# تشغيل التطبيق
 CMD ["python", "main.py"]
-
