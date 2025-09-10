@@ -85,7 +85,6 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         statement = select(OAuthAccount).where(
             (OAuthAccount.oauth_name == oauth_name) & (OAuthAccount.account_id == account_id)
         )
-        # Use synchronous session directly
         result = self.user_db.session.execute(statement)
         existing_oauth_account = result.scalars().first()
 
@@ -93,21 +92,31 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             return await self.on_after_login(existing_oauth_account.user, request)
 
         if associate_by_email:
-            user = await self.user_db.get_by_email(account_email)
+            # Synchronous query for get_by_email
+            statement = select(User).where(User.email == account_email)
+            result = self.user_db.session.execute(statement)
+            user = result.scalars().first()
             if user is not None:
                 oauth_account.user_id = user.id
-                await self.user_db.add_oauth_account(oauth_account)
+                self.user_db.session.add(oauth_account)
+                self.user_db.session.commit()
                 return await self.on_after_login(user, request)
 
+        # Create new user
         user_dict = {
             "email": account_email,
             "hashed_password": self.password_helper.hash("dummy_password"),
             "is_active": True,
             "is_verified": is_verified_by_default,
         }
-        user = await self.user_db.create(user_dict)
+        user = User(**user_dict)
+        self.user_db.session.add(user)
+        self.user_db.session.commit()
+        self.user_db.session.refresh(user)
+
         oauth_account.user_id = user.id
-        await self.user_db.add_oauth_account(oauth_account)
+        self.user_db.session.add(oauth_account)
+        self.user_db.session.commit()
         return await self.on_after_login(user, request)
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
