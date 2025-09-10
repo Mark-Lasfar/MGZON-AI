@@ -1,3 +1,4 @@
+# utils/generation.py
 import os
 import re
 import json
@@ -36,7 +37,7 @@ BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # Updated to target model
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # بدون :cerebras
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
 TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "gpt2")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
@@ -77,7 +78,7 @@ def check_model_availability(model_name: str, api_key: str) -> tuple[bool, str, 
         if response.status_code == 200:
             data = response.json().get("data", {})
             providers = data.get("providers", [])
-            # Select the first available provider (e.g., 'together')
+            # Select the first available provider (e.g., 'cerebras')
             for provider in providers:
                 if provider.get("status") == "live":
                     provider_name = provider.get("provider")
@@ -682,7 +683,7 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
 
     def make_raw_preview() -> str:
         return (
-            "```text\n"
+            "```text
             "Analysis (live):\n"
             f"{raw_analysis}\n\n"
             "Response (draft):\n"
