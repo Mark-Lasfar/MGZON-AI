@@ -47,7 +47,7 @@ TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
 
 # Provider endpoints (based on Router API providers)
 PROVIDER_ENDPOINTS = {
-    "together": "https://api.together.xyz/v1",
+
     "fireworks-ai": "https://api.fireworks.ai/inference/v1",
     "nebius": "https://api.nebius.ai/v1",
     "novita": "https://api.novita.ai/v1",
