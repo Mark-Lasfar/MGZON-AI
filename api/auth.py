@@ -108,6 +108,7 @@ google_oauth_router = get_oauth_router(
     google_oauth_client,
     auth_backend,
     get_user_manager,
+    state_secret=SECRET,  # أضف هذا السطر
     associate_by_email=True,
     redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback",
 )
@@ -116,6 +117,7 @@ github_oauth_router = get_oauth_router(
     github_oauth_client,
     auth_backend,
     get_user_manager,
+    state_secret=SECRET,  # أضف هذا السطر
     associate_by_email=True,
     redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback",
 )
