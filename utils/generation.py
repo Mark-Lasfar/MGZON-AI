@@ -33,11 +33,11 @@ LATEX_DELIMS = [
 # إعداد العميل لـ Hugging Face Inference API
 HF_TOKEN = os.getenv("HF_TOKEN")
 BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")
+MODEL_NAME = os.getenv("MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")  # Changed to supported model
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mistral-7B-Instruct-v0.2")
-TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "openai/gpt-oss-20b")
+TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "gpt2")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
 CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
 ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
@@ -59,14 +59,15 @@ def check_model_availability(model_name: str, api_base: str, api_key: str) -> tu
         response = requests.get(
             f"{api_base}/models/{model_name}",
             headers={"Authorization": f"Bearer {api_key}"},
-            timeout=10
+            timeout=30  # Increased timeout
         )
         if response.status_code == 200:
+            logger.info(f"Model {model_name} is available")
             return True, api_key
         elif response.status_code == 429 and BACKUP_HF_TOKEN and api_key != BACKUP_HF_TOKEN:
             logger.warning(f"Rate limit reached for token {api_key}. Switching to backup token.")
             return check_model_availability(model_name, api_base, BACKUP_HF_TOKEN)
-        logger.error(f"Model {model_name} not available: {response.status_code}")
+        logger.error(f"Model {model_name} not available: {response.status_code} - {response.text}")
         return False, api_key
     except Exception as e:
         logger.error(f"Failed to check model availability for {model_name}: {e}")
