@@ -30,18 +30,31 @@ LATEX_DELIMS = [
     {"left": "\\(", "right": "\\)", "display": False},
 ]
 
-# إعداد العميل لـ Hugging Face Inference API
+# إعداد العميل لـ Hugging Face Router API
 HF_TOKEN = os.getenv("HF_TOKEN")
 BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
+ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")  # Changed to supported model
-SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mistral-7B-Instruct-v0.2")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # Updated to target model
+SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
 TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "gpt2")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
 CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
 ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
 TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
+
+# Provider endpoints (based on Router API providers)
+PROVIDER_ENDPOINTS = {
+    "together": "https://api.together.xyz/v1",
+    "fireworks-ai": "https://api.fireworks.ai/inference/v1",
+    "nebius": "https://api.nebius.ai/v1",
+    "novita": "https://api.novita.ai/v1",
+    "groq": "https://api.groq.com/openai/v1",
+    "cerebras": "https://api.cerebras.ai/v1",
+    "hyperbolic": "https://api.hyperbolic.xyz/v1",
+    "nscale": "https://api.nscale.ai/v1"
+}
 
 # Model alias mapping
 MODEL_ALIASES = {
@@ -54,37 +67,45 @@ MODEL_ALIASES = {
     "tts": TTS_MODEL
 }
 
-def check_model_availability(model_name: str, api_base: str, api_key: str) -> tuple[bool, str]:
+def check_model_availability(model_name: str, api_key: str) -> tuple[bool, str, str]:
     try:
         response = requests.get(
-            f"{api_base}/models/{model_name}",
+            f"{ROUTER_API_URL}/v1/models/{model_name}",
             headers={"Authorization": f"Bearer {api_key}"},
-            timeout=30  # Increased timeout
+            timeout=30
         )
         if response.status_code == 200:
-            logger.info(f"Model {model_name} is available")
-            return True, api_key
+            data = response.json().get("data", {})
+            providers = data.get("providers", [])
+            # Select the first available provider (e.g., 'together')
+            for provider in providers:
+                if provider.get("status") == "live":
+                    provider_name = provider.get("provider")
+                    endpoint = PROVIDER_ENDPOINTS.get(provider_name, API_ENDPOINT)
+                    logger.info(f"Model {model_name} is available via provider {provider_name} at {endpoint}")
+                    return True, api_key, endpoint
+            logger.error(f"No live providers found for model {model_name}")
+            return False, api_key, API_ENDPOINT
         elif response.status_code == 429 and BACKUP_HF_TOKEN and api_key != BACKUP_HF_TOKEN:
             logger.warning(f"Rate limit reached for token {api_key}. Switching to backup token.")
-            return check_model_availability(model_name, api_base, BACKUP_HF_TOKEN)
+            return check_model_availability(model_name, BACKUP_HF_TOKEN)
         logger.error(f"Model {model_name} not available: {response.status_code} - {response.text}")
-        return False, api_key
+        return False, api_key, API_ENDPOINT
     except Exception as e:
         logger.error(f"Failed to check model availability for {model_name}: {e}")
         if BACKUP_HF_TOKEN and api_key != BACKUP_HF_TOKEN:
             logger.warning(f"Retrying with backup token for {model_name}")
-            return check_model_availability(model_name, api_base, BACKUP_HF_TOKEN)
-        return False, api_key
+            return check_model_availability(model_name, BACKUP_HF_TOKEN)
+        return False, api_key, API_ENDPOINT
 
 def select_model(query: str, input_type: str = "text", preferred_model: Optional[str] = None) -> tuple[str, str]:
     # If user has a preferred model, use it unless the input type requires a specific model
     if preferred_model and preferred_model in MODEL_ALIASES:
         model_name = MODEL_ALIASES[preferred_model]
-        api_endpoint = API_ENDPOINT if model_name in [MODEL_NAME, TERTIARY_MODEL_NAME] else FALLBACK_API_ENDPOINT
-        is_available, _ = check_model_availability(model_name, api_endpoint, HF_TOKEN)
+        is_available, _, endpoint = check_model_availability(model_name, HF_TOKEN)
         if is_available:
-            logger.info(f"Selected preferred model {model_name} with endpoint {api_endpoint} for query: {query}")
-            return model_name, api_endpoint
+            logger.info(f"Selected preferred model {model_name} with endpoint {endpoint} for query: {query}")
+            return model_name, endpoint
 
     query_lower = query.lower()
     # دعم الصوت
@@ -111,10 +132,10 @@ def select_model(query: str, input_type: str = "text", preferred_model: Optional
         (TERTIARY_MODEL_NAME, API_ENDPOINT)
     ]
     for model_name, api_endpoint in available_models:
-        is_available, _ = check_model_availability(model_name, api_endpoint, HF_TOKEN)
+        is_available, _, endpoint = check_model_availability(model_name, HF_TOKEN)
         if is_available:
-            logger.info(f"Selected {model_name} with endpoint {api_endpoint} for query: {query}")
-            return model_name, api_endpoint
+            logger.info(f"Selected {model_name} with endpoint {endpoint} for query: {query}")
+            return model_name, endpoint
     logger.error("No models available. Falling back to default.")
     return MODEL_NAME, API_ENDPOINT
 
@@ -137,7 +158,7 @@ def request_generation(
     image_data: Optional[bytes] = None,
     output_format: str = "text"
 ) -> Generator[bytes | str, None, None]:
-    is_available, selected_api_key = check_model_availability(model_name, api_base, api_key)
+    is_available, selected_api_key, selected_endpoint = check_model_availability(model_name, api_key)
     if not is_available:
         yield f"Error: Model {model_name} is not available. Please check the model endpoint or token."
         return
@@ -158,7 +179,7 @@ def request_generation(
             yield chunk
         return
 
-    client = OpenAI(api_key=selected_api_key, base_url=api_base, timeout=120.0)
+    client = OpenAI(api_key=selected_api_key, base_url=selected_endpoint, timeout=120.0)
     task_type = "general"
     enhanced_system_prompt = system_prompt
 
@@ -391,7 +412,7 @@ def request_generation(
             logger.warning(f"Retrying with backup token for model {model_name}")
             for chunk in request_generation(
                 api_key=BACKUP_HF_TOKEN,
-                api_base=api_base,
+                api_base=selected_endpoint,
                 message=message,
                 system_prompt=system_prompt,
                 model_name=model_name,
@@ -414,11 +435,11 @@ def request_generation(
             fallback_endpoint = FALLBACK_API_ENDPOINT
             logger.info(f"Retrying with fallback model: {fallback_model} on {fallback_endpoint}")
             try:
-                is_available, selected_api_key = check_model_availability(fallback_model, fallback_endpoint, selected_api_key)
+                is_available, selected_api_key, selected_endpoint = check_model_availability(fallback_model, selected_api_key)
                 if not is_available:
                     yield f"Error: Fallback model {fallback_model} is not available."
                     return
-                client = OpenAI(api_key=selected_api_key, base_url=fallback_endpoint, timeout=120.0)
+                client = OpenAI(api_key=selected_api_key, base_url=selected_endpoint, timeout=120.0)
                 stream = client.chat.completions.create(
                     model=fallback_model,
                     messages=input_messages,
@@ -496,11 +517,11 @@ def request_generation(
             except Exception as e2:
                 logger.exception(f"[Gateway] Streaming failed for fallback model {fallback_model}: {e2}")
                 try:
-                    is_available, selected_api_key = check_model_availability(TERTIARY_MODEL_NAME, API_ENDPOINT, selected_api_key)
+                    is_available, selected_api_key, selected_endpoint = check_model_availability(TERTIARY_MODEL_NAME, selected_api_key)
                     if not is_available:
                         yield f"Error: Tertiary model {TERTIARY_MODEL_NAME} is not available."
                         return
-                    client = OpenAI(api_key=selected_api_key, base_url=API_ENDPOINT, timeout=120.0)
+                    client = OpenAI(api_key=selected_api_key, base_url=selected_endpoint, timeout=120.0)
                     stream = client.chat.completions.create(
                         model=TERTIARY_MODEL_NAME,
                         messages=input_messages,
