@@ -6,7 +6,7 @@ from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from api.database import User, OAuthAccount, get_user_db
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
-from fastapi import Depends, Request
+from fastapi import Depends, Request, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_users.models import UP
 from typing import Optional
