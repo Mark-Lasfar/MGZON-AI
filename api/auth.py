@@ -13,6 +13,7 @@ from typing import Optional
 import os
 import logging
 from api.models import UserRead, UserCreate, UserUpdate
+from sqlalchemy import select
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -80,7 +81,14 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             "refresh_token": refresh_token,
         }
         oauth_account = OAuthAccount(**oauth_account_dict)
-        existing_oauth_account = await self.user_db.get_by_oauth_account(oauth_name, account_id)
+
+        # Custom query to fetch OAuth account
+        statement = select(OAuthAccount).where(
+            (OAuthAccount.oauth_name == oauth_name) & (OAuthAccount.account_id == account_id)
+        )
+        result = await self.user_db.session.run_sync(lambda s: s.execute(statement))
+        existing_oauth_account = result.scalars().first()
+
         if existing_oauth_account is not None:
             return await self.on_after_login(existing_oauth_account.user, request)
 
@@ -126,7 +134,7 @@ github_oauth_router = get_oauth_router(
 )
 
 fastapi_users = FastAPIUsers[User, int](
-    get_user_manager,  # تم تصحيح الـ dependency من get_user_db إلى get_user_manager
+    get_user_manager,
     [auth_backend],
 )
 
