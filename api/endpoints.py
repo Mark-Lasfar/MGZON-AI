@@ -28,10 +28,11 @@ BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 if not BACKUP_HF_TOKEN:
     logger.warning("BACKUP_HF_TOKEN is not set. Fallback to secondary model will not work if primary token fails.")
 
+ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")  # Changed to supported model
-SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mistral-7B-Instruct-v0.2")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # Updated to target model
+SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
 TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "gpt2")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
 CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
@@ -116,7 +117,7 @@ async def model_info():
             {"alias": "audio", "description": "Audio transcription model (default)"},
             {"alias": "tts", "description": "Text-to-speech model (default)"}
         ],
-        "api_base": API_ENDPOINT,
+        "api_base": ROUTER_API_URL,
         "fallback_api_base": FALLBACK_API_ENDPOINT,
         "status": "online"
     }
@@ -182,13 +183,13 @@ async def chat_endpoint(
     )
     if req.output_format == "audio":
         audio_chunks = []
-        for chunk in stream:  # Changed from async for
+        for chunk in stream:
             if isinstance(chunk, bytes):
                 audio_chunks.append(chunk)
         audio_data = b"".join(audio_chunks)
         return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
     response_chunks = []
-    for chunk in stream:  # Changed from async for
+    for chunk in stream:
         if isinstance(chunk, str):
             response_chunks.append(chunk)
     response = "".join(response_chunks)
@@ -255,7 +256,7 @@ async def audio_transcription_endpoint(
         output_format="text"
     )
     response_chunks = []
-    for chunk in stream:  # Changed from async for
+    for chunk in stream:
         if isinstance(chunk, str):
             response_chunks.append(chunk)
     response = "".join(response_chunks)
@@ -300,7 +301,7 @@ async def text_to_speech_endpoint(
         output_format="audio"
     )
     audio_chunks = []
-    for chunk in stream:  # Changed from async for
+    for chunk in stream:
         if isinstance(chunk, bytes):
             audio_chunks.append(chunk)
     audio_data = b"".join(audio_chunks)
@@ -340,13 +341,13 @@ async def code_endpoint(
     )
     if output_format == "audio":
         audio_chunks = []
-        for chunk in stream:  # Changed from async for
+        for chunk in stream:
             if isinstance(chunk, bytes):
                 audio_chunks.append(chunk)
         audio_data = b"".join(audio_chunks)
         return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
     response_chunks = []
-    for chunk in stream:  # Changed from async for
+    for chunk in stream:
         if isinstance(chunk, str):
             response_chunks.append(chunk)
     response = "".join(response_chunks)
@@ -383,13 +384,13 @@ async def analysis_endpoint(
     )
     if output_format == "audio":
         audio_chunks = []
-        for chunk in stream:  # Changed from async for
+        for chunk in stream:
             if isinstance(chunk, bytes):
                 audio_chunks.append(chunk)
         audio_data = b"".join(audio_chunks)
         return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
     response_chunks = []
-    for chunk in stream:  # Changed from async for
+    for chunk in stream:
         if isinstance(chunk, str):
             response_chunks.append(chunk)
     response = "".join(response_chunks)
@@ -446,13 +447,13 @@ async def image_analysis_endpoint(
     )
     if output_format == "audio":
         audio_chunks = []
-        for chunk in stream:  # Changed from async for
+        for chunk in stream:
             if isinstance(chunk, bytes):
                 audio_chunks.append(chunk)
         audio_data = b"".join(audio_chunks)
         return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
     response_chunks = []
-    for chunk in stream:  # Changed from async for
+    for chunk in stream:
         if isinstance(chunk, str):
             response_chunks.append(chunk)
     response = "".join(response_chunks)
@@ -473,9 +474,10 @@ async def image_analysis_endpoint(
     return {"image_analysis": response}
 
 @router.get("/api/test-model")
-async def test_model(model: str = MODEL_NAME, endpoint: str = API_ENDPOINT):
+async def test_model(model: str = MODEL_NAME, endpoint: str = ROUTER_API_URL):
     try:
-        client = OpenAI(api_key=HF_TOKEN, base_url=endpoint, timeout=60.0)
+        _, api_key, selected_endpoint = check_model_availability(model, HF_TOKEN)
+        client = OpenAI(api_key=api_key, base_url=selected_endpoint, timeout=60.0)
         response = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": "Test"}],
