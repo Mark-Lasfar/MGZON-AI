@@ -8,14 +8,14 @@ from api.models import QueryRequest, ConversationOut, ConversationCreate, UserUp
 from api.auth import current_active_user
 from api.database import get_db
 from sqlalchemy.orm import Session
-from utils.generation import request_generation, select_model
+from utils.generation import request_generation, select_model, check_model_availability
 from utils.web_search import web_search
 import io
 from openai import OpenAI
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
 import logging
-from typing import List
+from typing import List, Optional
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -31,9 +31,9 @@ if not BACKUP_HF_TOKEN:
     logger.warning("BACKUP_HF_TOKEN is not set. Fallback to secondary model will not work if primary token fails.")
 
 ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co")
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api.cerebras.ai/v1")  # تغيير الافتراضي لـ Cerebras
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # بدون :cerebras
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # النموذج الرئيسي
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
 TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
@@ -84,6 +84,16 @@ async def handle_session(request: Request):
             detail="Message limit reached. Please log in to continue."
         )
     return session_id
+
+# Helper function to enhance system prompt for Arabic language
+def enhance_system_prompt(system_prompt: str, message: str, user: Optional[User] = None) -> str:
+    enhanced_prompt = system_prompt
+    # Check if the message is in Arabic
+    if any(0x0600 <= ord(char) <= 0x06FF for char in message):
+        enhanced_prompt += "\nRespond in Arabic with clear, concise, and accurate information tailored to the user's query."
+    if user and user.additional_info:
+        enhanced_prompt += f"\nUser Profile: {user.additional_info}\nConversation Style: {user.conversation_style or 'default'}"
+    return enhanced_prompt
 
 @router.get("/api/settings")
 async def get_settings(user: User = Depends(current_active_user)):
@@ -166,13 +176,18 @@ async def chat_endpoint(
     # Use user's preferred model if set
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model(req.message, input_type="text", preferred_model=preferred_model)
-    system_prompt = req.system_prompt
-    if user and user.additional_info:
-        system_prompt = f"{system_prompt}\nUser Profile: {user.additional_info}\nConversation Style: {user.conversation_style or 'default'}"
+    
+    # Check model availability
+    is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
+    if not is_available:
+        logger.error(f"Model {model_name} is not available at {api_endpoint}")
+        raise HTTPException(status_code=503, detail=f"Model {model_name} is not available. Please try another model.")
+    
+    system_prompt = enhance_system_prompt(req.system_prompt, req.message, user)
     
     stream = request_generation(
-        api_key=HF_TOKEN,
-        api_base=api_endpoint,
+        api_key=api_key,
+        api_base=selected_endpoint,
         message=req.message,
         system_prompt=system_prompt,
         model_name=model_name,
@@ -183,19 +198,39 @@ async def chat_endpoint(
         input_type="text",
         output_format=req.output_format
     )
+    
     if req.output_format == "audio":
         audio_chunks = []
-        for chunk in stream:
-            if isinstance(chunk, bytes):
-                audio_chunks.append(chunk)
-        audio_data = b"".join(audio_chunks)
-        return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+        try:
+            for chunk in stream:
+                if isinstance(chunk, bytes):
+                    audio_chunks.append(chunk)
+                else:
+                    logger.warning(f"Unexpected non-bytes chunk in audio stream: {chunk}")
+            if not audio_chunks:
+                logger.error("No audio data generated.")
+                raise HTTPException(status_code=500, detail="No audio data generated.")
+            audio_data = b"".join(audio_chunks)
+            return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+        except Exception as e:
+            logger.error(f"Audio generation failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Audio generation failed: {str(e)}")
+    
     response_chunks = []
-    for chunk in stream:
-        if isinstance(chunk, str):
-            response_chunks.append(chunk)
-    response = "".join(response_chunks)
-    logger.info(f"Chat response: {response}")
+    try:
+        for chunk in stream:
+            if isinstance(chunk, str):
+                response_chunks.append(chunk)
+            else:
+                logger.warning(f"Unexpected non-string chunk in text stream: {chunk}")
+        response = "".join(response_chunks)
+        if not response.strip():
+            logger.error("Empty response generated.")
+            raise HTTPException(status_code=500, detail="Empty response generated from model.")
+        logger.info(f"Chat response: {response[:100]}...")  # Log first 100 chars
+    except Exception as e:
+        logger.error(f"Chat generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Chat generation failed: {str(e)}")
     
     if user and conversation:
         assistant_msg = Message(role="assistant", content=response, conversation_id=conversation.id)
@@ -244,12 +279,19 @@ async def audio_transcription_endpoint(
         db.commit()
     
     model_name, api_endpoint = select_model("transcribe audio", input_type="audio")
+    
+    # Check model availability
+    is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
+    if not is_available:
+        logger.error(f"Model {model_name} is not available at {api_endpoint}")
+        raise HTTPException(status_code=503, detail=f"Model {model_name} is not available. Please try another model.")
+    
     audio_data = await file.read()
     stream = request_generation(
-        api_key=HF_TOKEN,
-        api_base=api_endpoint,
+        api_key=api_key,
+        api_base=selected_endpoint,
         message="Transcribe audio",
-        system_prompt="Transcribe the provided audio using Whisper.",
+        system_prompt="Transcribe the provided audio using Whisper. Ensure accurate transcription in the detected language.",
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=2048,
@@ -258,11 +300,20 @@ async def audio_transcription_endpoint(
         output_format="text"
     )
     response_chunks = []
-    for chunk in stream:
-        if isinstance(chunk, str):
-            response_chunks.append(chunk)
-    response = "".join(response_chunks)
-    logger.info(f"Audio transcription response: {response}")
+    try:
+        for chunk in stream:
+            if isinstance(chunk, str):
+                response_chunks.append(chunk)
+            else:
+                logger.warning(f"Unexpected non-string chunk in transcription stream: {chunk}")
+        response = "".join(response_chunks)
+        if not response.strip():
+            logger.error("Empty transcription generated.")
+            raise HTTPException(status_code=500, detail="Empty transcription generated from model.")
+        logger.info(f"Audio transcription response: {response[:100]}...")
+    except Exception as e:
+        logger.error(f"Audio transcription failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Audio transcription failed: {str(e)}")
     
     if user and conversation:
         assistant_msg = Message(role="assistant", content=response, conversation_id=conversation.id)
@@ -290,12 +341,22 @@ async def text_to_speech_endpoint(
         await handle_session(request)
     
     text = req.get("text", "")
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Text input is required for text-to-speech.")
+    
     model_name, api_endpoint = select_model("text to speech", input_type="tts")
+    
+    # Check model availability
+    is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
+    if not is_available:
+        logger.error(f"Model {model_name} is not available at {api_endpoint}")
+        raise HTTPException(status_code=503, detail=f"Model {model_name} is not available. Please try another model.")
+    
     stream = request_generation(
-        api_key=HF_TOKEN,
-        api_base=api_endpoint,
+        api_key=api_key,
+        api_base=selected_endpoint,
         message=text,
-        system_prompt="Convert the provided text to speech using a text-to-speech model.",
+        system_prompt="Convert the provided text to speech using a text-to-speech model. Ensure clear and natural pronunciation, especially for Arabic text.",
         model_name=model_name,
         temperature=0.7,
         max_new_tokens=2048,
@@ -303,11 +364,20 @@ async def text_to_speech_endpoint(
         output_format="audio"
     )
     audio_chunks = []
-    for chunk in stream:
-        if isinstance(chunk, bytes):
-            audio_chunks.append(chunk)
-    audio_data = b"".join(audio_chunks)
-    return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+    try:
+        for chunk in stream:
+            if isinstance(chunk, bytes):
+                audio_chunks.append(chunk)
+            else:
+                logger.warning(f"Unexpected non-bytes chunk in TTS stream: {chunk}")
+        if not audio_chunks:
+            logger.error("No audio data generated for TTS.")
+            raise HTTPException(status_code=500, detail="No audio data generated for text-to-speech.")
+        audio_data = b"".join(audio_chunks)
+        return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+    except Exception as e:
+        logger.error(f"Text-to-speech generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Text-to-speech generation failed: {str(e)}")
 
 @router.post("/api/code")
 async def code_endpoint(
@@ -323,16 +393,27 @@ async def code_endpoint(
     task = req.get("task")
     code = req.get("code", "")
     output_format = req.get("output_format", "text")
+    if not task:
+        raise HTTPException(status_code=400, detail="Task description is required.")
+    
     prompt = f"Generate code for task: {task} using {framework}. Existing code: {code}"
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model(prompt, input_type="text", preferred_model=preferred_model)
-    system_prompt = "You are a coding expert. Provide detailed, well-commented code with examples and explanations."
-    if user and user.additional_info:
-        system_prompt = f"{system_prompt}\nUser Profile: {user.additional_info}\nConversation Style: {user.conversation_style or 'default'}"
+    
+    # Check model availability
+    is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
+    if not is_available:
+        logger.error(f"Model {model_name} is not available at {api_endpoint}")
+        raise HTTPException(status_code=503, detail=f"Model {model_name} is not available. Please try another model.")
+    
+    system_prompt = enhance_system_prompt(
+        "You are a coding expert. Provide detailed, well-commented code with examples and explanations.",
+        prompt, user
+    )
     
     stream = request_generation(
-        api_key=HF_TOKEN,
-        api_base=api_endpoint,
+        api_key=api_key,
+        api_base=selected_endpoint,
         message=prompt,
         system_prompt=system_prompt,
         model_name=model_name,
@@ -343,17 +424,36 @@ async def code_endpoint(
     )
     if output_format == "audio":
         audio_chunks = []
-        for chunk in stream:
-            if isinstance(chunk, bytes):
-                audio_chunks.append(chunk)
-        audio_data = b"".join(audio_chunks)
-        return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+        try:
+            for chunk in stream:
+                if isinstance(chunk, bytes):
+                    audio_chunks.append(chunk)
+                else:
+                    logger.warning(f"Unexpected non-bytes chunk in code audio stream: {chunk}")
+            if not audio_chunks:
+                logger.error("No audio data generated for code.")
+                raise HTTPException(status_code=500, detail="No audio data generated for code.")
+            audio_data = b"".join(audio_chunks)
+            return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+        except Exception as e:
+            logger.error(f"Code audio generation failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Code audio generation failed: {str(e)}")
+    
     response_chunks = []
-    for chunk in stream:
-        if isinstance(chunk, str):
-            response_chunks.append(chunk)
-    response = "".join(response_chunks)
-    return {"generated_code": response}
+    try:
+        for chunk in stream:
+            if isinstance(chunk, str):
+                response_chunks.append(chunk)
+            else:
+                logger.warning(f"Unexpected non-string chunk in code stream: {chunk}")
+        response = "".join(response_chunks)
+        if not response.strip():
+            logger.error("Empty code response generated.")
+            raise HTTPException(status_code=500, detail="Empty code response generated from model.")
+        return {"generated_code": response}
+    except Exception as e:
+        logger.error(f"Code generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Code generation failed: {str(e)}")
 
 @router.post("/api/analysis")
 async def analysis_endpoint(
@@ -367,15 +467,26 @@ async def analysis_endpoint(
     
     message = req.get("text", "")
     output_format = req.get("output_format", "text")
+    if not message.strip():
+        raise HTTPException(status_code=400, detail="Text input is required for analysis.")
+    
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model(message, input_type="text", preferred_model=preferred_model)
-    system_prompt = "You are an expert analyst. Provide detailed analysis with step-by-step reasoning and examples."
-    if user and user.additional_info:
-        system_prompt = f"{system_prompt}\nUser Profile: {user.additional_info}\nConversation Style: {user.conversation_style or 'default'}"
+    
+    # Check model availability
+    is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
+    if not is_available:
+        logger.error(f"Model {model_name} is not available at {api_endpoint}")
+        raise HTTPException(status_code=503, detail=f"Model {model_name} is not available. Please try another model.")
+    
+    system_prompt = enhance_system_prompt(
+        "You are an expert analyst. Provide detailed analysis with step-by-step reasoning and examples.",
+        message, user
+    )
     
     stream = request_generation(
-        api_key=HF_TOKEN,
-        api_base=api_endpoint,
+        api_key=api_key,
+        api_base=selected_endpoint,
         message=message,
         system_prompt=system_prompt,
         model_name=model_name,
@@ -386,17 +497,36 @@ async def analysis_endpoint(
     )
     if output_format == "audio":
         audio_chunks = []
-        for chunk in stream:
-            if isinstance(chunk, bytes):
-                audio_chunks.append(chunk)
-        audio_data = b"".join(audio_chunks)
-        return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+        try:
+            for chunk in stream:
+                if isinstance(chunk, bytes):
+                    audio_chunks.append(chunk)
+                else:
+                    logger.warning(f"Unexpected non-bytes chunk in analysis audio stream: {chunk}")
+            if not audio_chunks:
+                logger.error("No audio data generated for analysis.")
+                raise HTTPException(status_code=500, detail="No audio data generated for analysis.")
+            audio_data = b"".join(audio_chunks)
+            return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+        except Exception as e:
+            logger.error(f"Analysis audio generation failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Analysis audio generation failed: {str(e)}")
+    
     response_chunks = []
-    for chunk in stream:
-        if isinstance(chunk, str):
-            response_chunks.append(chunk)
-    response = "".join(response_chunks)
-    return {"analysis": response}
+    try:
+        for chunk in stream:
+            if isinstance(chunk, str):
+                response_chunks.append(chunk)
+            else:
+                logger.warning(f"Unexpected non-string chunk in analysis stream: {chunk}")
+        response = "".join(response_chunks)
+        if not response.strip():
+            logger.error("Empty analysis response generated.")
+            raise HTTPException(status_code=500, detail="Empty analysis response generated from model.")
+        return {"analysis": response}
+    except Exception as e:
+        logger.error(f"Analysis generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis generation failed: {str(e)}")
 
 @router.post("/api/image-analysis")
 async def image_analysis_endpoint(
@@ -430,14 +560,22 @@ async def image_analysis_endpoint(
     
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model("analyze image", input_type="image", preferred_model=preferred_model)
+    
+    # Check model availability
+    is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
+    if not is_available:
+        logger.error(f"Model {model_name} is not available at {api_endpoint}")
+        raise HTTPException(status_code=503, detail=f"Model {model_name} is not available. Please try another model.")
+    
     image_data = await file.read()
-    system_prompt = "You are an expert in image analysis. Provide detailed descriptions or classifications based on the query."
-    if user and user.additional_info:
-        system_prompt = f"{system_prompt}\nUser Profile: {user.additional_info}\nConversation Style: {user.conversation_style or 'default'}"
+    system_prompt = enhance_system_prompt(
+        "You are an expert in image analysis. Provide detailed descriptions or classifications based on the query.",
+        "Analyze this image", user
+    )
     
     stream = request_generation(
-        api_key=HF_TOKEN,
-        api_base=api_endpoint,
+        api_key=api_key,
+        api_base=selected_endpoint,
         message="Analyze this image",
         system_prompt=system_prompt,
         model_name=model_name,
@@ -449,36 +587,59 @@ async def image_analysis_endpoint(
     )
     if output_format == "audio":
         audio_chunks = []
-        for chunk in stream:
-            if isinstance(chunk, bytes):
-                audio_chunks.append(chunk)
-        audio_data = b"".join(audio_chunks)
-        return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+        try:
+            for chunk in stream:
+                if isinstance(chunk, bytes):
+                    audio_chunks.append(chunk)
+                else:
+                    logger.warning(f"Unexpected non-bytes chunk in image analysis audio stream: {chunk}")
+            if not audio_chunks:
+                logger.error("No audio data generated for image analysis.")
+                raise HTTPException(status_code=500, detail="No audio data generated for image analysis.")
+            audio_data = b"".join(audio_chunks)
+            return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
+        except Exception as e:
+            logger.error(f"Image analysis audio generation failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Image analysis audio generation failed: {str(e)}")
+    
     response_chunks = []
-    for chunk in stream:
-        if isinstance(chunk, str):
-            response_chunks.append(chunk)
-    response = "".join(response_chunks)
-    
-    if user and conversation:
-        assistant_msg = Message(role="assistant", content=response, conversation_id=conversation.id)
-        db.add(assistant_msg)
-        db.commit()
-        conversation.updated_at = datetime.utcnow()
-        db.commit()
-        return {
-            "image_analysis": response,
-            "conversation_id": conversation.conversation_id,
-            "conversation_url": f"https://mgzon-mgzon-app.hf.space/chat/{conversation.conversation_id}",
-            "conversation_title": conversation.title
-        }
-    
-    return {"image_analysis": response}
+    try:
+        for chunk in stream:
+            if isinstance(chunk, str):
+                response_chunks.append(chunk)
+            else:
+                logger.warning(f"Unexpected non-string chunk in image analysis stream: {chunk}")
+        response = "".join(response_chunks)
+        if not response.strip():
+            logger.error("Empty image analysis response generated.")
+            raise HTTPException(status_code=500, detail="Empty image analysis response generated from model.")
+        
+        if user and conversation:
+            assistant_msg = Message(role="assistant", content=response, conversation_id=conversation.id)
+            db.add(assistant_msg)
+            db.commit()
+            conversation.updated_at = datetime.utcnow()
+            db.commit()
+            return {
+                "image_analysis": response,
+                "conversation_id": conversation.conversation_id,
+                "conversation_url": f"https://mgzon-mgzon-app.hf.space/chat/{conversation.conversation_id}",
+                "conversation_title": conversation.title
+            }
+        
+        return {"image_analysis": response}
+    except Exception as e:
+        logger.error(f"Image analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
 
 @router.get("/api/test-model")
 async def test_model(model: str = MODEL_NAME, endpoint: str = ROUTER_API_URL):
     try:
-        _, api_key, selected_endpoint = check_model_availability(model, HF_TOKEN)
+        is_available, api_key, selected_endpoint = check_model_availability(model, HF_TOKEN)
+        if not is_available:
+            logger.error(f"Model {model} is not available at {endpoint}")
+            raise HTTPException(status_code=503, detail=f"Model {model} is not available.")
+        
         client = OpenAI(api_key=api_key, base_url=selected_endpoint, timeout=60.0)
         response = client.chat.completions.create(
             model=model,
@@ -487,7 +648,8 @@ async def test_model(model: str = MODEL_NAME, endpoint: str = ROUTER_API_URL):
         )
         return {"status": "success", "response": response.choices[0].message.content}
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        logger.error(f"Test model failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Test model failed: {str(e)}")
 
 @router.post("/api/conversations", response_model=ConversationOut)
 async def create_conversation(

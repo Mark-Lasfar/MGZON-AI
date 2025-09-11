@@ -1,7 +1,9 @@
+#web_search.py
 import os
 import requests
 from bs4 import BeautifulSoup
 import logging
+import time  # لإضافة التأخير
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,8 @@ def web_search(query: str) -> str:
             snippet = item.get("snippet", "")
             link = item.get("link", "")
             try:
-                page_response = requests.get(link, timeout=5)
+                time.sleep(2)  # إضافة تأخير 2 ثواني بين كل طلب
+                page_response = requests.get(link, timeout=10)
                 page_response.raise_for_status()
                 soup = BeautifulSoup(page_response.text, "html.parser")
                 paragraphs = soup.find_all("p")
@@ -36,3 +39,4 @@ def web_search(query: str) -> str:
     except Exception as e:
         logger.exception("Web search failed")
         return f"Web search error: {e}"
+
