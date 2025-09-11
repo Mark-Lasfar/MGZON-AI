@@ -14,7 +14,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
 from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router
-from api.database import get_db
+from api.database import get_db, User
 from api.models import UserRead, UserCreate, UserUpdate
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
