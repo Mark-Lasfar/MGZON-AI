@@ -25,10 +25,10 @@ cache = TTLCache(maxsize=int(os.getenv("QUEUE_SIZE", 100)), ttl=600)
 
 # تعريف LATEX_DELIMS
 LATEX_DELIMS = [
-    {"left": "$$  ", "right": "  $$", "display": True},
+    {"left": "$$", "right": "$$", "display": True},
     {"left": "$", "right": "$", "display": False},
-    {"left": "\$$ ", "right": "\ $$", "display": True},
-    {"left": "\$$ ", "right": "\ $$", "display": False},
+    {"left": "\\[", "right": "\\]", "display": True},
+    {"left": "\\(", "right": "\\)", "display": False},
 ]
 
 # إعداد العميل لـ Hugging Face Router API
@@ -37,7 +37,7 @@ BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # بدون :cerebras
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # النموذج الرئيسي
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
 TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
@@ -45,9 +45,8 @@ CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14"
 ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
 TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
 
-# Provider endpoints (based on Router API providers)
+# Provider endpoints (بدون together)
 PROVIDER_ENDPOINTS = {
-
     "fireworks-ai": "https://api.fireworks.ai/inference/v1",
     "nebius": "https://api.nebius.ai/v1",
     "novita": "https://api.novita.ai/v1",
@@ -78,7 +77,13 @@ def check_model_availability(model_name: str, api_key: str) -> tuple[bool, str, 
         if response.status_code == 200:
             data = response.json().get("data", {})
             providers = data.get("providers", [])
-            # Select the first available provider (e.g., 'cerebras')
+            # Prefer "cerebras" if available
+            for provider in providers:
+                if provider.get("provider") == "cerebras" and provider.get("status") == "live":
+                    endpoint = PROVIDER_ENDPOINTS.get("cerebras", API_ENDPOINT)
+                    logger.info(f"Model {model_name} is available via preferred provider cerebras at {endpoint}")
+                    return True, api_key, endpoint
+            # Fallback to first live provider if cerebras not available
             for provider in providers:
                 if provider.get("status") == "live":
                     provider_name = provider.get("provider")
@@ -410,7 +415,7 @@ def request_generation(
     except Exception as e:
         logger.exception(f"[Gateway] Streaming failed for model {model_name}: {e}")
         if selected_api_key != BACKUP_HF_TOKEN and BACKUP_HF_TOKEN:
-            logger.warning(f"Retrying with backup token for model {model_name}")
+            logger.warning(f"Retrying with backup token for {model_name}")
             for chunk in request_generation(
                 api_key=BACKUP_HF_TOKEN,
                 api_base=selected_endpoint,
@@ -475,27 +480,27 @@ def request_generation(
                             buffer = ""
                         continue
 
-                    if chunk.choices[0].finish_reason in ("stop", "error", "length"):
-                        if buffer:
-                            cached_chunks.append(buffer)
-                            yield buffer
-                            buffer = ""
+                        if chunk.choices[0].finish_reason in ("stop", "error", "length"):
+                            if buffer:
+                                cached_chunks.append(buffer)
+                                yield buffer
+                                buffer = ""
 
-                        if reasoning_started and not reasoning_closed:
-                            cached_chunks.append("assistantfinal")
-                            yield "assistantfinal"
-                            reasoning_closed = True
+                            if reasoning_started and not reasoning_closed:
+                                cached_chunks.append("assistantfinal")
+                                yield "assistantfinal"
+                                reasoning_closed = True
 
-                        if not saw_visible_output:
-                            cached_chunks.append("No visible output produced.")
-                            yield "No visible output produced."
-                        if chunk.choices[0].finish_reason == "error":
-                            cached_chunks.append(f"Error: Unknown error with fallback model {fallback_model}")
-                            yield f"Error: Unknown error with fallback model {fallback_model}"
-                        elif chunk.choices[0].finish_reason == "length":
-                            cached_chunks.append("Response truncated due to token limit. Please refine your query or request continuation.")
-                            yield "Response truncated due to token limit. Please refine your query or request continuation."
-                        break
+                            if not saw_visible_output:
+                                cached_chunks.append("No visible output produced.")
+                                yield "No visible output produced."
+                            if chunk.choices[0].finish_reason == "error":
+                                cached_chunks.append(f"Error: Unknown error with fallback model {fallback_model}")
+                                yield f"Error: Unknown error with fallback model {fallback_model}"
+                            elif chunk.choices[0].finish_reason == "length":
+                                cached_chunks.append("Response truncated due to token limit. Please refine your query or request continuation.")
+                                yield "Response truncated due to token limit. Please refine your query or request continuation."
+                            break
 
                 if buffer and output_format == "audio":
                     try:

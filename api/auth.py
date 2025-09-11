@@ -95,8 +95,21 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             logger.info(f"Found existing OAuth account for {oauth_name}, account_id: {account_id}")
             user = existing_oauth_account.user
             if user is None:
-                logger.error(f"No user associated with OAuth account {account_id}")
-                raise ValueError("No user associated with this OAuth account")
+                logger.error(f"No user associated with OAuth account {account_id}. Creating new user.")
+                # Create new user if user is None
+                user_dict = {
+                    "email": account_email,
+                    "hashed_password": self.password_helper.hash("dummy_password"),
+                    "is_active": True,
+                    "is_verified": is_verified_by_default,
+                }
+                user = User(**user_dict)
+                self.user_db.session.add(user)
+                self.user_db.session.commit()
+                self.user_db.session.refresh(user)
+                existing_oauth_account.user_id = user.id
+                self.user_db.session.commit()
+                logger.info(f"Created new user and linked to existing OAuth account: {user.email}")
             logger.info(f"Returning existing user: {user.email}")
             return await self.on_after_login(user, request)
 
@@ -105,13 +118,25 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             statement = select(User).where(User.email == account_email)
             result = self.user_db.session.execute(statement)
             user = result.scalars().first()
-            if user is not None:
-                logger.info(f"Found existing user by email: {user.email}")
-                oauth_account.user_id = user.id
-                self.user_db.session.add(oauth_account)
+            if user is None:
+                logger.error(f"No user found for email {account_email}. Creating new user.")
+                # Create new user if not found
+                user_dict = {
+                    "email": account_email,
+                    "hashed_password": self.password_helper.hash("dummy_password"),
+                    "is_active": True,
+                    "is_verified": is_verified_by_default,
+                }
+                user = User(**user_dict)
+                self.user_db.session.add(user)
                 self.user_db.session.commit()
-                logger.info(f"Associated OAuth account with user: {user.email}")
-                return await self.on_after_login(user, request)
+                self.user_db.session.refresh(user)
+                logger.info(f"Created new user for email: {user.email}")
+            oauth_account.user_id = user.id
+            self.user_db.session.add(oauth_account)
+            self.user_db.session.commit()
+            logger.info(f"Associated OAuth account with user: {user.email}")
+            return await self.on_after_login(user, request)
 
         # Create new user
         logger.info(f"Creating new user for email: {account_email}")
