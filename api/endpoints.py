@@ -3,7 +3,8 @@ import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File
 from fastapi.responses import StreamingResponse
-from api.models import QueryRequest, User, Conversation, Message, ConversationOut, ConversationCreate, UserUpdate
+from api.database import User, Conversation, Message
+from api.models import QueryRequest, ConversationOut, ConversationCreate, UserUpdate
 from api.auth import current_active_user
 from api.database import get_db
 from sqlalchemy.orm import Session
