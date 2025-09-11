@@ -10,11 +10,13 @@ RUN apt-get update && apt-get install -y \
     gcc \
     libc-dev \
     ffmpeg \
+    sqlite3 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Update pip
 RUN pip install --upgrade pip
 
+# Install torch and dependencies
 RUN pip install packaging torch==2.4.1
 
 # Copy requirements.txt and install dependencies
@@ -30,9 +32,12 @@ COPY . .
 # Verify files in /app
 RUN ls -R /app
 
+# Initialize the database
+ENV SQLALCHEMY_DATABASE_URL=sqlite:////data/mgzon_users.db
+RUN python init_db.py
+
 # Expose port 7860 for FastAPI
 EXPOSE 7860
 
 # Run the FastAPI app
 CMD ["python", "main.py"]
-

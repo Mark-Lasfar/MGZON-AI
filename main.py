@@ -14,8 +14,8 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
 from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router
-from api.database import get_db, engine, Base
-from api.models import User, UserRead, UserCreate, Conversation, UserUpdate  # استيراد User
+from api.database import get_db
+from api.models import UserRead, UserCreate, UserUpdate
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from typing import List
@@ -28,6 +28,7 @@ from hashlib import md5
 from datetime import datetime
 from httpx_oauth.exceptions import GetIdEmailError
 import re
+from init_db import init_db  # استيراد دالة init_db
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -79,8 +80,8 @@ CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 # Initialize FastAPI app
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    init_db()  # استدعاء دالة init_db لإنشاء الجداول وتنظيف البيانات
     await setup_mongo_index()
-    Base.metadata.create_all(bind=engine)  # Create tables on startup
     yield
 
 app = FastAPI(title="MGZon Chatbot API", lifespan=lifespan)

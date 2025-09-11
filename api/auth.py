@@ -11,6 +11,7 @@ from fastapi_users.models import UP
 from typing import Optional
 import os
 import logging
+from api.database import User, OAuthAccount
 from api.models import UserRead, UserCreate, UserUpdate
 from sqlalchemy import select
 
@@ -71,6 +72,8 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         associate_by_email: bool = False,
         is_verified_by_default: bool = False,
     ) -> UP:
+        logger.info(f"Processing OAuth callback for {oauth_name} with account_id: {account_id}, email: {account_email}")
+        
         oauth_account_dict = {
             "oauth_name": oauth_name,
             "access_token": access_token,
@@ -89,20 +92,29 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         existing_oauth_account = result.scalars().first()
 
         if existing_oauth_account is not None:
-            return await self.on_after_login(existing_oauth_account.user, request)
+            logger.info(f"Found existing OAuth account for {oauth_name}, account_id: {account_id}")
+            user = existing_oauth_account.user
+            if user is None:
+                logger.error(f"No user associated with OAuth account {account_id}")
+                raise ValueError("No user associated with this OAuth account")
+            logger.info(f"Returning existing user: {user.email}")
+            return await self.on_after_login(user, request)
 
         if associate_by_email:
-            # Synchronous query for get_by_email
+            logger.info(f"Associating by email: {account_email}")
             statement = select(User).where(User.email == account_email)
             result = self.user_db.session.execute(statement)
             user = result.scalars().first()
             if user is not None:
+                logger.info(f"Found existing user by email: {user.email}")
                 oauth_account.user_id = user.id
                 self.user_db.session.add(oauth_account)
                 self.user_db.session.commit()
+                logger.info(f"Associated OAuth account with user: {user.email}")
                 return await self.on_after_login(user, request)
 
         # Create new user
+        logger.info(f"Creating new user for email: {account_email}")
         user_dict = {
             "email": account_email,
             "hashed_password": self.password_helper.hash("dummy_password"),
@@ -113,10 +125,12 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         self.user_db.session.add(user)
         self.user_db.session.commit()
         self.user_db.session.refresh(user)
+        logger.info(f"Created new user: {user.email}")
 
         oauth_account.user_id = user.id
         self.user_db.session.add(oauth_account)
         self.user_db.session.commit()
+        logger.info(f"Linked OAuth account to new user: {user.email}")
         return await self.on_after_login(user, request)
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
