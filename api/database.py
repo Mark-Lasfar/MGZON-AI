@@ -8,6 +8,7 @@ from typing import AsyncGenerator
 from fastapi import Depends
 from datetime import datetime
 import logging
+import aiosqlite  # تأكد من استيراد aiosqlite صراحةً
 
 logger = logging.getLogger(__name__)
 
@@ -16,15 +17,15 @@ SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite+aiosqlite
 if not SQLALCHEMY_DATABASE_URL:
     raise ValueError("SQLALCHEMY_DATABASE_URL is not set in environment variables.")
 
-# إنشاء محرك async
-async_engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
+# إنشاء محرك async مع aiosqlite
+async_engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True, connect_args={"check_same_thread": False})
 
 # إعداد جلسة async
 AsyncSessionLocal = async_sessionmaker(
     async_engine, expire_on_commit=False, class_=AsyncSession
 )
 
-# قاعدة أساسية للنماذج
+# باقي الكود زي ما هو...
 Base = declarative_base()
 
 class OAuthAccount(Base):
