@@ -86,7 +86,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         await self.user_db.session.commit()
         await self.user_db.session.refresh(oauth_account)
 
-    async def oauth_callback(
+        async def oauth_callback(
         self,
         oauth_name: str,
         access_token: str,
@@ -111,14 +111,16 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         )
         existing_oauth_account = await self.get_by_oauth_account(oauth_name, account_id)
         if existing_oauth_account:
-            return await self.on_after_login(existing_oauth_account.user, request)
+            await self.on_after_login(existing_oauth_account.user, request)
+            return existing_oauth_account.user  # ✅ ✅ ✅
 
         if associate_by_email:
             user = await self.user_db.get_by_email(account_email)
             if user:
                 oauth_account.user_id = user.id
                 await self.add_oauth_account(oauth_account)
-                return await self.on_after_login(user, request)
+                await self.on_after_login(user, request)
+                return user  # ✅ ✅ ✅
 
         user_dict = {
             "email": account_email,
@@ -129,7 +131,9 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         user = await self.user_db.create(user_dict)
         oauth_account.user_id = user.id
         await self.add_oauth_account(oauth_account)
-        return await self.on_after_login(user, request)
+        await self.on_after_login(user, request)
+        return user  # ✅ ✅ ✅
+
 
 # استدعاء user manager من get_user_db (تجنب التكرار)
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
