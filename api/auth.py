@@ -5,7 +5,7 @@ from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from api.database import User, OAuthAccount, get_user_db
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
-from fastapi import Depends, Request, FastAPI
+from fastapi import Depends, Request, FastAPI, HTTPException
 from fastapi_users.models import UP
 from typing import Optional
 import os
@@ -49,7 +49,7 @@ logger.info("GITHUB_CLIENT_SECRET is set: %s", bool(GITHUB_CLIENT_SECRET))
 
 if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET]):
     logger.error("One or more OAuth environment variables are missing.")
-    raise ValueError("All OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET) are required.")
+    raise ValueError("All OAuth credentials are required.")
 
 google_oauth_client = GoogleOAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
 github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
@@ -88,104 +88,130 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         }
         oauth_account = OAuthAccount(**oauth_account_dict)
 
-        # Custom query to fetch OAuth account
-        statement = select(OAuthAccount).where(
-            (OAuthAccount.oauth_name == oauth_name) & (OAuthAccount.account_id == account_id)
-        )
-        result = self.user_db.session.execute(statement)
-        existing_oauth_account = result.scalars().first()
+        try:
+            # Custom query to fetch existing OAuth account
+            statement = select(OAuthAccount).where(
+                (OAuthAccount.oauth_name == oauth_name) & (OAuthAccount.account_id == account_id)
+            )
+            result = self.user_db.session.execute(statement)
+            existing_oauth_account = result.scalars().first()
 
-        if existing_oauth_account is not None:
-            logger.info(f"Found existing OAuth account for {oauth_name}, account_id: {account_id}")
-            user = existing_oauth_account.user
-            if user is None:
-                logger.error(f"No user associated with OAuth account {account_id}. Creating new user.")
-                # Create new user if user is None
-                user_dict = {
-                    "email": account_email,
-                    "hashed_password": self.password_helper.hash("dummy_password"),
-                    "is_active": True,
-                    "is_verified": is_verified_by_default,
-                }
-                user = User(**user_dict)
-                try:
+            user = None
+            if existing_oauth_account is not None:
+                logger.info(f"Found existing OAuth account for {oauth_name}, account_id: {account_id}")
+                user = existing_oauth_account.user
+                if user is None:
+                    logger.warning(f"No user associated with existing OAuth account. Creating new user.")
+                    # Create new user and link
+                    user_dict = {
+                        "email": account_email,
+                        "hashed_password": self.password_helper.hash("dummy_password"),
+                        "is_active": True,
+                        "is_verified": is_verified_by_default,
+                    }
+                    user = User(**user_dict)
                     self.user_db.session.add(user)
                     self.user_db.session.commit()
                     self.user_db.session.refresh(user)
                     existing_oauth_account.user_id = user.id
+                    # Update the existing account safely
+                    try:
+                        self.user_db.session.commit()
+                        logger.info(f"Linked new user to existing OAuth account: {user.email}")
+                    except Exception as update_e:
+                        self.user_db.session.rollback()
+                        logger.error(f"Failed to update existing OAuth account: {update_e}")
+                        raise ValueError(f"Failed to link user to OAuth account: {update_e}")
+                else:
+                    # Update existing OAuth account if needed (handle None return from update_oauth_account)
+                    try:
+                        updated_user = await self.user_db.update_oauth_account(user, existing_oauth_account, oauth_account_dict)
+                        if updated_user is None:
+                            logger.warning("update_oauth_account returned None. Using original user.")
+                            updated_user = user
+                        user = updated_user
+                    except Exception as update_e:
+                        logger.error(f"Error in update_oauth_account: {update_e}")
+                        # Fallback: just use the existing user
+                        user = user  # Keep original
+            elif associate_by_email:
+                logger.info(f"Associating by email: {account_email}")
+                # Safe get_by_email
+                user = await self.user_db.get_by_email(account_email)
+                if user is None:
+                    logger.info(f"No user found for email {account_email}. Creating new user.")
+                    user_dict = {
+                        "email": account_email,
+                        "hashed_password": self.password_helper.hash("dummy_password"),
+                        "is_active": True,
+                        "is_verified": is_verified_by_default,
+                    }
+                    try:
+                        user = await self.user_db.create(user_dict)
+                        logger.info(f"Created new user for email: {user.email}")
+                    except Exception as create_e:
+                        logger.error(f"Failed to create user for email {account_email}: {create_e}")
+                        raise ValueError(f"Failed to create user: {create_e}")
+                # Link OAuth account
+                oauth_account.user_id = user.id
+                try:
+                    self.user_db.session.add(oauth_account)
                     self.user_db.session.commit()
-                    logger.info(f"Created new user and linked to existing OAuth account: {user.email}")
-                except Exception as e:
+                    logger.info(f"Associated OAuth account with user: {user.email}")
+                except Exception as link_e:
                     self.user_db.session.rollback()
-                    logger.error(f"Failed to create user for OAuth account {account_id}: {e}")
-                    raise ValueError(f"Failed to create user: {e}")
-            logger.info(f"Returning existing user: {user.email}")
-            return await self.on_after_login(user, request)
-
-        if associate_by_email:
-            logger.info(f"Associating by email: {account_email}")
-            statement = select(User).where(User.email == account_email)
-            result = self.user_db.session.execute(statement)
-            user = result.scalars().first()
-            if user is None:
-                logger.info(f"No user found for email {account_email}. Creating new user.")
-                # Create new user if not found
+                    logger.error(f"Failed to associate OAuth account: {link_e}")
+                    raise ValueError(f"Failed to link OAuth account: {link_e}")
+            else:
+                # Create new user (default case)
+                logger.info(f"Creating new user for email: {account_email}")
                 user_dict = {
                     "email": account_email,
                     "hashed_password": self.password_helper.hash("dummy_password"),
                     "is_active": True,
                     "is_verified": is_verified_by_default,
                 }
-                user = User(**user_dict)
                 try:
-                    self.user_db.session.add(user)
+                    user = await self.user_db.create(user_dict)
+                    logger.info(f"Created new user: {user.email}")
+                except Exception as create_e:
+                    logger.error(f"Failed to create user for email {account_email}: {create_e}")
+                    raise ValueError(f"Failed to create user: {create_e}")
+
+                oauth_account.user_id = user.id
+                try:
+                    self.user_db.session.add(oauth_account)
                     self.user_db.session.commit()
-                    self.user_db.session.refresh(user)
-                    logger.info(f"Created new user for email: {user.email}")
-                except Exception as e:
+                    logger.info(f"Linked OAuth account to new user: {user.email}")
+                except Exception as link_e:
                     self.user_db.session.rollback()
-                    logger.error(f"Failed to create user for email {account_email}: {e}")
-                    raise ValueError(f"Failed to create user: {e}")
-            oauth_account.user_id = user.id
-            try:
-                self.user_db.session.add(oauth_account)
-                self.user_db.session.commit()
-                logger.info(f"Associated OAuth account with user: {user.email}")
-            except Exception as e:
-                self.user_db.session.rollback()
-                logger.error(f"Failed to associate OAuth account with user {user.email}: {e}")
-                raise ValueError(f"Failed to associate OAuth account: {e}")
+                    logger.error(f"Failed to link OAuth account: {link_e}")
+                    raise ValueError(f"Failed to link OAuth account: {link_e}")
+
+            # Safe check for user.is_active - التحقق الآمن من is_active
+            if user is None:
+                logger.error("User is still None after all attempts. Cannot proceed.")
+                raise ValueError("Failed to retrieve or create user.")
+            
+            if not user.is_active:
+                logger.warning(f"User {user.email} is inactive. Activating...")
+                user.is_active = True
+                try:
+                    await self.user_db.update(user)
+                    logger.info(f"Activated inactive user: {user.email}")
+                except Exception as activate_e:
+                    logger.error(f"Failed to activate user: {activate_e}")
+                    raise ValueError(f"Failed to activate user: {activate_e}")
+
+            logger.info(f"Returning user: {user.email} (active: {user.is_active})")
             return await self.on_after_login(user, request)
 
-        # Create new user
-        logger.info(f"Creating new user for email: {account_email}")
-        user_dict = {
-            "email": account_email,
-            "hashed_password": self.password_helper.hash("dummy_password"),
-            "is_active": True,
-            "is_verified": is_verified_by_default,
-        }
-        user = User(**user_dict)
-        try:
-            self.user_db.session.add(user)
-            self.user_db.session.commit()
-            self.user_db.session.refresh(user)
-            logger.info(f"Created new user: {user.email}")
         except Exception as e:
-            self.user_db.session.rollback()
-            logger.error(f"Failed to create user for email {account_email}: {e}")
-            raise ValueError(f"Failed to create user: {e}")
-
-        oauth_account.user_id = user.id
-        try:
-            self.user_db.session.add(oauth_account)
-            self.user_db.session.commit()
-            logger.info(f"Linked OAuth account to new user: {user.email}")
-        except Exception as e:
-            self.user_db.session.rollback()
-            logger.error(f"Failed to link OAuth account to user {user.email}: {e}")
-            raise ValueError(f"Failed to link OAuth account: {e}")
-        return await self.on_after_login(user, request)
+            # Rollback on any error
+            if self.user_db.session.in_transaction():
+                self.user_db.session.rollback()
+            logger.error(f"OAuth callback failed: {e}")
+            raise
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
