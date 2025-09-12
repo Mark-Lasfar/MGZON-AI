@@ -1,10 +1,10 @@
-# api/auth.py
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
 from fastapi_users.db import SQLAlchemyUserDatabase
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from api.database import User, OAuthAccount, get_user_db
+from api.models import UserRead, UserCreate, UserUpdate  # إضافة الاستيرادات
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
 from fastapi import Depends, Request, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -108,7 +108,7 @@ google_oauth_router = get_oauth_router(
     google_oauth_client,
     auth_backend,
     get_user_manager,
-    state_secret=SECRET,  # أضف هذا السطر
+    state_secret=SECRET,
     associate_by_email=True,
     redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback",
 )
@@ -117,7 +117,7 @@ github_oauth_router = get_oauth_router(
     github_oauth_client,
     auth_backend,
     get_user_manager,
-    state_secret=SECRET,  # أضف هذا السطر
+    state_secret=SECRET,
     associate_by_email=True,
     redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback",
 )
