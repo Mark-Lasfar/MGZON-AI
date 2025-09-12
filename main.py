@@ -14,7 +14,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
 from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router
-from api.database import get_db, User
+from api.database import get_db, User, Conversation
 from api.models import UserRead, UserCreate, UserUpdate
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
@@ -183,6 +183,9 @@ async def chat_conversation(
 ):
     if not user:
         return RedirectResponse(url="/login", status_code=302)
+    
+    # Import Conversation here to avoid circular import
+    from api.database import Conversation
     conversation = db.query(Conversation).filter(
         Conversation.conversation_id == conversation_id,
         Conversation.user_id == user.id
