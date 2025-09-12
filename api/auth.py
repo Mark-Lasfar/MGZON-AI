@@ -137,7 +137,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             elif associate_by_email:
                 logger.info(f"Associating by email: {account_email}")
                 # Safe get_by_email (sync)
-                user = self.user_db.get_by_email(account_email)  # بدون await
+                user = self.user_db.get_by_email(account_email)  # sync
                 if user is None:
                     logger.info(f"No user found for email {account_email}. Creating new user.")
                     user_dict = {
@@ -147,7 +147,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                         "is_verified": is_verified_by_default,
                     }
                     try:
-                        user = self.user_db.create(user_dict)  # بدون await
+                        user = self.user_db.create(user_dict)  # sync
                         logger.info(f"Created new user for email: {user.email}")
                     except Exception as create_e:
                         logger.error(f"Failed to create user for email {account_email}: {create_e}")
@@ -172,7 +172,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                     "is_verified": is_verified_by_default,
                 }
                 try:
-                    user = self.user_db.create(user_dict)  # بدون await
+                    user = self.user_db.create(user_dict)  # sync
                     logger.info(f"Created new user: {user.email}")
                 except Exception as create_e:
                     logger.error(f"Failed to create user for email {account_email}: {create_e}")
@@ -197,7 +197,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 logger.warning(f"User {user.email} is inactive. Activating...")
                 user.is_active = True
                 try:
-                    self.user_db.update(user)  # بدون await
+                    self.user_db.update(user)  # sync
                     logger.info(f"Activated inactive user: {user.email}")
                 except Exception as activate_e:
                     logger.error(f"Failed to activate user: {activate_e}")
