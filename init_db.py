@@ -1,35 +1,31 @@
 import os
 import logging
-from sqlalchemy import create_engine, select, delete
-from sqlalchemy.orm import sessionmaker
-from api.database import Base, User, OAuthAccount, Conversation, Message
+from api.database import async_engine, Base, User, OAuthAccount, Conversation, Message, AsyncSessionLocal
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# جلب URL قاعدة البيانات من المتغيرات البيئية
-SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:///./data/mgzon_users.db")
-if not SQLALCHEMY_DATABASE_URL:
-    logger.error("SQLALCHEMY_DATABASE_URL is not set in environment variables.")
-    raise ValueError("SQLALCHEMY_DATABASE_URL is required.")
-
-# إنشاء المحرك
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-
-# إعداد الجلسة
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 def init_db():
     logger.info("Starting database initialization...")
 
-    # إنشاء الجداول
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database tables created successfully.")
+    # إنشاء الجداول (sync version for init_db.py)
+    try:
+        from sqlalchemy import create_engine
+        sync_engine = create_engine(os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:///./data/mgzon_users.db"))
+        Base.metadata.create_all(bind=sync_engine)
+        logger.info("Database tables created successfully.")
+    except Exception as e:
+        logger.error(f"Error creating database tables: {e}")
+        raise
 
-    # تنظيف البيانات غير المتسقة
-    with SessionLocal() as session:
-        try:
+    # تنظيف البيانات غير المتسقة (sync for simplicity in init_db)
+    try:
+        from sqlalchemy import select, delete
+        from sqlalchemy.orm import sessionmaker
+        sync_engine = create_engine(os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:///./data/mgzon_users.db"))
+        SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
+        with SyncSessionLocal() as session:
             # حذف سجلات oauth_accounts اللي مش مرتبطة بمستخدم موجود
             stmt = delete(OAuthAccount).where(
                 OAuthAccount.user_id.notin_(select(User.id))
@@ -71,12 +67,9 @@ def init_db():
                 session.commit()
                 logger.info("Test conversation created successfully.")
 
-        except Exception as e:
-            session.rollback()
-            logger.error(f"Error during initialization: {e}")
-            raise
-        finally:
-            session.close()
+    except Exception as e:
+        logger.error(f"Error during initialization: {e}")
+        raise
 
     logger.info("Database initialization completed.")
 

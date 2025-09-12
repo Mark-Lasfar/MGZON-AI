@@ -4,7 +4,7 @@ from fastapi_users.db import SQLAlchemyUserDatabase
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from fastapi_users.router.oauth import get_oauth_router
-from api.database import User, OAuthAccount, get_user_db, get_db
+from api.database import User, OAuthAccount, get_user_db
 from api.models import UserRead, UserCreate, UserUpdate
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
 from fastapi import Depends, Request, FastAPI
@@ -163,7 +163,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
         user_dict = {
             "email": account_email,
-            "hashed_password": self.password_helper.hash(secrets.token_hex(32)),  # Improved random password
+            "hashed_password": self.password_helper.hash(secrets.token_hex(32)),
             "is_active": True,
             "is_verified": is_verified_by_default,
         }
