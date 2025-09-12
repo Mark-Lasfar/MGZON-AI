@@ -33,7 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.querySelector('.sidebar');
     const toggleBtn = document.querySelector('.sidebar-toggle');
     
-    toggleBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('active');
-    });
+    if (toggleBtn && sidebar) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            console.log('Sidebar toggled'); // Debugging
+        });
+    } else {
+        console.warn('Sidebar or toggle button not found');
+    }
 });

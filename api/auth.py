@@ -4,12 +4,13 @@ from fastapi_users.db import SQLAlchemyUserDatabase
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from api.database import User, OAuthAccount, get_user_db
-from api.models import UserRead, UserCreate, UserUpdate  # إضافة الاستيرادات
+from api.models import UserRead, UserCreate, UserUpdate
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
 from fastapi import Depends, Request, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from fastapi_users.models import UP
-from typing import Optional
+from typing import Optional, Dict, Any
 import os
 import logging
 
@@ -51,9 +52,72 @@ if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLI
 google_oauth_client = GoogleOAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
 github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
 
+class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
+    async def get_by_email(self, email: str) -> Optional[User]:
+        """Override to fix ChunkedIteratorResult issue for get_by_email"""
+        logger.info(f"Checking for user with email: {email}")
+        try:
+            statement = select(self.user_table).where(self.user_table.email == email)
+            result = await self.session.execute(statement)
+            user = result.scalar_one_or_none()
+            if user:
+                logger.info(f"Found user with email: {email}")
+            else:
+                logger.info(f"No user found with email: {email}")
+            return user
+        except Exception as e:
+            logger.error(f"Error in get_by_email: {e}")
+            raise
+
+    async def create(self, create_dict: Dict[str, Any]) -> User:
+        """Override to fix potential async issues in create"""
+        logger.info(f"Creating user with email: {create_dict.get('email')}")
+        try:
+            user = self.user_table(**create_dict)
+            self.session.add(user)
+            await self.session.commit()
+            await self.session.refresh(user)
+            logger.info(f"Created user with email: {create_dict.get('email')}")
+            return user
+        except Exception as e:
+            logger.error(f"Error creating user: {e}")
+            await self.session.rollback()
+            raise
+
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
+
+    async def get_by_oauth_account(self, oauth_name: str, account_id: str):
+        """Override to fix ChunkedIteratorResult issue in SQLAlchemy 2.0+"""
+        logger.info(f"Checking for existing OAuth account: {oauth_name}/{account_id}")
+        try:
+            statement = select(OAuthAccount).where(
+                OAuthAccount.oauth_name == oauth_name, OAuthAccount.account_id == account_id
+            )
+            result = await self.session.execute(statement)
+            oauth_account = result.scalar_one_or_none()
+            if oauth_account:
+                logger.info(f"Found existing OAuth account for {account_id}")
+            else:
+                logger.info(f"No existing OAuth account found for {account_id}")
+            return oauth_account
+        except Exception as e:
+            logger.error(f"Error in get_by_oauth_account: {e}")
+            raise
+
+    async def add_oauth_account(self, oauth_account: OAuthAccount):
+        """Override to fix potential async issues"""
+        logger.info(f"Adding OAuth account for user {oauth_account.user_id}")
+        try:
+            self.session.add(oauth_account)
+            await self.session.commit()
+            await self.session.refresh(oauth_account)
+            logger.info(f"Successfully added OAuth account for user {oauth_account.user_id}")
+        except Exception as e:
+            logger.error(f"Error adding OAuth account: {e}")
+            await self.session.rollback()
+            raise
 
     async def oauth_callback(
         self,
@@ -68,6 +132,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         associate_by_email: bool = False,
         is_verified_by_default: bool = False,
     ) -> UP:
+        logger.info(f"OAuth callback for {oauth_name} with account_id {account_id}")
         oauth_account_dict = {
             "oauth_name": oauth_name,
             "access_token": access_token,
@@ -77,15 +142,17 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             "refresh_token": refresh_token,
         }
         oauth_account = OAuthAccount(**oauth_account_dict)
-        existing_oauth_account = await self.user_db.get_by_oauth_account(oauth_name, account_id)
+        existing_oauth_account = await self.get_by_oauth_account(oauth_name, account_id)
         if existing_oauth_account is not None:
+            logger.info(f"Existing account found, logging in user {existing_oauth_account.user.email}")
             return await self.on_after_login(existing_oauth_account.user, request)
 
         if associate_by_email:
             user = await self.user_db.get_by_email(account_email)
             if user is not None:
                 oauth_account.user_id = user.id
-                await self.user_db.add_oauth_account(oauth_account)
+                await self.add_oauth_account(oauth_account)
+                logger.info(f"Associated with existing user {user.email}")
                 return await self.on_after_login(user, request)
 
         user_dict = {
@@ -96,13 +163,15 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         }
         user = await self.user_db.create(user_dict)
         oauth_account.user_id = user.id
-        await self.user_db.add_oauth_account(oauth_account)
+        await self.add_oauth_account(oauth_account)
+        logger.info(f"Created new user {user.email}")
         return await self.on_after_login(user, request)
 
-async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
-    yield UserManager(user_db)
+async def get_user_db(session: AsyncSession = Depends(get_db)):
+    yield CustomSQLAlchemyUserDatabase(session, User, OAuthAccount)
 
-from fastapi_users.router.oauth import get_oauth_router
+async def get_user_manager(user_db: CustomSQLAlchemyUserDatabase = Depends(get_user_db)):
+    yield UserManager(user_db)
 
 google_oauth_router = get_oauth_router(
     google_oauth_client,

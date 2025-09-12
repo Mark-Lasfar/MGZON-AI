@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session
 from typing import AsyncGenerator
 from fastapi import Depends
 from datetime import datetime
+import logging
 
+logger = logging.getLogger(__name__)
 # جلب URL قاعدة البيانات من المتغيرات البيئية
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
@@ -84,4 +86,9 @@ async def get_user_db(session: Session = Depends(get_db)):
     yield SQLAlchemyUserDatabase(session, User, OAuthAccount)
 
 # إنشاء الجداول
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables created successfully")
+except Exception as e:
+    logger.error(f"Error creating database tables: {e}")
+    raise

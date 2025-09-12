@@ -127,6 +127,7 @@ async def debug_routes():
     return "\n".join(sorted(routes))
 
 # Custom middleware for 404 and 500 errors
+# في main.py، استبدل NotFoundMiddleware ب:
 class NotFoundMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         try:
@@ -137,7 +138,13 @@ class NotFoundMiddleware(BaseHTTPMiddleware):
             return response
         except Exception as e:
             logger.exception(f"Error processing request {request.url}: {e}")
-            return templates.TemplateResponse("500.html", {"request": request, "error": str(e)}, status_code=500)
+            if "ChunkedIteratorResult" in str(e):
+                logger.error("ChunkedIteratorResult error detected - check SQLAlchemy async execution")
+            return templates.TemplateResponse(
+                "500.html",
+                {"request": request, "error": str(e)},
+                status_code=500
+            )
 
 app.add_middleware(NotFoundMiddleware)
 
