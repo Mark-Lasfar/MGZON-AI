@@ -22,7 +22,7 @@ webrtcvad==2.0.10
 Pillow==10.4.0
 urllib3==2.2.3
 itsdangerous==2.2.0
-protobuf==4.25.5
+protobuf==3.19.6  # عدلنا من 4.25.5 عشان يتوافق مع descript-audiotools
 fastapi-users[sqlalchemy,oauth2]==14.0.0
 sqlalchemy==2.0.35
 python-jose[cryptography]==3.3.0
@@ -35,7 +35,6 @@ redis==5.0.0
 markdown2==2.5.0
 pymongo==4.10.1
 parler-tts @ git+https://github.com/huggingface/parler-tts.git@5d0aca9753ab74ded179732f5bd797f7a8c6f8ee
-# تبعيات إضافية لتجنب التعارضات
 soupsieve>=2.5
 tqdm>=4.66.0
 argon2-cffi>=23.1.0
