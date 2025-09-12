@@ -12,11 +12,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 # جلب URL قاعدة البيانات من المتغيرات البيئية
-SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
+SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite+aiosqlite:///./data/mgzon_users.db")
 if not SQLALCHEMY_DATABASE_URL:
     raise ValueError("SQLALCHEMY_DATABASE_URL is not set in environment variables.")
 
-# إنشاء محرك async (استخدم sqlite+aiosqlite للدعم async)
+# إنشاء محرك async
 async_engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 
 # إعداد جلسة async

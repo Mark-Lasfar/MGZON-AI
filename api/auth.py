@@ -60,7 +60,7 @@ github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
 
 class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
     async def get_by_email(self, email: str) -> Optional[User]:
-        """Override to fix ChunkedIteratorResult issue for get_by_email"""
+        """Override to fix ChunkedIteratorResult issue."""
         logger.info(f"Checking for user with email: {email}")
         try:
             statement = select(self.user_table).where(self.user_table.email == email)
@@ -76,7 +76,7 @@ class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
             raise
 
     async def create(self, create_dict: Dict[str, Any]) -> User:
-        """Override to fix potential async issues in create"""
+        """Override to fix potential async issues."""
         logger.info(f"Creating user with email: {create_dict.get('email')}")
         try:
             user = self.user_table(**create_dict)
@@ -95,7 +95,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     verification_token_secret = SECRET
 
     async def get_by_oauth_account(self, oauth_name: str, account_id: str):
-        """Override to fix ChunkedIteratorResult issue in SQLAlchemy 2.0+"""
+        """Override to fix ChunkedIteratorResult issue."""
         logger.info(f"Checking for existing OAuth account: {oauth_name}/{account_id}")
         try:
             statement = select(OAuthAccount).where(
@@ -113,7 +113,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             raise
 
     async def add_oauth_account(self, oauth_account: OAuthAccount):
-        """Override to fix potential async issues"""
+        """Override to fix potential async issues."""
         logger.info(f"Adding OAuth account for user {oauth_account.user_id}")
         try:
             self.session.add(oauth_account)

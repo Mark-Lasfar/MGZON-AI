@@ -1,62 +1,68 @@
 import os
 import logging
+import asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
 from api.database import async_engine, Base, User, OAuthAccount, Conversation, Message, AsyncSessionLocal
+from passlib.context import CryptContext
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def init_db():
+# إعداد تشفير كلمة المرور
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+async def init_db():
     logger.info("Starting database initialization...")
 
-    # إنشاء الجداول (sync version for init_db.py)
+    # إنشاء الجداول
     try:
-        from sqlalchemy import create_engine
-        sync_engine = create_engine(os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:///./data/mgzon_users.db"))
-        Base.metadata.create_all(bind=sync_engine)
+        async with async_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables created successfully.")
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
         raise
 
-    # تنظيف البيانات غير المتسقة (sync for simplicity in init_db)
-    try:
-        from sqlalchemy import select, delete
-        from sqlalchemy.orm import sessionmaker
-        sync_engine = create_engine(os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:///./data/mgzon_users.db"))
-        SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
-        with SyncSessionLocal() as session:
+    # تنظيف البيانات غير المتسقة
+    async with AsyncSessionLocal() as session:
+        try:
             # حذف سجلات oauth_accounts اللي مش مرتبطة بمستخدم موجود
             stmt = delete(OAuthAccount).where(
                 OAuthAccount.user_id.notin_(select(User.id))
             )
-            result = session.execute(stmt)
+            result = await session.execute(stmt)
             deleted_count = result.rowcount
-            session.commit()
+            await session.commit()
             logger.info(f"Deleted {deleted_count} orphaned OAuth accounts.")
 
             # التأكد من إن كل المستخدمين ليهم is_active=True
-            users = session.execute(select(User)).scalars().all()
+            users = (await session.execute(select(User))).scalars().all()
             for user in users:
                 if not user.is_active:
                     user.is_active = True
                     logger.info(f"Updated user {user.email} to is_active=True")
-            session.commit()
+            await session.commit()
 
             # اختبار إنشاء مستخدم ومحادثة (اختياري)
-            test_user = session.query(User).filter_by(email="test@example.com").first()
+            test_user = (await session.execute(
+                select(User).filter_by(email="test@example.com")
+            )).scalar_one_or_none()
             if not test_user:
                 test_user = User(
                     email="test@example.com",
-                    hashed_password="$2b$12$examplehashedpassword",  # استبدل بكلمة مرور مشفرة حقيقية
+                    hashed_password=pwd_context.hash("testpassword123"),  # تشفير كلمة المرور
                     is_active=True,
                     display_name="Test User"
                 )
                 session.add(test_user)
-                session.commit()
+                await session.commit()
                 logger.info("Test user created successfully.")
 
-            test_conversation = session.query(Conversation).filter_by(user_id=test_user.id).first()
+            test_conversation = (await session.execute(
+                select(Conversation).filter_by(user_id=test_user.id)
+            )).scalar_one_or_none()
             if not test_conversation:
                 test_conversation = Conversation(
                     conversation_id="test-conversation-1",
@@ -64,14 +70,17 @@ def init_db():
                     title="Test Conversation"
                 )
                 session.add(test_conversation)
-                session.commit()
+                await session.commit()
                 logger.info("Test conversation created successfully.")
 
-    except Exception as e:
-        logger.error(f"Error during initialization: {e}")
-        raise
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"Error during initialization: {e}")
+            raise
+        finally:
+            await session.close()
 
     logger.info("Database initialization completed.")
 
 if __name__ == "__main__":
-    init_db()
+    asyncio.run(init_db())
