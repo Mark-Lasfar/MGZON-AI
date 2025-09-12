@@ -52,6 +52,8 @@ GITHUB_REDIRECT_URL = os.getenv("GITHUB_REDIRECT_URL", "https://mgzon-mgzon-app.
 google_oauth_client = GoogleOAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
 github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
 
+
+# قاعدة بيانات المستخدم
 class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
     async def get_by_email(self, email: str) -> Optional[User]:
         logger.info(f"Checking for user with email: {email}")
@@ -67,6 +69,8 @@ class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
         await self.session.refresh(user)
         return user
 
+
+# مدير المستخدمين
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
@@ -86,7 +90,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         await self.user_db.session.commit()
         await self.user_db.session.refresh(oauth_account)
 
-        async def oauth_callback(
+    async def oauth_callback(
         self,
         oauth_name: str,
         access_token: str,
@@ -109,10 +113,11 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             expires_at=expires_at,
             refresh_token=refresh_token,
         )
+
         existing_oauth_account = await self.get_by_oauth_account(oauth_name, account_id)
         if existing_oauth_account:
             await self.on_after_login(existing_oauth_account.user, request)
-            return existing_oauth_account.user  # ✅ ✅ ✅
+            return existing_oauth_account.user
 
         if associate_by_email:
             user = await self.user_db.get_by_email(account_email)
@@ -120,7 +125,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 oauth_account.user_id = user.id
                 await self.add_oauth_account(oauth_account)
                 await self.on_after_login(user, request)
-                return user  # ✅ ✅ ✅
+                return user
 
         user_dict = {
             "email": account_email,
@@ -128,17 +133,20 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             "is_active": True,
             "is_verified": is_verified_by_default,
         }
+
         user = await self.user_db.create(user_dict)
         oauth_account.user_id = user.id
         await self.add_oauth_account(oauth_account)
         await self.on_after_login(user, request)
-        return user  # ✅ ✅ ✅
+        return user
 
 
-# استدعاء user manager من get_user_db (تجنب التكرار)
+# استدعاء user manager من get_user_db
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
+
+# OAuth Routers
 google_oauth_router = get_oauth_router(
     google_oauth_client,
     auth_backend,
@@ -164,6 +172,7 @@ fastapi_users = FastAPIUsers[User, int](
 
 current_active_user = fastapi_users.current_user(active=True, optional=True)
 
+# تضمين الراوترات داخل التطبيق
 def get_auth_router(app: FastAPI):
     app.include_router(google_oauth_router, prefix="/auth/google", tags=["auth"])
     app.include_router(github_oauth_router, prefix="/auth/github", tags=["auth"])
