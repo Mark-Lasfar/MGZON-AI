@@ -6,7 +6,8 @@ from api.database import User, Conversation, Message
 from api.models import QueryRequest, ConversationOut, ConversationCreate, UserUpdate
 from api.auth import current_active_user
 from api.database import get_db
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
 from utils.generation import request_generation, select_model, check_model_availability
 from utils.web_search import web_search
 import io
@@ -145,7 +146,7 @@ async def chat_endpoint(
     request: Request,
     req: QueryRequest,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     logger.info(f"Received chat request: {req}")
     
@@ -155,7 +156,10 @@ async def chat_endpoint(
     conversation = None
     if user:
         title = req.title or (req.message[:50] + "..." if len(req.message) > 50 else req.message or "Untitled Conversation")
-        conversation = db.query(Conversation).filter(Conversation.user_id == user.id).order_by(Conversation.updated_at.desc()).first()
+        result = await db.execute(
+            select(Conversation).filter(Conversation.user_id == user.id).order_by(Conversation.updated_at.desc())
+        )
+        conversation = result.scalar_one_or_none()
         if not conversation:
             conversation_id = str(uuid.uuid4())
             conversation = Conversation(
@@ -164,12 +168,12 @@ async def chat_endpoint(
                 title=title
             )
             db.add(conversation)
-            db.commit()
-            db.refresh(conversation)
+            await db.commit()
+            await db.refresh(conversation)
         
         user_msg = Message(role="user", content=req.message, conversation_id=conversation.id)
         db.add(user_msg)
-        db.commit()
+        await db.commit()
     
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model(req.message, input_type="text", preferred_model=preferred_model)
@@ -231,9 +235,9 @@ async def chat_endpoint(
     if user and conversation:
         assistant_msg = Message(role="assistant", content=response, conversation_id=conversation.id)
         db.add(assistant_msg)
-        db.commit()
+        await db.commit()
         conversation.updated_at = datetime.utcnow()
-        db.commit()
+        await db.commit()
         return {
             "response": response,
             "conversation_id": conversation.conversation_id,
@@ -248,7 +252,7 @@ async def audio_transcription_endpoint(
     request: Request,
     file: UploadFile = File(...),
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     logger.info(f"Received audio transcription request for file: {file.filename}")
     
@@ -258,7 +262,10 @@ async def audio_transcription_endpoint(
     conversation = None
     if user:
         title = "Audio Transcription"
-        conversation = db.query(Conversation).filter(Conversation.user_id == user.id).order_by(Conversation.updated_at.desc()).first()
+        result = await db.execute(
+            select(Conversation).filter(Conversation.user_id == user.id).order_by(Conversation.updated_at.desc())
+        )
+        conversation = result.scalar_one_or_none()
         if not conversation:
             conversation_id = str(uuid.uuid4())
             conversation = Conversation(
@@ -267,12 +274,12 @@ async def audio_transcription_endpoint(
                 title=title
             )
             db.add(conversation)
-            db.commit()
-            db.refresh(conversation)
+            await db.commit()
+            await db.refresh(conversation)
         
         user_msg = Message(role="user", content="Audio message", conversation_id=conversation.id)
         db.add(user_msg)
-        db.commit()
+        await db.commit()
     
     model_name, api_endpoint = select_model("transcribe audio", input_type="audio")
     
@@ -313,9 +320,9 @@ async def audio_transcription_endpoint(
     if user and conversation:
         assistant_msg = Message(role="assistant", content=response, conversation_id=conversation.id)
         db.add(assistant_msg)
-        db.commit()
+        await db.commit()
         conversation.updated_at = datetime.utcnow()
-        db.commit()
+        await db.commit()
         return {
             "transcription": response,
             "conversation_id": conversation.conversation_id,
@@ -330,7 +337,7 @@ async def text_to_speech_endpoint(
     request: Request,
     req: dict,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         await handle_session(request)
@@ -378,7 +385,7 @@ async def code_endpoint(
     request: Request,
     req: dict,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         await handle_session(request)
@@ -453,7 +460,7 @@ async def analysis_endpoint(
     request: Request,
     req: dict,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         await handle_session(request)
@@ -526,7 +533,7 @@ async def image_analysis_endpoint(
     file: UploadFile = File(...),
     output_format: str = "text",
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         await handle_session(request)
@@ -534,7 +541,10 @@ async def image_analysis_endpoint(
     conversation = None
     if user:
         title = "Image Analysis"
-        conversation = db.query(Conversation).filter(Conversation.user_id == user.id).order_by(Conversation.updated_at.desc()).first()
+        result = await db.execute(
+            select(Conversation).filter(Conversation.user_id == user.id).order_by(Conversation.updated_at.desc())
+        )
+        conversation = result.scalar_one_or_none()
         if not conversation:
             conversation_id = str(uuid.uuid4())
             conversation = Conversation(
@@ -543,12 +553,12 @@ async def image_analysis_endpoint(
                 title=title
             )
             db.add(conversation)
-            db.commit()
-            db.refresh(conversation)
+            await db.commit()
+            await db.refresh(conversation)
         
         user_msg = Message(role="user", content="Image analysis request", conversation_id=conversation.id)
         db.add(user_msg)
-        db.commit()
+        await db.commit()
     
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model("analyze image", input_type="image", preferred_model=preferred_model)
@@ -608,9 +618,9 @@ async def image_analysis_endpoint(
         if user and conversation:
             assistant_msg = Message(role="assistant", content=response, conversation_id=conversation.id)
             db.add(assistant_msg)
-            db.commit()
+            await db.commit()
             conversation.updated_at = datetime.utcnow()
-            db.commit()
+            await db.commit()
             return {
                 "image_analysis": response,
                 "conversation_id": conversation.conversation_id,
@@ -646,7 +656,7 @@ async def test_model(model: str = MODEL_NAME, endpoint: str = API_ENDPOINT):
 async def create_conversation(
     req: ConversationCreate,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         raise HTTPException(status_code=401, detail="Login required")
@@ -657,77 +667,87 @@ async def create_conversation(
         user_id=user.id
     )
     db.add(conversation)
-    db.commit()
-    db.refresh(conversation)
+    await db.commit()
+    await db.refresh(conversation)
     return ConversationOut.from_orm(conversation)
 
 @router.get("/api/conversations/{conversation_id}", response_model=ConversationOut)
 async def get_conversation(
     conversation_id: str,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         raise HTTPException(status_code=401, detail="Login required")
-    conversation = db.query(Conversation).filter(
-        Conversation.conversation_id == conversation_id,
-        Conversation.user_id == user.id
-    ).first()
+    result = await db.execute(
+        select(Conversation).filter(
+            Conversation.conversation_id == conversation_id,
+            Conversation.user_id == user.id
+        )
+    )
+    conversation = result.scalar_one_or_none()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    db.add(conversation)
-    db.commit()
     return ConversationOut.from_orm(conversation)
 
 @router.get("/api/conversations", response_model=List[ConversationOut])
 async def list_conversations(
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         raise HTTPException(status_code=401, detail="Login required")
-    conversations = db.query(Conversation).filter(Conversation.user_id == user.id).order_by(Conversation.created_at.desc()).all()
-    return conversations
+    result = await db.execute(
+        select(Conversation).filter(Conversation.user_id == user.id).order_by(Conversation.created_at.desc())
+    )
+    conversations = result.scalars().all()
+    return [ConversationOut.from_orm(conv) for conv in conversations]
 
 @router.put("/api/conversations/{conversation_id}/title")
 async def update_conversation_title(
     conversation_id: str,
     title: str,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         raise HTTPException(status_code=401, detail="Login required")
-    conversation = db.query(Conversation).filter(
-        Conversation.conversation_id == conversation_id,
-        Conversation.user_id == user.id
-    ).first()
+    result = await db.execute(
+        select(Conversation).filter(
+            Conversation.conversation_id == conversation_id,
+            Conversation.user_id == user.id
+        )
+    )
+    conversation = result.scalar_one_or_none()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
     conversation.title = title
     conversation.updated_at = datetime.utcnow()
-    db.commit()
+    await db.commit()
     return {"message": "Conversation title updated", "title": conversation.title}
 
 @router.delete("/api/conversations/{conversation_id}")
 async def delete_conversation(
     conversation_id: str,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         raise HTTPException(status_code=401, detail="Login required")
-    conversation = db.query(Conversation).filter(
-        Conversation.conversation_id == conversation_id,
-        Conversation.user_id == user.id
-    ).first()
+    result = await db.execute(
+        select(Conversation).filter(
+            Conversation.conversation_id == conversation_id,
+            Conversation.user_id == user.id
+        )
+    )
+    conversation = result.scalar_one_or_none()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
-    db.query(Message).filter(Message.conversation_id == conversation.id).delete()
-    db.delete(conversation)
-    db.commit()
+    await db.execute(delete(Message).filter(Message.conversation_id == conversation.id))
+    await db.delete(conversation)
+    await db.commit()
     return {"message": "Conversation deleted successfully"}
 
 @router.get("/users/me")
@@ -752,7 +772,7 @@ async def get_user_settings(user: User = Depends(current_active_user)):
 async def update_user_settings(
     settings: UserUpdate,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         raise HTTPException(status_code=401, detail="Login required")
@@ -775,8 +795,8 @@ async def update_user_settings(
     if settings.conversation_style is not None:
         user.conversation_style = settings.conversation_style
     
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return {"message": "Settings updated successfully", "user": {
         "id": user.id,
         "email": user.email,
@@ -790,4 +810,3 @@ async def update_user_settings(
         "is_active": user.is_active,
         "is_superuser": user.is_superuser
     }}
-
