@@ -109,6 +109,13 @@ app.add_middleware(
 app.include_router(api_router)
 get_auth_router(app)  # Add OAuth and auth routers
 
+# Add logout endpoint
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    response = RedirectResponse("/login")
+    response.delete_cookie("access_token")
+    return response
 # Debug routes endpoint
 @app.get("/debug/routes", response_class=PlainTextResponse)
 async def debug_routes():
