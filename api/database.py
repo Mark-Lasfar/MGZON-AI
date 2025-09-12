@@ -1,4 +1,3 @@
-# api/database.py
 import os
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean
 from sqlalchemy import create_engine
@@ -14,7 +13,7 @@ from datetime import datetime
 # جلب URL قاعدة البيانات من المتغيرات البيئية
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
-    raise ValueValue("SQLALCHEMY_DATABASE_URL is not set in environment variables.")
+    raise ValueError("SQLALCHEMY_DATABASE_URL is not set in environment variables.")  # إصلاح الخطأ الإملائي
 
 # إنشاء المحرك
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
@@ -67,6 +66,9 @@ class Conversation(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+    user = relationship("User", back_populates="conversations")
+    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
+
 class Message(Base):
     __tablename__ = "message"
 
@@ -74,6 +76,9 @@ class Message(Base):
     conversation_id = Column(Integer, ForeignKey("conversation.id"))
     role = Column(String)
     content = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    conversation = relationship("Conversation", back_populates="messages")
 
 def get_db():
     db = SessionLocal()
@@ -82,7 +87,9 @@ def get_db():
     finally:
         db.close()
 
+# إنشاء الجداول
 Base.metadata.create_all(bind=engine)
 
+# دالة للحصول على user database لـ fastapi_users
 async def get_user_db(session: Session = Depends(get_db)):
     yield SQLAlchemyUserDatabase(session, User, OAuthAccount)
