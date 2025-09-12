@@ -1,4 +1,3 @@
-# main.py
 # SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,7 +13,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
 from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router
-from api.database import get_db, User, Conversation
+from api.database import User, Conversation, get_db, init_db
 from api.models import UserRead, UserCreate, UserUpdate
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
@@ -22,13 +21,12 @@ from typing import List
 from contextlib import asynccontextmanager
 import uvicorn
 import markdown2
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from pathlib import Path
 from hashlib import md5
 from datetime import datetime
 from httpx_oauth.exceptions import GetIdEmailError
 import re
-from init_db import init_db  # استيراد دالة init_db
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -80,7 +78,7 @@ CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 # Initialize FastAPI app
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()  # استدعاء دالة init_db لإنشاء الجداول وتنظيف البيانات
+    await init_db()  # استدعاء دالة init_db بشكل async
     await setup_mongo_index()
     yield
 
@@ -99,6 +97,8 @@ app.add_middleware(
     allow_origins=[
         "https://mgzon-mgzon-app.hf.space",
         "http://localhost:7860",
+        "https://mgzon-mgzon-app.hf.space/auth/google/callback",
+        "https://mgzon-mgzon-app.hf.space/auth/github/callback",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
@@ -116,6 +116,7 @@ async def logout(request: Request):
     response = RedirectResponse("/login")
     response.delete_cookie("access_token")
     return response
+
 # Debug routes endpoint
 @app.get("/debug/routes", response_class=PlainTextResponse)
 async def debug_routes():
@@ -127,7 +128,6 @@ async def debug_routes():
     return "\n".join(sorted(routes))
 
 # Custom middleware for 404 and 500 errors
-# في main.py، استبدل NotFoundMiddleware ب:
 class NotFoundMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         try:
@@ -193,17 +193,18 @@ async def chat_conversation(
     request: Request,
     conversation_id: str,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         return RedirectResponse(url="/login", status_code=302)
     
-    # Import Conversation here to avoid circular import
-    from api.database import Conversation
-    conversation = db.query(Conversation).filter(
-        Conversation.conversation_id == conversation_id,
-        Conversation.user_id == user.id
-    ).first()
+    conversation = await db.execute(
+        select(Conversation).filter(
+            Conversation.conversation_id == conversation_id,
+            Conversation.user_id == user.id
+        )
+    )
+    conversation = conversation.scalar_one_or_none()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return templates.TemplateResponse(
