@@ -78,16 +78,6 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             logger.error(f"Invalid OAuth callback data: email={account_email}, account_id={account_id}")
             raise ValueError("Invalid OAuth callback data: email and account_id are required.")
 
-        oauth_account_dict = {
-            "oauth_name": oauth_name,
-            "access_token": access_token,
-            "account_id": account_id,
-            "account_email": account_email,
-            "expires_at": expires_at,
-            "refresh_token": refresh_token,
-        }
-        oauth_account = OAuthAccount(**oauth_account_dict)
-
         try:
             # Custom query to fetch existing OAuth account (sync)
             statement = select(OAuthAccount).where(
@@ -125,7 +115,14 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 else:
                     # Update existing OAuth account if needed (handle None return from update_oauth_account)
                     try:
-                        updated_user = self.user_db.update_oauth_account(user, existing_oauth_account, oauth_account_dict)  # sync
+                        updated_user = self.user_db.update_oauth_account(user, existing_oauth_account, {
+                            "oauth_name": oauth_name,
+                            "access_token": access_token,
+                            "account_id": account_id,
+                            "account_email": account_email,
+                            "expires_at": expires_at,
+                            "refresh_token": refresh_token,
+                        })  # sync
                         if updated_user is None:
                             logger.warning("update_oauth_account returned None. Using original user.")
                             updated_user = user
@@ -136,8 +133,8 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                         user = user  # Keep original
             elif associate_by_email:
                 logger.info(f"Associating by email: {account_email}")
-                # Safe get_by_email (sync)
-                user = self.user_db.get_by_email(account_email)  # sync
+                # Safe get_by_email (sync) - NO AWAIT
+                user = self.user_db.get_by_email(account_email)
                 if user is None:
                     logger.info(f"No user found for email {account_email}. Creating new user.")
                     user_dict = {
@@ -147,13 +144,27 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                         "is_verified": is_verified_by_default,
                     }
                     try:
-                        user = self.user_db.create(user_dict)  # sync
+                        # Create user manually to avoid any async issues
+                        user = User(**user_dict)
+                        self.user_db.session.add(user)
+                        self.user_db.session.commit()
+                        self.user_db.session.refresh(user)
                         logger.info(f"Created new user for email: {user.email}")
                     except Exception as create_e:
+                        self.user_db.session.rollback()
                         logger.error(f"Failed to create user for email {account_email}: {create_e}")
                         raise ValueError(f"Failed to create user: {create_e}")
-                # Link OAuth account
-                oauth_account.user_id = user.id
+                
+                # Create and link OAuth account
+                oauth_account = OAuthAccount(
+                    oauth_name=oauth_name,
+                    access_token=access_token,
+                    account_id=account_id,
+                    account_email=account_email,
+                    expires_at=expires_at,
+                    refresh_token=refresh_token,
+                    user_id=user.id
+                )
                 try:
                     self.user_db.session.add(oauth_account)
                     self.user_db.session.commit()
@@ -172,13 +183,27 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                     "is_verified": is_verified_by_default,
                 }
                 try:
-                    user = self.user_db.create(user_dict)  # sync
+                    # Create user manually to avoid any async issues
+                    user = User(**user_dict)
+                    self.user_db.session.add(user)
+                    self.user_db.session.commit()
+                    self.user_db.session.refresh(user)
                     logger.info(f"Created new user: {user.email}")
                 except Exception as create_e:
+                    self.user_db.session.rollback()
                     logger.error(f"Failed to create user for email {account_email}: {create_e}")
                     raise ValueError(f"Failed to create user: {create_e}")
 
-                oauth_account.user_id = user.id
+                # Create and link OAuth account
+                oauth_account = OAuthAccount(
+                    oauth_name=oauth_name,
+                    access_token=access_token,
+                    account_id=account_id,
+                    account_email=account_email,
+                    expires_at=expires_at,
+                    refresh_token=refresh_token,
+                    user_id=user.id
+                )
                 try:
                     self.user_db.session.add(oauth_account)
                     self.user_db.session.commit()
@@ -197,9 +222,10 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 logger.warning(f"User {user.email} is inactive. Activating...")
                 user.is_active = True
                 try:
-                    self.user_db.update(user)  # sync
+                    self.user_db.session.commit()
                     logger.info(f"Activated inactive user: {user.email}")
                 except Exception as activate_e:
+                    self.user_db.session.rollback()
                     logger.error(f"Failed to activate user: {activate_e}")
                     raise ValueError(f"Failed to activate user: {activate_e}")
 
