@@ -55,6 +55,17 @@ if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLI
     logger.error("One or more OAuth environment variables are missing.")
     raise ValueError("All OAuth credentials are required.")
 
+# Create OAuth clients
+google_oauth_client = GoogleOAuth2(
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET
+)
+
+github_oauth_client = GitHubOAuth2(
+    client_id=GITHUB_CLIENT_ID,
+    client_secret=GITHUB_CLIENT_SECRET
+)
+
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
