@@ -1,8 +1,9 @@
 import os
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, Text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import relationship, declarative_base
-from fastapi_users.db import SQLAlchemyUserDatabase
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
+from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
 from typing import AsyncGenerator
 from fastapi import Depends
 from datetime import datetime
@@ -15,7 +16,7 @@ SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
     raise ValueError("SQLALCHEMY_DATABASE_URL is not set in environment variables.")
 
-# إنشاء محرك async
+# إنشاء محرك async (استخدم sqlite+aiosqlite للدعم async)
 async_engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 
 # إعداد جلسة async
@@ -77,17 +78,19 @@ class Message(Base):
     conversation = relationship("Conversation", back_populates="messages")
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSessionLocal() as db:
+    """Get async database session."""
+    async with AsyncSessionLocal() as session:
         try:
-            yield db
+            yield session
         finally:
-            await db.close()
+            await session.close()
 
-async def get_user_db(session: AsyncSession = Depends(get_db)):
+async def get_user_db(session: AsyncSession = Depends(get_db)) -> AsyncGenerator[SQLAlchemyUserDatabase, None]:
+    """Get user database for fastapi-users."""
     yield SQLAlchemyUserDatabase(session, User, OAuthAccount)
 
-# إنشاء الجداول بشكل async
 async def init_db():
+    """Initialize database tables asynchronously."""
     try:
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -95,4 +98,3 @@ async def init_db():
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
         raise
-
