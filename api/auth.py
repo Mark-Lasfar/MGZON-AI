@@ -5,7 +5,7 @@ from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from api.database import User, OAuthAccount, get_user_db, get_db
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
-from fastapi import Depends, Request, FastAPI, HTTPException, status
+from fastapi import Depends, Request, FastAPI, HTTPException, status, APIRouter
 from fastapi.responses import RedirectResponse
 from fastapi_users.models import UP
 from typing import Optional
@@ -57,9 +57,6 @@ if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLI
 google_oauth_client = GoogleOAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
 github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
 
-# OAuth state secret
-OAUTH_STATE_SECRET = SECRET
-
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
@@ -70,204 +67,216 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
-# Custom OAuth routers without fastapi_users
-from fastapi import APIRouter
+# Custom OAuth Router
+oauth_router = APIRouter(prefix="/auth", tags=["auth"])
 
-def get_custom_oauth_router():
-    router = APIRouter()
+# Store state in session
+@oauth_router.get("/google/authorize")
+async def google_authorize(request: Request):
+    state = secrets.token_urlsafe(32)
+    request.session["oauth_state"] = state
+    request.session["oauth_provider"] = "google"
+    redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/google/callback"
+    url = google_oauth_client.get_authorization_url(
+        redirect_uri, state=state, scope=["openid", "email", "profile"]
+    )
+    return RedirectResponse(url)
+
+@oauth_router.get("/google/callback")
+async def google_callback(request: Request, db: Session = Depends(get_db)):
+    state = request.query_params.get("state")
+    code = request.query_params.get("code")
     
-    # Store state in session
-    @router.get("/google/authorize")
-    async def google_authorize(request: Request):
-        state = secrets.token_urlsafe(32)
-        request.session["oauth_state"] = state
-        request.session["oauth_provider"] = "google"
-        redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/google/callback"
-        url = google_oauth_client.get_authorization_url(
-            redirect_uri, state=state, scope=["openid", "email", "profile"]
-        )
-        return RedirectResponse(url)
-
-    @router.get("/google/callback")
-    async def google_callback(request: Request, db: Session = Depends(get_db)):
-        state = request.query_params.get("state")
-        code = request.query_params.get("code")
+    # Verify state
+    if not state or state != request.session.get("oauth_state"):
+        logger.error("OAuth state mismatch")
+        return RedirectResponse("/login?error=Invalid state")
+    
+    provider = request.session.get("oauth_provider")
+    if provider != "google":
+        return RedirectResponse("/login?error=Invalid provider")
+    
+    try:
+        # Get token and user info
+        token = await google_oauth_client.get_access_token(code, redirect_uri="https://mgzon-mgzon-app.hf.space/auth/google/callback")
+        user_info = await google_oauth_client.get_id_email(token)
         
-        # Verify state
-        if not state or state != request.session.get("oauth_state"):
-            logger.error("OAuth state mismatch")
-            return RedirectResponse("/login?error=Invalid state")
+        account_id = user_info["id"]
+        account_email = user_info["email"]
+        logger.info(f"Google OAuth success: account_id={account_id}, email={account_email}")
         
-        provider = request.session.get("oauth_provider")
-        if provider != "google":
-            return RedirectResponse("/login?error=Invalid provider")
-        
-        try:
-            # Get token and user info
-            token = await google_oauth_client.get_access_token(code, redirect_uri="https://mgzon-mgzon-app.hf.space/auth/google/callback")
-            user_info = await google_oauth_client.get_id_email(token)
-            
-            account_id = user_info["id"]
-            account_email = user_info["email"]
-            logger.info(f"Google OAuth success: account_id={account_id}, email={account_email}")
-            
-            # Find or create user
-            user = db.query(User).filter(User.email == account_email).first()
-            if user is None:
-                # Create new user
-                user = User(
-                    email=account_email,
-                    hashed_password=UserManager(None).password_helper.hash("dummy_password"),  # Dummy password
-                    is_active=True,
-                    is_verified=True,
-                )
-                db.add(user)
-                db.commit()
-                db.refresh(user)
-                logger.info(f"Created new user: {user.email}")
-            
-            # Find or create OAuth account
-            oauth_account = db.query(OAuthAccount).filter(
-                OAuthAccount.oauth_name == "google",
-                OAuthAccount.account_id == account_id
-            ).first()
-            
-            if oauth_account is None:
-                oauth_account = OAuthAccount(
-                    oauth_name="google",
-                    access_token=token["access_token"],
-                    account_id=account_id,
-                    account_email=account_email,
-                    user_id=user.id
-                )
-                db.add(oauth_account)
-                db.commit()
-                logger.info(f"Created OAuth account for user: {user.email}")
-            else:
-                # Update existing OAuth account
-                oauth_account.access_token = token["access_token"]
-                oauth_account.account_email = account_email
-                db.commit()
-                logger.info(f"Updated OAuth account for user: {user.email}")
-            
-            # Create JWT token using fastapi_users
-            user_manager = UserManager(get_user_db(db))
-            jwt_token = await user_manager.create_access_token(user)
-            
-            # Set cookie
-            response = RedirectResponse("/chat")
-            response.set_cookie(
-                key="access_token",
-                value=jwt_token,
-                max_age=3600,
-                httponly=True,
-                secure=True,
-                samesite="lax"
+        # Find or create user
+        user = db.query(User).filter(User.email == account_email).first()
+        if user is None:
+            # Create new user
+            user = User(
+                email=account_email,
+                hashed_password="dummy_hashed_password",  # We'll use JWT only, no password login
+                is_active=True,
+                is_verified=True,
             )
-            
-            logger.info(f"OAuth login successful for user: {user.email}")
-            return response
-            
-        except Exception as e:
-            logger.error(f"Google OAuth callback failed: {e}")
-            return RedirectResponse(f"/login?error={str(e)}")
-    
-    @router.get("/github/authorize")
-    async def github_authorize(request: Request):
-        state = secrets.token_urlsafe(32)
-        request.session["oauth_state"] = state
-        request.session["oauth_provider"] = "github"
-        redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/github/callback"
-        url = github_oauth_client.get_authorization_url(
-            redirect_uri, state=state, scope=["user:email"]
-        )
-        return RedirectResponse(url)
-    
-    @router.get("/github/callback")
-    async def github_callback(request: Request, db: Session = Depends(get_db)):
-        state = request.query_params.get("state")
-        code = request.query_params.get("code")
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            logger.info(f"Created new user: {user.email}")
         
-        # Verify state
-        if not state or state != request.session.get("oauth_state"):
-            logger.error("OAuth state mismatch")
-            return RedirectResponse("/login?error=Invalid state")
+        # Find or create OAuth account
+        oauth_account = db.query(OAuthAccount).filter(
+            OAuthAccount.oauth_name == "google",
+            OAuthAccount.account_id == account_id
+        ).first()
         
-        provider = request.session.get("oauth_provider")
-        if provider != "github":
-            return RedirectResponse("/login?error=Invalid provider")
-        
-        try:
-            # Get token and user info
-            token = await github_oauth_client.get_access_token(code, redirect_uri="https://mgzon-mgzon-app.hf.space/auth/github/callback")
-            user_info = await github_oauth_client.get_id_email(token)
-            
-            account_id = user_info["id"]
-            account_email = user_info["email"]
-            logger.info(f"GitHub OAuth success: account_id={account_id}, email={account_email}")
-            
-            # Find or create user
-            user = db.query(User).filter(User.email == account_email).first()
-            if user is None:
-                # Create new user
-                user = User(
-                    email=account_email,
-                    hashed_password=UserManager(None).password_helper.hash("dummy_password"),  # Dummy password
-                    is_active=True,
-                    is_verified=True,
-                )
-                db.add(user)
-                db.commit()
-                db.refresh(user)
-                logger.info(f"Created new user: {user.email}")
-            
-            # Find or create OAuth account
-            oauth_account = db.query(OAuthAccount).filter(
-                OAuthAccount.oauth_name == "github",
-                OAuthAccount.account_id == account_id
-            ).first()
-            
-            if oauth_account is None:
-                oauth_account = OAuthAccount(
-                    oauth_name="github",
-                    access_token=token["access_token"],
-                    account_id=account_id,
-                    account_email=account_email,
-                    user_id=user.id
-                )
-                db.add(oauth_account)
-                db.commit()
-                logger.info(f"Created OAuth account for user: {user.email}")
-            else:
-                # Update existing OAuth account
-                oauth_account.access_token = token["access_token"]
-                oauth_account.account_email = account_email
-                db.commit()
-                logger.info(f"Updated OAuth account for user: {user.email}")
-            
-            # Create JWT token using fastapi_users
-            user_manager = UserManager(get_user_db(db))
-            jwt_token = await user_manager.create_access_token(user)
-            
-            # Set cookie
-            response = RedirectResponse("/chat")
-            response.set_cookie(
-                key="access_token",
-                value=jwt_token,
-                max_age=3600,
-                httponly=True,
-                secure=True,
-                samesite="lax"
+        if oauth_account is None:
+            oauth_account = OAuthAccount(
+                oauth_name="google",
+                access_token=token["access_token"],
+                account_id=account_id,
+                account_email=account_email,
+                user_id=user.id
             )
-            
-            logger.info(f"OAuth login successful for user: {user.email}")
-            return response
-            
-        except Exception as e:
-            logger.error(f"GitHub OAuth callback failed: {e}")
-            return RedirectResponse(f"/login?error={str(e)}")
+            db.add(oauth_account)
+            db.commit()
+            logger.info(f"Created OAuth account for user: {user.email}")
+        else:
+            # Update existing OAuth account
+            oauth_account.access_token = token["access_token"]
+            oauth_account.account_email = account_email
+            db.commit()
+            logger.info(f"Updated OAuth account for user: {user.email}")
+        
+        # Create JWT token using fastapi_users
+        user_db = get_user_db(db)
+        user_manager = UserManager(user_db)
+        jwt_token = await user_manager.create_access_token(user)
+        
+        # Set cookie
+        response = RedirectResponse("/chat")
+        response.set_cookie(
+            key="access_token",
+            value=jwt_token,
+            max_age=3600,
+            httponly=True,
+            secure=True,
+            samesite="lax"
+        )
+        
+        # Clear session
+        request.session.clear()
+        
+        logger.info(f"OAuth login successful for user: {user.email}")
+        return response
+        
+    except Exception as e:
+        logger.error(f"Google OAuth callback failed: {e}")
+        request.session.clear()
+        return RedirectResponse(f"/login?error={str(e)}")
 
-    return router
+@oauth_router.get("/github/authorize")
+async def github_authorize(request: Request):
+    state = secrets.token_urlsafe(32)
+    request.session["oauth_state"] = state
+    request.session["oauth_provider"] = "github"
+    redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/github/callback"
+    url = github_oauth_client.get_authorization_url(
+        redirect_uri, state=state, scope=["user:email"]
+    )
+    return RedirectResponse(url)
+
+@oauth_router.get("/github/callback")
+async def github_callback(request: Request, db: Session = Depends(get_db)):
+    state = request.query_params.get("state")
+    code = request.query_params.get("code")
+    
+    # Verify state
+    if not state or state != request.session.get("oauth_state"):
+        logger.error("OAuth state mismatch")
+        return RedirectResponse("/login?error=Invalid state")
+    
+    provider = request.session.get("oauth_provider")
+    if provider != "github":
+        return RedirectResponse("/login?error=Invalid provider")
+    
+    try:
+        # Get token and user info
+        token = await github_oauth_client.get_access_token(code, redirect_uri="https://mgzon-mgzon-app.hf.space/auth/github/callback")
+        user_info = await github_oauth_client.get_id_email(token)
+        
+        account_id = user_info["id"]
+        account_email = user_info["email"]
+        logger.info(f"GitHub OAuth success: account_id={account_id}, email={account_email}")
+        
+        # Find or create user
+        user = db.query(User).filter(User.email == account_email).first()
+        if user is None:
+            # Create new user
+            user = User(
+                email=account_email,
+                hashed_password="dummy_hashed_password",  # We'll use JWT only, no password login
+                is_active=True,
+                is_verified=True,
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            logger.info(f"Created new user: {user.email}")
+        
+        # Find or create OAuth account
+        oauth_account = db.query(OAuthAccount).filter(
+            OAuthAccount.oauth_name == "github",
+            OAuthAccount.account_id == account_id
+        ).first()
+        
+        if oauth_account is None:
+            oauth_account = OAuthAccount(
+                oauth_name="github",
+                access_token=token["access_token"],
+                account_id=account_id,
+                account_email=account_email,
+                user_id=user.id
+            )
+            db.add(oauth_account)
+            db.commit()
+            logger.info(f"Created OAuth account for user: {user.email}")
+        else:
+            # Update existing OAuth account
+            oauth_account.access_token = token["access_token"]
+            oauth_account.account_email = account_email
+            db.commit()
+            logger.info(f"Updated OAuth account for user: {user.email}")
+        
+        # Create JWT token using fastapi_users
+        user_db = get_user_db(db)
+        user_manager = UserManager(user_db)
+        jwt_token = await user_manager.create_access_token(user)
+        
+        # Set cookie
+        response = RedirectResponse("/chat")
+        response.set_cookie(
+            key="access_token",
+            value=jwt_token,
+            max_age=3600,
+            httponly=True,
+            secure=True,
+            samesite="lax"
+        )
+        
+        # Clear session
+        request.session.clear()
+        
+        logger.info(f"OAuth login successful for user: {user.email}")
+        return response
+        
+    except Exception as e:
+        logger.error(f"GitHub OAuth callback failed: {e}")
+        request.session.clear()
+        return RedirectResponse(f"/login?error={str(e)}")
+
+@oauth_router.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    response = RedirectResponse("/login")
+    response.delete_cookie("access_token")
+    return response
 
 # Standard fastapi_users setup for JWT only (no OAuth)
 fastapi_users = FastAPIUsers[User, int](
@@ -279,8 +288,7 @@ current_active_user = fastapi_users.current_user(active=True, optional=True)
 
 def get_auth_router(app: FastAPI):
     # Add custom OAuth router
-    custom_oauth_router = get_custom_oauth_router()
-    app.include_router(custom_oauth_router, prefix="/auth", tags=["auth"])
+    app.include_router(oauth_router)
     
     # Add standard fastapi_users routes (without OAuth)
     app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
@@ -288,13 +296,3 @@ def get_auth_router(app: FastAPI):
     app.include_router(fastapi_users.get_reset_password_router(), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_verify_router(UserRead), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate), prefix="/users", tags=["users"])
-
-# Add logout endpoint
-@get_auth_router
-def logout_endpoint():
-    @router.get("/logout")
-    async def logout(request: Request):
-        request.session.clear()
-        response = RedirectResponse("/login")
-        response.delete_cookie("access_token")
-        return response
