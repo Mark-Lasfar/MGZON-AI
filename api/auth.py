@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 import secrets
 import json
+import httpx
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -54,9 +55,6 @@ if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLI
     logger.error("One or more OAuth environment variables are missing.")
     raise ValueError("All OAuth credentials are required.")
 
-google_oauth_client = GoogleOAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
-github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
-
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
@@ -67,20 +65,22 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
-# Custom OAuth Router
+# Custom OAuth Router - SYNC VERSION
 oauth_router = APIRouter(prefix="/auth", tags=["auth"])
 
-# Store state in session
 @oauth_router.get("/google/authorize")
 async def google_authorize(request: Request):
     state = secrets.token_urlsafe(32)
     request.session["oauth_state"] = state
     request.session["oauth_provider"] = "google"
+    
+    # SYNC call to get_authorization_url
     redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/google/callback"
     url = google_oauth_client.get_authorization_url(
         redirect_uri, state=state, scope=["openid", "email", "profile"]
     )
-    return RedirectResponse(url)
+    logger.info(f"Redirecting to Google OAuth: {url}")
+    return RedirectResponse(str(url))
 
 @oauth_router.get("/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
@@ -97,15 +97,18 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse("/login?error=Invalid provider")
     
     try:
-        # Get token and user info
-        token = await google_oauth_client.get_access_token(code, redirect_uri="https://mgzon-mgzon-app.hf.space/auth/google/callback")
-        user_info = await google_oauth_client.get_id_email(token)
+        # SYNC call to get_access_token
+        redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/google/callback"
+        token = google_oauth_client.get_access_token(code, redirect_uri=redirect_uri)
+        
+        # SYNC call to get_id_email
+        user_info = google_oauth_client.get_id_email(token)
         
         account_id = user_info["id"]
         account_email = user_info["email"]
         logger.info(f"Google OAuth success: account_id={account_id}, email={account_email}")
         
-        # Find or create user
+        # Find or create user - SYNC
         user = db.query(User).filter(User.email == account_email).first()
         if user is None:
             # Create new user
@@ -120,7 +123,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             db.refresh(user)
             logger.info(f"Created new user: {user.email}")
         
-        # Find or create OAuth account
+        # Find or create OAuth account - SYNC
         oauth_account = db.query(OAuthAccount).filter(
             OAuthAccount.oauth_name == "google",
             OAuthAccount.account_id == account_id
@@ -144,7 +147,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             db.commit()
             logger.info(f"Updated OAuth account for user: {user.email}")
         
-        # Create JWT token using fastapi_users
+        # Create JWT token using fastapi_users - ASYNC
         user_db = get_user_db(db)
         user_manager = UserManager(user_db)
         jwt_token = await user_manager.create_access_token(user)
@@ -176,11 +179,14 @@ async def github_authorize(request: Request):
     state = secrets.token_urlsafe(32)
     request.session["oauth_state"] = state
     request.session["oauth_provider"] = "github"
+    
+    # SYNC call to get_authorization_url
     redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/github/callback"
     url = github_oauth_client.get_authorization_url(
         redirect_uri, state=state, scope=["user:email"]
     )
-    return RedirectResponse(url)
+    logger.info(f"Redirecting to GitHub OAuth: {url}")
+    return RedirectResponse(str(url))
 
 @oauth_router.get("/github/callback")
 async def github_callback(request: Request, db: Session = Depends(get_db)):
@@ -197,15 +203,18 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse("/login?error=Invalid provider")
     
     try:
-        # Get token and user info
-        token = await github_oauth_client.get_access_token(code, redirect_uri="https://mgzon-mgzon-app.hf.space/auth/github/callback")
-        user_info = await github_oauth_client.get_id_email(token)
+        # SYNC call to get_access_token
+        redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/github/callback"
+        token = github_oauth_client.get_access_token(code, redirect_uri=redirect_uri)
+        
+        # SYNC call to get_id_email
+        user_info = github_oauth_client.get_id_email(token)
         
         account_id = user_info["id"]
         account_email = user_info["email"]
         logger.info(f"GitHub OAuth success: account_id={account_id}, email={account_email}")
         
-        # Find or create user
+        # Find or create user - SYNC
         user = db.query(User).filter(User.email == account_email).first()
         if user is None:
             # Create new user
@@ -220,7 +229,7 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
             db.refresh(user)
             logger.info(f"Created new user: {user.email}")
         
-        # Find or create OAuth account
+        # Find or create OAuth account - SYNC
         oauth_account = db.query(OAuthAccount).filter(
             OAuthAccount.oauth_name == "github",
             OAuthAccount.account_id == account_id
@@ -244,7 +253,7 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
             db.commit()
             logger.info(f"Updated OAuth account for user: {user.email}")
         
-        # Create JWT token using fastapi_users
+        # Create JWT token using fastapi_users - ASYNC
         user_db = get_user_db(db)
         user_manager = UserManager(user_db)
         jwt_token = await user_manager.create_access_token(user)
