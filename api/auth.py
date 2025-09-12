@@ -16,7 +16,7 @@ import os
 import logging
 import secrets
 
-# Setup logging
+# إعداد اللوقينج
 logger = logging.getLogger(__name__)
 
 cookie_transport = CookieTransport(cookie_max_age=3600)
@@ -35,23 +35,17 @@ auth_backend = AuthenticationBackend(
     get_strategy=get_jwt_strategy,
 )
 
-# OAuth credentials
+# OAuth بيانات الاعتماد
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 
-# Log OAuth credentials status
-logger.info("GOOGLE_CLIENT_ID is set: %s", bool(GOOGLE_CLIENT_ID))
-logger.info("GOOGLE_CLIENT_SECRET is set: %s", bool(GOOGLE_CLIENT_SECRET))
-logger.info("GITHUB_CLIENT_ID is set: %s", bool(GITHUB_CLIENT_ID))
-logger.info("GITHUB_CLIENT_SECRET is set: %s", bool(GITHUB_CLIENT_SECRET))
-
+# تحقق من توافر بيانات الاعتماد
 if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET]):
     logger.error("One or more OAuth environment variables are missing.")
-    raise ValueError("All OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET) are required.")
+    raise ValueError("All OAuth credentials are required.")
 
-# OAuth redirect URLs
 GOOGLE_REDIRECT_URL = os.getenv("GOOGLE_REDIRECT_URL", "https://mgzon-mgzon-app.hf.space/auth/google/callback")
 GITHUB_REDIRECT_URL = os.getenv("GITHUB_REDIRECT_URL", "https://mgzon-mgzon-app.hf.space/auth/github/callback")
 
@@ -60,70 +54,37 @@ github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
 
 class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
     async def get_by_email(self, email: str) -> Optional[User]:
-        """Override to fix ChunkedIteratorResult issue."""
         logger.info(f"Checking for user with email: {email}")
-        try:
-            statement = select(self.user_table).where(self.user_table.email == email)
-            result = await self.session.execute(statement)
-            user = result.scalar_one_or_none()
-            if user:
-                logger.info(f"Found user with email: {email}")
-            else:
-                logger.info(f"No user found with email: {email}")
-            return user
-        except Exception as e:
-            logger.error(f"Error in get_by_email: {e}")
-            raise
+        statement = select(self.user_table).where(self.user_table.email == email)
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
 
     async def create(self, create_dict: Dict[str, Any]) -> User:
-        """Override to fix potential async issues."""
         logger.info(f"Creating user with email: {create_dict.get('email')}")
-        try:
-            user = self.user_table(**create_dict)
-            self.session.add(user)
-            await self.session.commit()
-            await self.session.refresh(user)
-            logger.info(f"Created user with email: {create_dict.get('email')}")
-            return user
-        except Exception as e:
-            logger.error(f"Error creating user: {e}")
-            await self.session.rollback()
-            raise
+        user = self.user_table(**create_dict)
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
 
     async def get_by_oauth_account(self, oauth_name: str, account_id: str):
-        """Override to fix ChunkedIteratorResult issue."""
-        logger.info(f"Checking for existing OAuth account: {oauth_name}/{account_id}")
-        try:
-            statement = select(OAuthAccount).where(
-                OAuthAccount.oauth_name == oauth_name, OAuthAccount.account_id == account_id
-            )
-            result = await self.session.execute(statement)
-            oauth_account = result.scalar_one_or_none()
-            if oauth_account:
-                logger.info(f"Found existing OAuth account for {account_id}")
-            else:
-                logger.info(f"No existing OAuth account found for {account_id}")
-            return oauth_account
-        except Exception as e:
-            logger.error(f"Error in get_by_oauth_account: {e}")
-            raise
+        logger.info(f"Checking OAuth account: {oauth_name}/{account_id}")
+        statement = select(OAuthAccount).where(
+            OAuthAccount.oauth_name == oauth_name,
+            OAuthAccount.account_id == account_id
+        )
+        result = await self.user_db.session.execute(statement)
+        return result.scalar_one_or_none()
 
     async def add_oauth_account(self, oauth_account: OAuthAccount):
-        """Override to fix potential async issues."""
         logger.info(f"Adding OAuth account for user {oauth_account.user_id}")
-        try:
-            self.session.add(oauth_account)
-            await self.session.commit()
-            await self.session.refresh(oauth_account)
-            logger.info(f"Successfully added OAuth account for user {oauth_account.user_id}")
-        except Exception as e:
-            logger.error(f"Error adding OAuth account: {e}")
-            await self.session.rollback()
-            raise
+        self.user_db.session.add(oauth_account)
+        await self.user_db.session.commit()
+        await self.user_db.session.refresh(oauth_account)
 
     async def oauth_callback(
         self,
@@ -138,27 +99,25 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         associate_by_email: bool = False,
         is_verified_by_default: bool = False,
     ) -> UP:
-        logger.info(f"OAuth callback for {oauth_name} with account_id {account_id}")
-        oauth_account_dict = {
-            "oauth_name": oauth_name,
-            "access_token": access_token,
-            "account_id": account_id,
-            "account_email": account_email,
-            "expires_at": expires_at,
-            "refresh_token": refresh_token,
-        }
-        oauth_account = OAuthAccount(**oauth_account_dict)
+        logger.info(f"OAuth callback for {oauth_name} account {account_id}")
+
+        oauth_account = OAuthAccount(
+            oauth_name=oauth_name,
+            access_token=access_token,
+            account_id=account_id,
+            account_email=account_email,
+            expires_at=expires_at,
+            refresh_token=refresh_token,
+        )
         existing_oauth_account = await self.get_by_oauth_account(oauth_name, account_id)
-        if existing_oauth_account is not None:
-            logger.info(f"Existing account found, logging in user {existing_oauth_account.user.email}")
+        if existing_oauth_account:
             return await self.on_after_login(existing_oauth_account.user, request)
 
         if associate_by_email:
             user = await self.user_db.get_by_email(account_email)
-            if user is not None:
+            if user:
                 oauth_account.user_id = user.id
                 await self.add_oauth_account(oauth_account)
-                logger.info(f"Associated with existing user {user.email}")
                 return await self.on_after_login(user, request)
 
         user_dict = {
@@ -170,9 +129,9 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         user = await self.user_db.create(user_dict)
         oauth_account.user_id = user.id
         await self.add_oauth_account(oauth_account)
-        logger.info(f"Created new user {user.email}")
         return await self.on_after_login(user, request)
 
+# استدعاء user manager من get_user_db (تجنب التكرار)
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
@@ -184,7 +143,6 @@ google_oauth_router = get_oauth_router(
     associate_by_email=True,
     redirect_url=GOOGLE_REDIRECT_URL,
 )
-logger.info("Google OAuth router initialized successfully")
 
 github_oauth_router = get_oauth_router(
     github_oauth_client,
@@ -194,7 +152,6 @@ github_oauth_router = get_oauth_router(
     associate_by_email=True,
     redirect_url=GITHUB_REDIRECT_URL,
 )
-logger.info("GitHub OAuth router initialized successfully")
 
 fastapi_users = FastAPIUsers[User, int](
     get_user_db,
@@ -211,3 +168,4 @@ def get_auth_router(app: FastAPI):
     app.include_router(fastapi_users.get_reset_password_router(), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_verify_router(UserRead), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate), prefix="/users", tags=["users"])
+
