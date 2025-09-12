@@ -33,7 +33,9 @@ COPY . .
 RUN ls -R /app
 
 # Initialize the database
-ENV SQLALCHEMY_DATABASE_URL=sqlite:////data/mgzon_users.db
+ENV SQLALCHEMY_DATABASE_URL=sqlite+aiosqlite:///./data/mgzon_users.db
+
+
 RUN python init_db.py
 
 # Expose port 7860 for FastAPI
