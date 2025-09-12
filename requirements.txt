@@ -1,7 +1,7 @@
 fastapi==0.115.2
 packaging>=23.0
 uvicorn==0.30.6
-gradio>=4.44.1
+
 openai==1.51.2
 httpx==0.27.0
 python-dotenv==1.0.1
@@ -22,15 +22,15 @@ torchaudio==2.4.1
 transformers==4.43.3
 webrtcvad==2.0.10
 Pillow==10.4.0
-urllib3==2.0.7
+urllib3==2.2.3
 itsdangerous
-protobuf==3.19.6
+protobuf==4.25.5
 
 fastapi-users[sqlalchemy,oauth2]==14.0.0
 sqlalchemy>=2.0.0
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
-httpx-oauth==0.15.3
+httpx-oauth==0.16.1
 python-multipart==0.0.12
 aiofiles
 motor
