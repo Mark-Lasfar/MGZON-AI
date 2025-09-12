@@ -52,7 +52,7 @@ async def init_db():
             if not test_user:
                 test_user = User(
                     email="test@example.com",
-                    hashed_password=pwd_context.hash("testpassword123"),  # تشفير كلمة المرور
+                    hashed_password=pwd_context.hash("testpassword123"),
                     is_active=True,
                     display_name="Test User"
                 )
@@ -83,4 +83,8 @@ async def init_db():
     logger.info("Database initialization completed.")
 
 if __name__ == "__main__":
-    asyncio.run(init_db())
+    try:
+        asyncio.run(init_db())
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        raise
