@@ -3,7 +3,7 @@ from fastapi_users.authentication import CookieTransport, JWTStrategy, Authentic
 from fastapi_users.db import SQLAlchemyUserDatabase
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
-from api.database import User, OAuthAccount, get_user_db
+from api.database import User, OAuthAccount, get_user_db, get_db
 from api.models import UserRead, UserCreate, UserUpdate
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
 from fastapi import Depends, Request, FastAPI
