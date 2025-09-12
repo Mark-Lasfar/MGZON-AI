@@ -1,4 +1,3 @@
-# api/auth.py
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
 from fastapi_users.db import SQLAlchemyUserDatabase
@@ -74,6 +73,11 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     ) -> UP:
         logger.info(f"Processing OAuth callback for {oauth_name} with account_id: {account_id}, email: {account_email}")
         
+        # Validate inputs
+        if not account_email or not account_id:
+            logger.error(f"Invalid OAuth callback data: email={account_email}, account_id={account_id}")
+            raise ValueError("Invalid OAuth callback data: email and account_id are required.")
+
         oauth_account_dict = {
             "oauth_name": oauth_name,
             "access_token": access_token,
@@ -104,12 +108,17 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                     "is_verified": is_verified_by_default,
                 }
                 user = User(**user_dict)
-                self.user_db.session.add(user)
-                self.user_db.session.commit()
-                self.user_db.session.refresh(user)
-                existing_oauth_account.user_id = user.id
-                self.user_db.session.commit()
-                logger.info(f"Created new user and linked to existing OAuth account: {user.email}")
+                try:
+                    self.user_db.session.add(user)
+                    self.user_db.session.commit()
+                    self.user_db.session.refresh(user)
+                    existing_oauth_account.user_id = user.id
+                    self.user_db.session.commit()
+                    logger.info(f"Created new user and linked to existing OAuth account: {user.email}")
+                except Exception as e:
+                    self.user_db.session.rollback()
+                    logger.error(f"Failed to create user for OAuth account {account_id}: {e}")
+                    raise ValueError(f"Failed to create user: {e}")
             logger.info(f"Returning existing user: {user.email}")
             return await self.on_after_login(user, request)
 
@@ -119,7 +128,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             result = self.user_db.session.execute(statement)
             user = result.scalars().first()
             if user is None:
-                logger.error(f"No user found for email {account_email}. Creating new user.")
+                logger.info(f"No user found for email {account_email}. Creating new user.")
                 # Create new user if not found
                 user_dict = {
                     "email": account_email,
@@ -128,14 +137,24 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                     "is_verified": is_verified_by_default,
                 }
                 user = User(**user_dict)
-                self.user_db.session.add(user)
-                self.user_db.session.commit()
-                self.user_db.session.refresh(user)
-                logger.info(f"Created new user for email: {user.email}")
+                try:
+                    self.user_db.session.add(user)
+                    self.user_db.session.commit()
+                    self.user_db.session.refresh(user)
+                    logger.info(f"Created new user for email: {user.email}")
+                except Exception as e:
+                    self.user_db.session.rollback()
+                    logger.error(f"Failed to create user for email {account_email}: {e}")
+                    raise ValueError(f"Failed to create user: {e}")
             oauth_account.user_id = user.id
-            self.user_db.session.add(oauth_account)
-            self.user_db.session.commit()
-            logger.info(f"Associated OAuth account with user: {user.email}")
+            try:
+                self.user_db.session.add(oauth_account)
+                self.user_db.session.commit()
+                logger.info(f"Associated OAuth account with user: {user.email}")
+            except Exception as e:
+                self.user_db.session.rollback()
+                logger.error(f"Failed to associate OAuth account with user {user.email}: {e}")
+                raise ValueError(f"Failed to associate OAuth account: {e}")
             return await self.on_after_login(user, request)
 
         # Create new user
@@ -147,15 +166,25 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             "is_verified": is_verified_by_default,
         }
         user = User(**user_dict)
-        self.user_db.session.add(user)
-        self.user_db.session.commit()
-        self.user_db.session.refresh(user)
-        logger.info(f"Created new user: {user.email}")
+        try:
+            self.user_db.session.add(user)
+            self.user_db.session.commit()
+            self.user_db.session.refresh(user)
+            logger.info(f"Created new user: {user.email}")
+        except Exception as e:
+            self.user_db.session.rollback()
+            logger.error(f"Failed to create user for email {account_email}: {e}")
+            raise ValueError(f"Failed to create user: {e}")
 
         oauth_account.user_id = user.id
-        self.user_db.session.add(oauth_account)
-        self.user_db.session.commit()
-        logger.info(f"Linked OAuth account to new user: {user.email}")
+        try:
+            self.user_db.session.add(oauth_account)
+            self.user_db.session.commit()
+            logger.info(f"Linked OAuth account to new user: {user.email}")
+        except Exception as e:
+            self.user_db.session.rollback()
+            logger.error(f"Failed to link OAuth account to user {user.email}: {e}")
+            raise ValueError(f"Failed to link OAuth account: {e}")
         return await self.on_after_login(user, request)
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
