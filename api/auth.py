@@ -89,7 +89,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         oauth_account = OAuthAccount(**oauth_account_dict)
 
         try:
-            # Custom query to fetch existing OAuth account
+            # Custom query to fetch existing OAuth account (sync)
             statement = select(OAuthAccount).where(
                 (OAuthAccount.oauth_name == oauth_name) & (OAuthAccount.account_id == account_id)
             )
@@ -102,7 +102,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 user = existing_oauth_account.user
                 if user is None:
                     logger.warning(f"No user associated with existing OAuth account. Creating new user.")
-                    # Create new user and link
+                    # Create new user and link (sync)
                     user_dict = {
                         "email": account_email,
                         "hashed_password": self.password_helper.hash("dummy_password"),
@@ -125,7 +125,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 else:
                     # Update existing OAuth account if needed (handle None return from update_oauth_account)
                     try:
-                        updated_user = await self.user_db.update_oauth_account(user, existing_oauth_account, oauth_account_dict)
+                        updated_user = self.user_db.update_oauth_account(user, existing_oauth_account, oauth_account_dict)  # sync
                         if updated_user is None:
                             logger.warning("update_oauth_account returned None. Using original user.")
                             updated_user = user
@@ -136,8 +136,8 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                         user = user  # Keep original
             elif associate_by_email:
                 logger.info(f"Associating by email: {account_email}")
-                # Safe get_by_email
-                user = await self.user_db.get_by_email(account_email)
+                # Safe get_by_email (sync)
+                user = self.user_db.get_by_email(account_email)  # بدون await
                 if user is None:
                     logger.info(f"No user found for email {account_email}. Creating new user.")
                     user_dict = {
@@ -147,7 +147,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                         "is_verified": is_verified_by_default,
                     }
                     try:
-                        user = await self.user_db.create(user_dict)
+                        user = self.user_db.create(user_dict)  # بدون await
                         logger.info(f"Created new user for email: {user.email}")
                     except Exception as create_e:
                         logger.error(f"Failed to create user for email {account_email}: {create_e}")
@@ -172,7 +172,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                     "is_verified": is_verified_by_default,
                 }
                 try:
-                    user = await self.user_db.create(user_dict)
+                    user = self.user_db.create(user_dict)  # بدون await
                     logger.info(f"Created new user: {user.email}")
                 except Exception as create_e:
                     logger.error(f"Failed to create user for email {account_email}: {create_e}")
@@ -197,7 +197,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 logger.warning(f"User {user.email} is inactive. Activating...")
                 user.is_active = True
                 try:
-                    await self.user_db.update(user)
+                    self.user_db.update(user)  # بدون await
                     logger.info(f"Activated inactive user: {user.email}")
                 except Exception as activate_e:
                     logger.error(f"Failed to activate user: {activate_e}")
