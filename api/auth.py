@@ -3,9 +3,10 @@ from fastapi_users.authentication import CookieTransport, JWTStrategy, Authentic
 from fastapi_users.db import SQLAlchemyUserDatabase
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
-from api.database import User, OAuthAccount, get_user_db
+from api.database import User, OAuthAccount, get_user_db, get_db
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
-from fastapi import Depends, Request, FastAPI, HTTPException
+from fastapi import Depends, Request, FastAPI, HTTPException, status
+from fastapi.responses import RedirectResponse
 from fastapi_users.models import UP
 from typing import Optional
 import os
@@ -13,6 +14,10 @@ import logging
 from api.database import User, OAuthAccount
 from api.models import UserRead, UserCreate, UserUpdate
 from sqlalchemy import select
+from sqlalchemy.orm import Session
+from datetime import datetime
+import secrets
+import json
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -43,9 +48,7 @@ GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 
 # Log OAuth credentials status
 logger.info("GOOGLE_CLIENT_ID is set: %s", bool(GOOGLE_CLIENT_ID))
-logger.info("GOOGLE_CLIENT_SECRET is set: %s", bool(GOOGLE_CLIENT_SECRET))
 logger.info("GITHUB_CLIENT_ID is set: %s", bool(GITHUB_CLIENT_ID))
-logger.info("GITHUB_CLIENT_SECRET is set: %s", bool(GITHUB_CLIENT_SECRET))
 
 if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET]):
     logger.error("One or more OAuth environment variables are missing.")
@@ -54,214 +57,219 @@ if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLI
 google_oauth_client = GoogleOAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
 github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
 
+# OAuth state secret
+OAUTH_STATE_SECRET = SECRET
+
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
 
-    async def oauth_callback(
-        self,
-        oauth_name: str,
-        access_token: str,
-        account_id: str,
-        account_email: str,
-        expires_at: Optional[int] = None,
-        refresh_token: Optional[str] = None,
-        request: Optional[Request] = None,
-        *,
-        associate_by_email: bool = False,
-        is_verified_by_default: bool = False,
-    ) -> UP:
-        logger.info(f"Processing OAuth callback for {oauth_name} with account_id: {account_id}, email: {account_email}")
-        
-        # Validate inputs
-        if not account_email or not account_id:
-            logger.error(f"Invalid OAuth callback data: email={account_email}, account_id={account_id}")
-            raise ValueError("Invalid OAuth callback data: email and account_id are required.")
-
-        try:
-            # Custom query to fetch existing OAuth account (sync)
-            statement = select(OAuthAccount).where(
-                (OAuthAccount.oauth_name == oauth_name) & (OAuthAccount.account_id == account_id)
-            )
-            result = self.user_db.session.execute(statement)
-            existing_oauth_account = result.scalars().first()
-
-            user = None
-            if existing_oauth_account is not None:
-                logger.info(f"Found existing OAuth account for {oauth_name}, account_id: {account_id}")
-                user = existing_oauth_account.user
-                if user is None:
-                    logger.warning(f"No user associated with existing OAuth account. Creating new user.")
-                    # Create new user and link (sync)
-                    user_dict = {
-                        "email": account_email,
-                        "hashed_password": self.password_helper.hash("dummy_password"),
-                        "is_active": True,
-                        "is_verified": is_verified_by_default,
-                    }
-                    user = User(**user_dict)
-                    self.user_db.session.add(user)
-                    self.user_db.session.commit()
-                    self.user_db.session.refresh(user)
-                    existing_oauth_account.user_id = user.id
-                    # Update the existing account safely
-                    try:
-                        self.user_db.session.commit()
-                        logger.info(f"Linked new user to existing OAuth account: {user.email}")
-                    except Exception as update_e:
-                        self.user_db.session.rollback()
-                        logger.error(f"Failed to update existing OAuth account: {update_e}")
-                        raise ValueError(f"Failed to link user to OAuth account: {update_e}")
-                else:
-                    # Update existing OAuth account if needed (handle None return from update_oauth_account)
-                    try:
-                        updated_user = self.user_db.update_oauth_account(user, existing_oauth_account, {
-                            "oauth_name": oauth_name,
-                            "access_token": access_token,
-                            "account_id": account_id,
-                            "account_email": account_email,
-                            "expires_at": expires_at,
-                            "refresh_token": refresh_token,
-                        })  # sync
-                        if updated_user is None:
-                            logger.warning("update_oauth_account returned None. Using original user.")
-                            updated_user = user
-                        user = updated_user
-                    except Exception as update_e:
-                        logger.error(f"Error in update_oauth_account: {update_e}")
-                        # Fallback: just use the existing user
-                        user = user  # Keep original
-            elif associate_by_email:
-                logger.info(f"Associating by email: {account_email}")
-                # Safe get_by_email (sync) - NO AWAIT
-                user = self.user_db.get_by_email(account_email)
-                if user is None:
-                    logger.info(f"No user found for email {account_email}. Creating new user.")
-                    user_dict = {
-                        "email": account_email,
-                        "hashed_password": self.password_helper.hash("dummy_password"),
-                        "is_active": True,
-                        "is_verified": is_verified_by_default,
-                    }
-                    try:
-                        # Create user manually to avoid any async issues
-                        user = User(**user_dict)
-                        self.user_db.session.add(user)
-                        self.user_db.session.commit()
-                        self.user_db.session.refresh(user)
-                        logger.info(f"Created new user for email: {user.email}")
-                    except Exception as create_e:
-                        self.user_db.session.rollback()
-                        logger.error(f"Failed to create user for email {account_email}: {create_e}")
-                        raise ValueError(f"Failed to create user: {create_e}")
-                
-                # Create and link OAuth account
-                oauth_account = OAuthAccount(
-                    oauth_name=oauth_name,
-                    access_token=access_token,
-                    account_id=account_id,
-                    account_email=account_email,
-                    expires_at=expires_at,
-                    refresh_token=refresh_token,
-                    user_id=user.id
-                )
-                try:
-                    self.user_db.session.add(oauth_account)
-                    self.user_db.session.commit()
-                    logger.info(f"Associated OAuth account with user: {user.email}")
-                except Exception as link_e:
-                    self.user_db.session.rollback()
-                    logger.error(f"Failed to associate OAuth account: {link_e}")
-                    raise ValueError(f"Failed to link OAuth account: {link_e}")
-            else:
-                # Create new user (default case)
-                logger.info(f"Creating new user for email: {account_email}")
-                user_dict = {
-                    "email": account_email,
-                    "hashed_password": self.password_helper.hash("dummy_password"),
-                    "is_active": True,
-                    "is_verified": is_verified_by_default,
-                }
-                try:
-                    # Create user manually to avoid any async issues
-                    user = User(**user_dict)
-                    self.user_db.session.add(user)
-                    self.user_db.session.commit()
-                    self.user_db.session.refresh(user)
-                    logger.info(f"Created new user: {user.email}")
-                except Exception as create_e:
-                    self.user_db.session.rollback()
-                    logger.error(f"Failed to create user for email {account_email}: {create_e}")
-                    raise ValueError(f"Failed to create user: {create_e}")
-
-                # Create and link OAuth account
-                oauth_account = OAuthAccount(
-                    oauth_name=oauth_name,
-                    access_token=access_token,
-                    account_id=account_id,
-                    account_email=account_email,
-                    expires_at=expires_at,
-                    refresh_token=refresh_token,
-                    user_id=user.id
-                )
-                try:
-                    self.user_db.session.add(oauth_account)
-                    self.user_db.session.commit()
-                    logger.info(f"Linked OAuth account to new user: {user.email}")
-                except Exception as link_e:
-                    self.user_db.session.rollback()
-                    logger.error(f"Failed to link OAuth account: {link_e}")
-                    raise ValueError(f"Failed to link OAuth account: {link_e}")
-
-            # Safe check for user.is_active - التحقق الآمن من is_active
-            if user is None:
-                logger.error("User is still None after all attempts. Cannot proceed.")
-                raise ValueError("Failed to retrieve or create user.")
-            
-            if not user.is_active:
-                logger.warning(f"User {user.email} is inactive. Activating...")
-                user.is_active = True
-                try:
-                    self.user_db.session.commit()
-                    logger.info(f"Activated inactive user: {user.email}")
-                except Exception as activate_e:
-                    self.user_db.session.rollback()
-                    logger.error(f"Failed to activate user: {activate_e}")
-                    raise ValueError(f"Failed to activate user: {activate_e}")
-
-            logger.info(f"Returning user: {user.email} (active: {user.is_active})")
-            return await self.on_after_login(user, request)
-
-        except Exception as e:
-            # Rollback on any error
-            if self.user_db.session.in_transaction():
-                self.user_db.session.rollback()
-            logger.error(f"OAuth callback failed: {e}")
-            raise
+    # Standard user manager methods (for JWT only)
+    pass
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
-from fastapi_users.router.oauth import get_oauth_router
+# Custom OAuth routers without fastapi_users
+from fastapi import APIRouter
 
-google_oauth_router = get_oauth_router(
-    google_oauth_client,
-    auth_backend,
-    get_user_manager,
-    state_secret=SECRET,
-    associate_by_email=True,
-    redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback",
-)
+def get_custom_oauth_router():
+    router = APIRouter()
+    
+    # Store state in session
+    @router.get("/google/authorize")
+    async def google_authorize(request: Request):
+        state = secrets.token_urlsafe(32)
+        request.session["oauth_state"] = state
+        request.session["oauth_provider"] = "google"
+        redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/google/callback"
+        url = google_oauth_client.get_authorization_url(
+            redirect_uri, state=state, scope=["openid", "email", "profile"]
+        )
+        return RedirectResponse(url)
 
-github_oauth_router = get_oauth_router(
-    github_oauth_client,
-    auth_backend,
-    get_user_manager,
-    state_secret=SECRET,
-    associate_by_email=True,
-    redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback",
-)
+    @router.get("/google/callback")
+    async def google_callback(request: Request, db: Session = Depends(get_db)):
+        state = request.query_params.get("state")
+        code = request.query_params.get("code")
+        
+        # Verify state
+        if not state or state != request.session.get("oauth_state"):
+            logger.error("OAuth state mismatch")
+            return RedirectResponse("/login?error=Invalid state")
+        
+        provider = request.session.get("oauth_provider")
+        if provider != "google":
+            return RedirectResponse("/login?error=Invalid provider")
+        
+        try:
+            # Get token and user info
+            token = await google_oauth_client.get_access_token(code, redirect_uri="https://mgzon-mgzon-app.hf.space/auth/google/callback")
+            user_info = await google_oauth_client.get_id_email(token)
+            
+            account_id = user_info["id"]
+            account_email = user_info["email"]
+            logger.info(f"Google OAuth success: account_id={account_id}, email={account_email}")
+            
+            # Find or create user
+            user = db.query(User).filter(User.email == account_email).first()
+            if user is None:
+                # Create new user
+                user = User(
+                    email=account_email,
+                    hashed_password=UserManager(None).password_helper.hash("dummy_password"),  # Dummy password
+                    is_active=True,
+                    is_verified=True,
+                )
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+                logger.info(f"Created new user: {user.email}")
+            
+            # Find or create OAuth account
+            oauth_account = db.query(OAuthAccount).filter(
+                OAuthAccount.oauth_name == "google",
+                OAuthAccount.account_id == account_id
+            ).first()
+            
+            if oauth_account is None:
+                oauth_account = OAuthAccount(
+                    oauth_name="google",
+                    access_token=token["access_token"],
+                    account_id=account_id,
+                    account_email=account_email,
+                    user_id=user.id
+                )
+                db.add(oauth_account)
+                db.commit()
+                logger.info(f"Created OAuth account for user: {user.email}")
+            else:
+                # Update existing OAuth account
+                oauth_account.access_token = token["access_token"]
+                oauth_account.account_email = account_email
+                db.commit()
+                logger.info(f"Updated OAuth account for user: {user.email}")
+            
+            # Create JWT token using fastapi_users
+            user_manager = UserManager(get_user_db(db))
+            jwt_token = await user_manager.create_access_token(user)
+            
+            # Set cookie
+            response = RedirectResponse("/chat")
+            response.set_cookie(
+                key="access_token",
+                value=jwt_token,
+                max_age=3600,
+                httponly=True,
+                secure=True,
+                samesite="lax"
+            )
+            
+            logger.info(f"OAuth login successful for user: {user.email}")
+            return response
+            
+        except Exception as e:
+            logger.error(f"Google OAuth callback failed: {e}")
+            return RedirectResponse(f"/login?error={str(e)}")
+    
+    @router.get("/github/authorize")
+    async def github_authorize(request: Request):
+        state = secrets.token_urlsafe(32)
+        request.session["oauth_state"] = state
+        request.session["oauth_provider"] = "github"
+        redirect_uri = "https://mgzon-mgzon-app.hf.space/auth/github/callback"
+        url = github_oauth_client.get_authorization_url(
+            redirect_uri, state=state, scope=["user:email"]
+        )
+        return RedirectResponse(url)
+    
+    @router.get("/github/callback")
+    async def github_callback(request: Request, db: Session = Depends(get_db)):
+        state = request.query_params.get("state")
+        code = request.query_params.get("code")
+        
+        # Verify state
+        if not state or state != request.session.get("oauth_state"):
+            logger.error("OAuth state mismatch")
+            return RedirectResponse("/login?error=Invalid state")
+        
+        provider = request.session.get("oauth_provider")
+        if provider != "github":
+            return RedirectResponse("/login?error=Invalid provider")
+        
+        try:
+            # Get token and user info
+            token = await github_oauth_client.get_access_token(code, redirect_uri="https://mgzon-mgzon-app.hf.space/auth/github/callback")
+            user_info = await github_oauth_client.get_id_email(token)
+            
+            account_id = user_info["id"]
+            account_email = user_info["email"]
+            logger.info(f"GitHub OAuth success: account_id={account_id}, email={account_email}")
+            
+            # Find or create user
+            user = db.query(User).filter(User.email == account_email).first()
+            if user is None:
+                # Create new user
+                user = User(
+                    email=account_email,
+                    hashed_password=UserManager(None).password_helper.hash("dummy_password"),  # Dummy password
+                    is_active=True,
+                    is_verified=True,
+                )
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+                logger.info(f"Created new user: {user.email}")
+            
+            # Find or create OAuth account
+            oauth_account = db.query(OAuthAccount).filter(
+                OAuthAccount.oauth_name == "github",
+                OAuthAccount.account_id == account_id
+            ).first()
+            
+            if oauth_account is None:
+                oauth_account = OAuthAccount(
+                    oauth_name="github",
+                    access_token=token["access_token"],
+                    account_id=account_id,
+                    account_email=account_email,
+                    user_id=user.id
+                )
+                db.add(oauth_account)
+                db.commit()
+                logger.info(f"Created OAuth account for user: {user.email}")
+            else:
+                # Update existing OAuth account
+                oauth_account.access_token = token["access_token"]
+                oauth_account.account_email = account_email
+                db.commit()
+                logger.info(f"Updated OAuth account for user: {user.email}")
+            
+            # Create JWT token using fastapi_users
+            user_manager = UserManager(get_user_db(db))
+            jwt_token = await user_manager.create_access_token(user)
+            
+            # Set cookie
+            response = RedirectResponse("/chat")
+            response.set_cookie(
+                key="access_token",
+                value=jwt_token,
+                max_age=3600,
+                httponly=True,
+                secure=True,
+                samesite="lax"
+            )
+            
+            logger.info(f"OAuth login successful for user: {user.email}")
+            return response
+            
+        except Exception as e:
+            logger.error(f"GitHub OAuth callback failed: {e}")
+            return RedirectResponse(f"/login?error={str(e)}")
 
+    return router
+
+# Standard fastapi_users setup for JWT only (no OAuth)
 fastapi_users = FastAPIUsers[User, int](
     get_user_manager,
     [auth_backend],
@@ -270,10 +278,23 @@ fastapi_users = FastAPIUsers[User, int](
 current_active_user = fastapi_users.current_user(active=True, optional=True)
 
 def get_auth_router(app: FastAPI):
-    app.include_router(google_oauth_router, prefix="/auth/google", tags=["auth"])
-    app.include_router(github_oauth_router, prefix="/auth/github", tags=["auth"])
+    # Add custom OAuth router
+    custom_oauth_router = get_custom_oauth_router()
+    app.include_router(custom_oauth_router, prefix="/auth", tags=["auth"])
+    
+    # Add standard fastapi_users routes (without OAuth)
     app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
     app.include_router(fastapi_users.get_register_router(UserRead, UserCreate), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_reset_password_router(), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_verify_router(UserRead), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate), prefix="/users", tags=["users"])
+
+# Add logout endpoint
+@get_auth_router
+def logout_endpoint():
+    @router.get("/logout")
+    async def logout(request: Request):
+        request.session.clear()
+        response = RedirectResponse("/login")
+        response.delete_cookie("access_token")
+        return response
