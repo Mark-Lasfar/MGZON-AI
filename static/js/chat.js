@@ -236,7 +236,7 @@ function startVoiceRecording() {
     mediaRecorder.addEventListener('dataavailable', event => audioChunks.push(event.data));
   }).catch(err => {
     console.error('Error accessing microphone:', err);
-    alert('فشل الوصول إلى الميكروفون. من فضلك، تحقق من الأذونات.');
+    alert('Failed to access microphone. Please check permissions.');
     isRecording = false;
     if (uiElements.sendBtn) uiElements.sendBtn.classList.remove('recording');
   });
@@ -259,8 +259,8 @@ function stopVoiceRecording() {
 // Send audio message
 async function submitAudioMessage(formData) {
   enterChatView();
-  addMsg('user', 'رسالة صوتية');
-  conversationHistory.push({ role: 'user', content: 'رسالة صوتية' });
+  addMsg('user', 'Voice message');
+  conversationHistory.push({ role: 'user', content: 'Voice message' });
   sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
   streamMsg = addMsg('assistant', '');
   const loadingEl = document.createElement('span');
@@ -277,8 +277,8 @@ async function submitAudioMessage(formData) {
       throw new Error(`Request failed with status ${response.status}`);
     }
     const data = await response.json();
-    if (!data.transcription) throw new Error('لم يتم استلام نص النسخ من الخادم');
-    const transcription = data.transcription || 'خطأ: لم يتم إنشاء نص النسخ.';
+    if (!data.transcription) throw new Error('No transcription received from server');
+    const transcription = data.transcription || 'Error: No transcription generated.';
     if (streamMsg) {
       streamMsg.dataset.text = transcription;
       renderMarkdown(streamMsg);
@@ -291,7 +291,7 @@ async function submitAudioMessage(formData) {
     }
     if (checkAuth() && data.conversation_id) {
       currentConversationId = data.conversation_id;
-      currentConversationTitle = data.conversation_title || 'محادثة بدون عنوان';
+      currentConversationTitle = data.conversation_title || 'Untitled Conversation';
       if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
       history.pushState(null, '', `/chat/${currentConversationId}`);
       await loadConversations();
@@ -316,22 +316,22 @@ async function sendRequest(endpoint, body, headers = {}) {
     if (!response.ok) {
       if (response.status === 403) {
         if (uiElements.messageLimitWarning) uiElements.messageLimitWarning.classList.remove('hidden');
-        throw new Error('تم الوصول إلى الحد الأقصى للرسائل. من فضلك، سجل الدخول للمتابعة.');
+        throw new Error('Message limit reached. Please log in to continue.');
       }
       if (response.status === 401) {
         localStorage.removeItem('token');
         window.location.href = '/login';
-        throw new Error('غير مصرح. من فضلك، سجل الدخول مرة أخرى.');
+        throw new Error('Unauthorized. Please log in again.');
       }
       if (response.status === 503) {
-        throw new Error('النموذج غير متاح حاليًا. من فضلك، حاول استخدام نموذج آخر.');
+        throw new Error('Model not available. Please try another model.');
       }
-      throw new Error(`فشل الطلب: ${response.status}`);
+      throw new Error(`Request failed with status ${response.status}`);
     }
     return response;
   } catch (error) {
     if (error.name === 'AbortError') {
-      throw new Error('تم إلغاء الطلب');
+      throw new Error('Request was aborted');
     }
     throw error;
   }
@@ -361,13 +361,13 @@ function finalizeRequest() {
 function handleRequestError(error) {
   if (streamMsg) {
     streamMsg.querySelector('.loading')?.remove();
-    streamMsg.dataset.text = `خطأ: ${error.message || 'حدث خطأ أثناء الطلب.'}`;
+    streamMsg.dataset.text = `Error: ${error.message || 'An error occurred during the request.'}`;
     renderMarkdown(streamMsg);
     streamMsg.dataset.done = '1';
     streamMsg = null;
   }
-  console.error('خطأ في الطلب:', error);
-  alert(`خطأ: ${error.message || 'حدث خطأ أثناء الطلب.'}`);
+  console.error('Request error:', error);
+  alert(`Error: ${error.message || 'An error occurred during the request.'}`);
   isRequestActive = false;
   abortController = null;
   if (uiElements.sendBtn) uiElements.sendBtn.style.display = 'inline-flex';
@@ -381,7 +381,7 @@ async function loadConversations() {
     const response = await fetch('/api/conversations', {
       headers: { 'Authorization': `Bearer ${checkAuth()}` }
     });
-    if (!response.ok) throw new Error('فشل تحميل المحادثات');
+    if (!response.ok) throw new Error('Failed to load conversations');
     const conversations = await response.json();
     if (uiElements.conversationList) {
       uiElements.conversationList.innerHTML = '';
@@ -394,9 +394,9 @@ async function loadConversations() {
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
             </svg>
-            <span class="truncate flex-1">${conv.title || 'محادثة بدون عنوان'}</span>
+            <span class="truncate flex-1">${conv.title || 'Untitled Conversation'}</span>
           </div>
-          <button class="delete-conversation-btn text-red-400 hover:text-red-600 p-1" title="حذف المحادثة" data-conversation-id="${conv.conversation_id}">
+          <button class="delete-conversation-btn text-red-400 hover:text-red-600 p-1" title="Delete Conversation" data-conversation-id="${conv.conversation_id}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4M3 7h18"></path>
             </svg>
@@ -408,8 +408,8 @@ async function loadConversations() {
       });
     }
   } catch (error) {
-    console.error('خطأ في تحميل المحادثات:', error);
-    alert('فشل تحميل المحادثات. من فضلك، حاول مرة أخرى.');
+    console.error('Error loading conversations:', error);
+    alert('Failed to load conversations. Please try again.');
   }
 }
 
@@ -421,11 +421,11 @@ async function loadConversation(conversationId) {
     });
     if (!response.ok) {
       if (response.status === 401) window.location.href = '/login';
-      throw new Error('فشل تحميل المحادثة');
+      throw new Error('Failed to load conversation');
     }
     const data = await response.json();
     currentConversationId = data.conversation_id;
-    currentConversationTitle = data.title || 'محادثة بدون عنوان';
+    currentConversationTitle = data.title || 'Untitled Conversation';
     conversationHistory = data.messages.map(msg => ({ role: msg.role, content: msg.content }));
     if (uiElements.chatBox) uiElements.chatBox.innerHTML = '';
     conversationHistory.forEach(msg => addMsg(msg.role, msg.content));
@@ -434,14 +434,14 @@ async function loadConversation(conversationId) {
     history.pushState(null, '', `/chat/${currentConversationId}`);
     toggleSidebar(false);
   } catch (error) {
-    console.error('خطأ في تحميل المحادثة:', error);
-    alert('فشل تحميل المحادثة. من فضلك، حاول مرة أخرى أو سجل الدخول.');
+    console.error('Error loading conversation:', error);
+    alert('Failed to load conversation. Please try again or log in.');
   }
 }
 
 // Delete conversation
 async function deleteConversation(conversationId) {
-  if (!confirm('هل أنت متأكد من حذف هذه المحادثة؟')) return;
+  if (!confirm('Are you sure you want to delete this conversation?')) return;
   try {
     const response = await fetch(`/api/conversations/${conversationId}`, {
       method: 'DELETE',
@@ -449,7 +449,7 @@ async function deleteConversation(conversationId) {
     });
     if (!response.ok) {
       if (response.status === 401) window.location.href = '/login';
-      throw new Error('فشل حذف المحادثة');
+      throw new Error('Failed to delete conversation');
     }
     if (conversationId === currentConversationId) {
       clearAllMessages();
@@ -459,8 +459,8 @@ async function deleteConversation(conversationId) {
     }
     await loadConversations();
   } catch (error) {
-    console.error('خطأ في حذف المحادثة:', error);
-    alert('فشل حذف المحادثة. من فضلك، حاول مرة أخرى.');
+    console.error('Error deleting conversation:', error);
+    alert('Failed to delete conversation. Please try again.');
   }
 }
 
@@ -475,16 +475,16 @@ async function saveMessageToConversation(conversationId, role, content) {
       },
       body: JSON.stringify({ role, content })
     });
-    if (!response.ok) throw new Error('فشل حفظ الرسالة');
+    if (!response.ok) throw new Error('Failed to save message');
   } catch (error) {
-    console.error('خطأ في حفظ الرسالة:', error);
+    console.error('Error saving message:', error);
   }
 }
 
 // Create new conversation
 async function createNewConversation() {
   if (!checkAuth()) {
-    alert('من فضلك، سجل الدخول لإنشاء محادثة جديدة.');
+    alert('Please log in to create a new conversation.');
     window.location.href = '/login';
     return;
   }
@@ -495,14 +495,14 @@ async function createNewConversation() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${checkAuth()}`
       },
-      body: JSON.stringify({ title: 'محادثة جديدة' })
+      body: JSON.stringify({ title: 'New Conversation' })
     });
     if (!response.ok) {
       if (response.status === 401) {
         localStorage.removeItem('token');
         window.location.href = '/login';
       }
-      throw new Error('فشل إنشاء المحادثة');
+      throw new Error('Failed to create conversation');
     }
     const data = await response.json();
     currentConversationId = data.conversation_id;
@@ -516,8 +516,8 @@ async function createNewConversation() {
     await loadConversations();
     toggleSidebar(false);
   } catch (error) {
-    console.error('خطأ في إنشاء المحادثة:', error);
-    alert('فشل إنشاء محادثة جديدة. من فضلك، حاول مرة أخرى.');
+    console.error('Error creating conversation:', error);
+    alert('Failed to create new conversation. Please try again.');
   }
 }
 
@@ -532,14 +532,14 @@ async function updateConversationTitle(conversationId, newTitle) {
       },
       body: JSON.stringify({ title: newTitle })
     });
-    if (!response.ok) throw new Error('فشل تحديث العنوان');
+    if (!response.ok) throw new Error('Failed to update title');
     const data = await response.json();
     currentConversationTitle = data.title;
     if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
     await loadConversations();
   } catch (error) {
-    console.error('خطأ في تحديث العنوان:', error);
-    alert('فشل تحديث عنوان المحادثة.');
+    console.error('Error updating title:', error);
+    alert('Failed to update conversation title.');
   }
 }
 
@@ -632,7 +632,7 @@ async function submitMessage() {
     if (file.type.startsWith('image/')) {
       endpoint = '/api/image-analysis';
       inputType = 'image';
-      message = 'تحليل هذه الصورة';
+      message = 'Analyze this image';
       formData = new FormData();
       formData.append('file', file);
       formData.append('output_format', 'text');
@@ -642,7 +642,7 @@ async function submitMessage() {
     if (file.type.startsWith('audio/')) {
       endpoint = '/api/audio-transcription';
       inputType = 'audio';
-      message = 'نسخ هذا الصوت';
+      message = 'Transcribe this audio';
       formData = new FormData();
       formData.append('file', file);
     }
@@ -681,8 +681,8 @@ async function submitMessage() {
     const response = await sendRequest(endpoint, payload ? JSON.stringify(payload) : formData, headers);
     if (endpoint === '/api/audio-transcription') {
       const data = await response.json();
-      if (!data.transcription) throw new Error('لم يتم استلام نص النسخ من الخادم');
-      const transcription = data.transcription || 'خطأ: لم يتم إنشاء نص النسخ.';
+      if (!data.transcription) throw new Error('No transcription received from server');
+      const transcription = data.transcription || 'Error: No transcription generated.';
       if (streamMsg) {
         streamMsg.dataset.text = transcription;
         renderMarkdown(streamMsg);
@@ -695,14 +695,14 @@ async function submitMessage() {
       }
       if (checkAuth() && data.conversation_id) {
         currentConversationId = data.conversation_id;
-        currentConversationTitle = data.conversation_title || 'محادثة بدون عنوان';
+        currentConversationTitle = data.conversation_title || 'Untitled Conversation';
         if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
         history.pushState(null, '', `/chat/${currentConversationId}`);
         await loadConversations();
       }
     } else if (endpoint === '/api/image-analysis') {
       const data = await response.json();
-      const analysis = data.image_analysis || 'خطأ: لم يتم إنشاء تحليل.';
+      const analysis = data.image_analysis || 'Error: No analysis generated.';
       if (streamMsg) {
         streamMsg.dataset.text = analysis;
         renderMarkdown(streamMsg);
@@ -715,7 +715,7 @@ async function submitMessage() {
       }
       if (checkAuth() && data.conversation_id) {
         currentConversationId = data.conversation_id;
-        currentConversationTitle = data.conversation_title || 'محادثة بدون عنوان';
+        currentConversationTitle = data.conversation_title || 'Untitled Conversation';
         if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
         history.pushState(null, '', `/chat/${currentConversationId}`);
         await loadConversations();
@@ -724,7 +724,7 @@ async function submitMessage() {
       const contentType = response.headers.get('Content-Type');
       if (contentType?.includes('application/json')) {
         const data = await response.json();
-        const responseText = data.response || 'خطأ: لم يتم إنشاء رد.';
+        const responseText = data.response || 'Error: No response generated.';
         if (streamMsg) {
           streamMsg.dataset.text = responseText;
           renderMarkdown(streamMsg);
@@ -737,7 +737,7 @@ async function submitMessage() {
         }
         if (checkAuth() && data.conversation_id) {
           currentConversationId = data.conversation_id;
-          currentConversationTitle = data.conversation_title || 'محادثة بدون عنوان';
+          currentConversationTitle = data.conversation_title || 'Untitled Conversation';
           if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
           history.pushState(null, '', `/chat/${currentConversationId}`);
           await loadConversations();
@@ -749,7 +749,7 @@ async function submitMessage() {
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
-            if (!buffer.trim()) throw new Error('الرد فارغ من الخادم');
+            if (!buffer.trim()) throw new Error('Empty response from server');
             break;
           }
           buffer += decoder.decode(value, { stream: true });
@@ -800,7 +800,7 @@ function stopStream(forceCancel = false) {
 if (uiElements.settingsBtn) {
   uiElements.settingsBtn.addEventListener('click', () => {
     if (!checkAuth()) {
-      alert('من فضلك، سجل الدخول للوصول إلى الإعدادات.');
+      alert('Please log in to access settings.');
       window.location.href = '/login';
       return;
     }
@@ -814,7 +814,7 @@ if (uiElements.settingsBtn) {
             localStorage.removeItem('token');
             window.location.href = '/login';
           }
-          throw new Error('فشل جلب الإعدادات');
+          throw new Error('Failed to fetch settings');
         }
         return res.json();
       })
@@ -846,8 +846,8 @@ if (uiElements.settingsBtn) {
         });
       })
       .catch(err => {
-        console.error('خطأ في جلب الإعدادات:', err);
-        alert('فشل تحميل الإعدادات. من فضلك، حاول مرة أخرى.');
+        console.error('Error fetching settings:', err);
+        alert('Failed to load settings. Please try again.');
       });
   });
 }
@@ -862,7 +862,7 @@ if (uiElements.settingsForm) {
   uiElements.settingsForm.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!checkAuth()) {
-      alert('من فضلك، سجل الدخول لحفظ الإعدادات.');
+      alert('Please log in to save settings.');
       window.location.href = '/login';
       return;
     }
@@ -882,18 +882,18 @@ if (uiElements.settingsForm) {
             localStorage.removeItem('token');
             window.location.href = '/login';
           }
-          throw new Error('فشل تحديث الإعدادات');
+          throw new Error('Failed to update settings');
         }
         return res.json();
       })
       .then(() => {
-        alert('تم تحديث الإعدادات بنجاح!');
+        alert('Settings updated successfully!');
         uiElements.settingsModal.classList.add('hidden');
         toggleSidebar(false);
       })
       .catch(err => {
-        console.error('خطأ في تحديث الإعدادات:', err);
-        alert('خطأ في تحديث الإعدادات: ' + err.message);
+        console.error('Error updating settings:', err);
+        alert('Error updating settings: ' + err.message);
       });
   });
 }
@@ -906,10 +906,10 @@ if (uiElements.historyToggle) {
       uiElements.historyToggle.innerHTML = uiElements.conversationList.classList.contains('hidden')
         ? `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-           </svg>إظهار السجل`
+           </svg>Show History`
         : `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-           </svg>إخفاء السجل`;
+           </svg>Hide History`;
     }
   });
 }
@@ -985,8 +985,8 @@ if (uiElements.clearBtn) uiElements.clearBtn.addEventListener('click', clearAllM
 
 if (uiElements.conversationTitle) {
   uiElements.conversationTitle.addEventListener('click', () => {
-    if (!checkAuth()) return alert('من فضلك، سجل الدخول لتعديل عنوان المحادثة.');
-    const newTitle = prompt('أدخل عنوان المحادثة الجديد:', currentConversationTitle || '');
+    if (!checkAuth()) return alert('Please log in to edit the conversation title.');
+    const newTitle = prompt('Enter new conversation title:', currentConversationTitle || '');
     if (newTitle && currentConversationId) {
       updateConversationTitle(currentConversationId, newTitle);
     }
