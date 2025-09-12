@@ -1,9 +1,8 @@
 import os
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean
-from sqlalchemy import create_engine
+from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy.sql import func
+from sqlalchemy import create_engine
 from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
 from sqlalchemy.orm import Session
 from typing import AsyncGenerator
@@ -13,7 +12,7 @@ from datetime import datetime
 # جلب URL قاعدة البيانات من المتغيرات البيئية
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
-    raise ValueError("SQLALCHEMY_DATABASE_URL is not set in environment variables.")  # إصلاح الخطأ الإملائي
+    raise ValueError("SQLALCHEMY_DATABASE_URL is not set in environment variables.")
 
 # إنشاء المحرك
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
@@ -26,7 +25,6 @@ Base = declarative_base()
 
 class OAuthAccount(Base):
     __tablename__ = "oauth_account"
-
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     oauth_name = Column(String, nullable=False)
@@ -35,12 +33,10 @@ class OAuthAccount(Base):
     refresh_token = Column(String, nullable=True)
     account_id = Column(String, index=True, nullable=False)
     account_email = Column(String, nullable=False)
-
     user = relationship("User", back_populates="oauth_accounts")
 
 class User(SQLAlchemyBaseUserTable[int], Base):
     __tablename__ = "user"
-
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
@@ -52,32 +48,29 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     job_title = Column(String, nullable=True)
     education = Column(String, nullable=True)
     interests = Column(String, nullable=True)
-    additional_info = Column(String, nullable=True)
+    additional_info = Column(Text, nullable=True)
     conversation_style = Column(String, nullable=True)
     oauth_accounts = relationship("OAuthAccount", back_populates="user", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
 
 class Conversation(Base):
     __tablename__ = "conversation"
-
     id = Column(Integer, primary_key=True, index=True)
-    conversation_id = Column(String, unique=True, index=True)
-    user_id = Column(Integer, ForeignKey("user.id"))
-    title = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
+    conversation_id = Column(String, unique=True, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    title = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user = relationship("User", back_populates="conversations")
     messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
 
 class Message(Base):
     __tablename__ = "message"
-
     id = Column(Integer, primary_key=True, index=True)
-    conversation_id = Column(Integer, ForeignKey("conversation.id"))
-    role = Column(String)
-    content = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    conversation_id = Column(Integer, ForeignKey("conversation.id"), nullable=False)
+    role = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
     conversation = relationship("Conversation", back_populates="messages")
 
 def get_db():
@@ -87,9 +80,8 @@ def get_db():
     finally:
         db.close()
 
-# إنشاء الجداول
-Base.metadata.create_all(bind=engine)
-
-# دالة للحصول على user database لـ fastapi_users
 async def get_user_db(session: Session = Depends(get_db)):
     yield SQLAlchemyUserDatabase(session, User, OAuthAccount)
+
+# إنشاء الجداول
+Base.metadata.create_all(bind=engine)
