@@ -1,33 +1,46 @@
 import os
+import logging
+from datetime import datetime
+from typing import AsyncGenerator
+
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, Text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
-from typing import AsyncGenerator
 from fastapi import Depends
-from datetime import datetime
-import logging
-import aiosqlite  # تأكد من استيراد aiosqlite صراحةً
+import aiosqlite  # مهم جداً: حتى يضمن استخدام aiosqlite وليس pysqlite
 
+# إعداد اللوج
 logger = logging.getLogger(__name__)
 
-# جلب URL قاعدة البيانات من المتغيرات البيئية
-SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite+aiosqlite:///./data/mgzon_users.db")
-if not SQLALCHEMY_DATABASE_URL:
-    raise ValueError("SQLALCHEMY_DATABASE_URL is not set in environment variables.")
+# ✅ استخدم القيمة مباشرة إذا لم يكن هناك متغير بيئة
+SQLALCHEMY_DATABASE_URL = os.environ.get(
+    "SQLALCHEMY_DATABASE_URL"
+) or "sqlite+aiosqlite:///./data/mgzon_users.db"
 
-# إنشاء محرك async مع aiosqlite
-async_engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True, connect_args={"check_same_thread": False})
+# ✅ تأكد أن الدرايفر async
+if "aiosqlite" not in SQLALCHEMY_DATABASE_URL:
+    raise ValueError("Database URL must use 'sqlite+aiosqlite' for async support")
 
-# إعداد جلسة async
-AsyncSessionLocal = async_sessionmaker(
-    async_engine, expire_on_commit=False, class_=AsyncSession
+# إنشاء محرك async
+async_engine = create_async_engine(
+    SQLALCHEMY_DATABASE_URL,
+    echo=True,
+    connect_args={"check_same_thread": False}
 )
 
-# باقي الكود زي ما هو...
+# إعداد الجلسة async
+AsyncSessionLocal = async_sessionmaker(
+    async_engine,
+    expire_on_commit=False,
+    class_=AsyncSession
+)
+
+# القاعدة الأساسية للنماذج
 Base = declarative_base()
 
+# النماذج (Models)
 class OAuthAccount(Base):
     __tablename__ = "oauth_account"
     id = Column(Integer, primary_key=True, index=True)
@@ -38,6 +51,7 @@ class OAuthAccount(Base):
     refresh_token = Column(String, nullable=True)
     account_id = Column(String, index=True, nullable=False)
     account_email = Column(String, nullable=False)
+
     user = relationship("User", back_populates="oauth_accounts")
 
 class User(SQLAlchemyBaseUserTable[int], Base):
@@ -55,6 +69,7 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     interests = Column(String, nullable=True)
     additional_info = Column(Text, nullable=True)
     conversation_style = Column(String, nullable=True)
+
     oauth_accounts = relationship("OAuthAccount", back_populates="user", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
 
@@ -66,6 +81,7 @@ class Conversation(Base):
     title = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     user = relationship("User", back_populates="conversations")
     messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
 
@@ -76,22 +92,23 @@ class Message(Base):
     role = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
     conversation = relationship("Conversation", back_populates="messages")
 
+# دالة لجلب الجلسة async
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Get async database session."""
     async with AsyncSessionLocal() as session:
         try:
             yield session
         finally:
             await session.close()
 
+# دالة لجلب قاعدة بيانات المستخدمين لـ fastapi-users
 async def get_user_db(session: AsyncSession = Depends(get_db)) -> AsyncGenerator[SQLAlchemyUserDatabase, None]:
-    """Get user database for fastapi-users."""
     yield SQLAlchemyUserDatabase(session, User, OAuthAccount)
 
+# (اختياري) دالة لإنشاء الجداول
 async def init_db():
-    """Initialize database tables asynchronously."""
     try:
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -99,3 +116,4 @@ async def init_db():
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
         raise
+
