@@ -1,4 +1,3 @@
-# api/endpoints.py
 import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File
@@ -31,11 +30,11 @@ if not BACKUP_HF_TOKEN:
     logger.warning("BACKUP_HF_TOKEN is not set. Fallback to secondary model will not work if primary token fails.")
 
 ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api.cerebras.ai/v1")  # تغيير الافتراضي لـ Cerebras
-FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # النموذج الرئيسي
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co/v1")
+FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
-TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct")
+TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "meta-llama/Llama-3-8b-chat-hf")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
 CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
 ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
@@ -88,7 +87,6 @@ async def handle_session(request: Request):
 # Helper function to enhance system prompt for Arabic language
 def enhance_system_prompt(system_prompt: str, message: str, user: Optional[User] = None) -> str:
     enhanced_prompt = system_prompt
-    # Check if the message is in Arabic
     if any(0x0600 <= ord(char) <= 0x06FF for char in message):
         enhanced_prompt += "\nRespond in Arabic with clear, concise, and accurate information tailored to the user's query."
     if user and user.additional_info:
@@ -129,7 +127,7 @@ async def model_info():
             {"alias": "audio", "description": "Audio transcription model (default)"},
             {"alias": "tts", "description": "Text-to-speech model (default)"}
         ],
-        "api_base": ROUTER_API_URL,
+        "api_base": API_ENDPOINT,
         "fallback_api_base": FALLBACK_API_ENDPOINT,
         "status": "online"
     }
@@ -173,11 +171,9 @@ async def chat_endpoint(
         db.add(user_msg)
         db.commit()
     
-    # Use user's preferred model if set
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model(req.message, input_type="text", preferred_model=preferred_model)
     
-    # Check model availability
     is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
     if not is_available:
         logger.error(f"Model {model_name} is not available at {api_endpoint}")
@@ -227,7 +223,7 @@ async def chat_endpoint(
         if not response.strip():
             logger.error("Empty response generated.")
             raise HTTPException(status_code=500, detail="Empty response generated from model.")
-        logger.info(f"Chat response: {response[:100]}...")  # Log first 100 chars
+        logger.info(f"Chat response: {response[:100]}...")
     except Exception as e:
         logger.error(f"Chat generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Chat generation failed: {str(e)}")
@@ -280,7 +276,6 @@ async def audio_transcription_endpoint(
     
     model_name, api_endpoint = select_model("transcribe audio", input_type="audio")
     
-    # Check model availability
     is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
     if not is_available:
         logger.error(f"Model {model_name} is not available at {api_endpoint}")
@@ -346,7 +341,6 @@ async def text_to_speech_endpoint(
     
     model_name, api_endpoint = select_model("text to speech", input_type="tts")
     
-    # Check model availability
     is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
     if not is_available:
         logger.error(f"Model {model_name} is not available at {api_endpoint}")
@@ -400,7 +394,6 @@ async def code_endpoint(
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model(prompt, input_type="text", preferred_model=preferred_model)
     
-    # Check model availability
     is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
     if not is_available:
         logger.error(f"Model {model_name} is not available at {api_endpoint}")
@@ -473,7 +466,6 @@ async def analysis_endpoint(
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model(message, input_type="text", preferred_model=preferred_model)
     
-    # Check model availability
     is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
     if not is_available:
         logger.error(f"Model {model_name} is not available at {api_endpoint}")
@@ -561,7 +553,6 @@ async def image_analysis_endpoint(
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model("analyze image", input_type="image", preferred_model=preferred_model)
     
-    # Check model availability
     is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
     if not is_available:
         logger.error(f"Model {model_name} is not available at {api_endpoint}")
@@ -633,7 +624,7 @@ async def image_analysis_endpoint(
         raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
 
 @router.get("/api/test-model")
-async def test_model(model: str = MODEL_NAME, endpoint: str = ROUTER_API_URL):
+async def test_model(model: str = MODEL_NAME, endpoint: str = API_ENDPOINT):
     try:
         is_available, api_key, selected_endpoint = check_model_availability(model, HF_TOKEN)
         if not is_available:
@@ -766,11 +757,9 @@ async def update_user_settings(
     if not user:
         raise HTTPException(status_code=401, detail="Login required")
     
-    # Validate preferred_model
     if settings.preferred_model and settings.preferred_model not in MODEL_ALIASES:
         raise HTTPException(status_code=400, detail="Invalid model alias")
     
-    # Update user settings
     if settings.display_name is not None:
         user.display_name = settings.display_name
     if settings.preferred_model is not None:
@@ -801,3 +790,4 @@ async def update_user_settings(
         "is_active": user.is_active,
         "is_superuser": user.is_superuser
     }}
+

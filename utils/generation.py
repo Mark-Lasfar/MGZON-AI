@@ -1,4 +1,3 @@
-# utils/generation.py
 import os
 import re
 import json
@@ -31,40 +30,23 @@ LATEX_DELIMS = [
     {"left": "\\(", "right": "\\)", "display": False},
 ]
 
-# إعداد العميل لـ Hugging Face Router API
+# إعداد العميل لـ Hugging Face API
 HF_TOKEN = os.getenv("HF_TOKEN")
 BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co")
-FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")  # النموذج الرئيسي
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co/v1")
+FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
-TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct")
+TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "meta-llama/Llama-3-8b-chat-hf")  # استبدال Qwen بنموذج متاح
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
 CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
 ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
 TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
 
-# Provider endpoints (بدون together)
+# تعطيل PROVIDER_ENDPOINTS لأننا بنستخدم Hugging Face فقط
 PROVIDER_ENDPOINTS = {
-    "fireworks-ai": "https://api.fireworks.ai/inference/v1",
-    "nebius": "https://api.nebius.ai/v1",
-    "novita": "https://api.novita.ai/v1",
-    "groq": "https://api.groq.com/openai/v1",
-    "cerebras": "https://api.cerebras.ai/v1",
-    "hyperbolic": "https://api.hyperbolic.xyz/v1",
-    "nscale": "https://api.nscale.ai/v1"
-}
-
-# Model alias mapping
-MODEL_ALIASES = {
-    "advanced": MODEL_NAME,
-    "standard": SECONDARY_MODEL_NAME,
-    "light": TERTIARY_MODEL_NAME,
-    "image_base": CLIP_BASE_MODEL,
-    "image_advanced": CLIP_LARGE_MODEL,
-    "audio": ASR_MODEL,
-    "tts": TTS_MODEL
+    "huggingface": API_ENDPOINT  # استخدام Hugging Face فقط
 }
 
 def check_model_availability(model_name: str, api_key: str) -> tuple[bool, str, str]:
@@ -75,23 +57,8 @@ def check_model_availability(model_name: str, api_key: str) -> tuple[bool, str, 
             timeout=30
         )
         if response.status_code == 200:
-            data = response.json().get("data", {})
-            providers = data.get("providers", [])
-            # Prefer "cerebras" if available
-            for provider in providers:
-                if provider.get("provider") == "cerebras" and provider.get("status") == "live":
-                    endpoint = PROVIDER_ENDPOINTS.get("cerebras", API_ENDPOINT)
-                    logger.info(f"Model {model_name} is available via preferred provider cerebras at {endpoint}")
-                    return True, api_key, endpoint
-            # Fallback to first live provider if cerebras not available
-            for provider in providers:
-                if provider.get("status") == "live":
-                    provider_name = provider.get("provider")
-                    endpoint = PROVIDER_ENDPOINTS.get(provider_name, API_ENDPOINT)
-                    logger.info(f"Model {model_name} is available via provider {provider_name} at {endpoint}")
-                    return True, api_key, endpoint
-            logger.error(f"No live providers found for model {model_name}")
-            return False, api_key, API_ENDPOINT
+            logger.info(f"Model {model_name} is available at {API_ENDPOINT}")
+            return True, api_key, API_ENDPOINT
         elif response.status_code == 429 and BACKUP_HF_TOKEN and api_key != BACKUP_HF_TOKEN:
             logger.warning(f"Rate limit reached for token {api_key}. Switching to backup token.")
             return check_model_availability(model_name, BACKUP_HF_TOKEN)
@@ -105,7 +72,6 @@ def check_model_availability(model_name: str, api_key: str) -> tuple[bool, str, 
         return False, api_key, API_ENDPOINT
 
 def select_model(query: str, input_type: str = "text", preferred_model: Optional[str] = None) -> tuple[str, str]:
-    # If user has a preferred model, use it unless the input type requires a specific model
     if preferred_model and preferred_model in MODEL_ALIASES:
         model_name = MODEL_ALIASES[preferred_model]
         is_available, _, endpoint = check_model_availability(model_name, HF_TOKEN)
@@ -114,15 +80,12 @@ def select_model(query: str, input_type: str = "text", preferred_model: Optional
             return model_name, endpoint
 
     query_lower = query.lower()
-    # دعم الصوت
     if input_type == "audio" or any(keyword in query_lower for keyword in ["voice", "audio", "speech", "صوت", "تحويل صوت"]):
         logger.info(f"Selected {ASR_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for audio input")
         return ASR_MODEL, FALLBACK_API_ENDPOINT
-    # دعم تحويل النص إلى صوت
     if any(keyword in query_lower for keyword in ["text-to-speech", "tts", "تحويل نص إلى صوت"]) or input_type == "tts":
         logger.info(f"Selected {TTS_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for text-to-speech")
         return TTS_MODEL, FALLBACK_API_ENDPOINT
-    # نماذج CLIP للصور
     image_patterns = [
         r"\bimage\b", r"\bpicture\b", r"\bphoto\b", r"\bvisual\b", r"\bصورة\b", r"\bتحليل\s+صورة\b",
         r"\bimage\s+analysis\b", r"\bimage\s+classification\b", r"\bimage\s+description\b"
@@ -131,7 +94,6 @@ def select_model(query: str, input_type: str = "text", preferred_model: Optional
         if re.search(pattern, query_lower, re.IGNORECASE):
             logger.info(f"Selected {CLIP_BASE_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for image-related query: {query}")
             return CLIP_BASE_MODEL, FALLBACK_API_ENDPOINT
-    # اختيار النموذج بناءً على توفره
     available_models = [
         (MODEL_NAME, API_ENDPOINT),
         (SECONDARY_MODEL_NAME, FALLBACK_API_ENDPOINT),
@@ -188,8 +150,8 @@ def request_generation(
     client = OpenAI(api_key=selected_api_key, base_url=selected_endpoint, timeout=120.0)
     task_type = "general"
     enhanced_system_prompt = system_prompt
+    buffer = ""  # تعريف buffer هنا لتجنب UnboundLocalError
 
-    # معالجة الصوت (ASR)
     if model_name == ASR_MODEL and audio_data:
         task_type = "audio_transcription"
         try:
@@ -212,7 +174,6 @@ def request_generation(
             yield f"Error: Audio transcription failed: {e}"
             return
 
-    # معالجة تحويل النص إلى صوت (TTS)
     if model_name == TTS_MODEL or output_format == "audio":
         task_type = "text_to_speech"
         try:
@@ -232,7 +193,6 @@ def request_generation(
             yield f"Error: Text-to-speech failed: {e}"
             return
 
-    # معالجة الصور
     if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:
         task_type = "image_analysis"
         try:
@@ -263,27 +223,26 @@ def request_generation(
             yield f"Error: Image analysis failed: {e}"
             return
 
-    # تحسين system_prompt بناءً على نوع المهمة
     if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL]:
         task_type = "image"
-        enhanced_system_prompt = f"{system_prompt}\nYou are an expert in image analysis and description. Provide detailed descriptions, classifications, or analysis of images based on the query. Continue until the query is fully addressed."
+        enhanced_system_prompt = f"{system_prompt}\nYou are an expert in image analysis and description. Provide detailed descriptions, classifications, or analysis of images based on the query."
     elif any(keyword in message.lower() for keyword in ["code", "programming", "python", "javascript", "react", "django", "flask"]):
         task_type = "code"
-        enhanced_system_prompt = f"{system_prompt}\nYou are an expert programmer. Provide accurate, well-commented code with comprehensive examples and detailed explanations. Support frameworks like React, Django, Flask, and others. Format code with triple backticks (```) and specify the language. Continue until the task is fully addressed."
+        enhanced_system_prompt = f"{system_prompt}\nYou are an expert programmer. Provide accurate, well-commented code with comprehensive examples and detailed explanations."
     elif any(keyword in message.lower() for keyword in ["analyze", "analysis", "تحليل"]):
         task_type = "analysis"
-        enhanced_system_prompt = f"{system_prompt}\nProvide detailed analysis with step-by-step reasoning, examples, and data-driven insights. Continue until all aspects of the query are thoroughly covered."
+        enhanced_system_prompt = f"{system_prompt}\nProvide detailed analysis with step-by-step reasoning, examples, and data-driven insights."
     elif any(keyword in message.lower() for keyword in ["review", "مراجعة"]):
         task_type = "review"
-        enhanced_system_prompt = f"{system_prompt}\nReview the provided content thoroughly, identify issues, and suggest improvements with detailed explanations. Ensure the response is complete and detailed."
+        enhanced_system_prompt = f"{system_prompt}\nReview the provided content thoroughly, identify issues, and suggest improvements with detailed explanations."
     elif any(keyword in message.lower() for keyword in ["publish", "نشر"]):
         task_type = "publish"
-        enhanced_system_prompt = f"{system_prompt}\nPrepare content for publishing, ensuring clarity, professionalism, and adherence to best practices. Provide a complete and detailed response."
+        enhanced_system_prompt = f"{system_prompt}\nPrepare content for publishing, ensuring clarity, professionalism, and adherence to best practices."
     else:
-        enhanced_system_prompt = f"{system_prompt}\nFor general queries, provide comprehensive, detailed responses with examples and explanations where applicable. Continue generating content until the query is fully answered, leveraging the full capacity of the model."
+        enhanced_system_prompt = f"{system_prompt}\nFor general queries, provide comprehensive, detailed responses with examples and explanations where applicable."
 
     if len(message.split()) < 5:
-        enhanced_system_prompt += "\nEven for short or general queries, provide a detailed, in-depth response with examples, explanations, and additional context to ensure completeness."
+        enhanced_system_prompt += "\nEven for short or general queries, provide a detailed, in-depth response."
 
     logger.info(f"Task type detected: {task_type}")
     input_messages: List[dict] = [{"role": "system", "content": enhanced_system_prompt}]
@@ -323,7 +282,6 @@ def request_generation(
         saw_visible_output = False
         last_tool_name = None
         last_tool_args = None
-        buffer = ""
 
         for chunk in stream:
             if chunk.choices[0].delta.content:
@@ -372,7 +330,7 @@ def request_generation(
                     reasoning_closed = True
 
                 if not saw_visible_output:
-                    msg = "I attempted to call a tool, but tools aren't executed in this environment, so no final answer was produced."
+                    msg = "I attempted to call a tool, but tools aren't executed in this environment."
                     if last_tool_name:
                         try:
                             args_text = json.dumps(last_tool_args, ensure_ascii=False, default=str)
@@ -386,15 +344,15 @@ def request_generation(
                     cached_chunks.append(f"Error: Unknown error")
                     yield f"Error: Unknown error"
                 elif chunk.choices[0].finish_reason == "length":
-                    cached_chunks.append("Response truncated due to token limit. Please refine your query or request continuation.")
-                    yield "Response truncated due to token limit. Please refine your query or request continuation."
+                    cached_chunks.append("Response truncated due to token limit.")
+                    yield "Response truncated due to token limit."
                 break
 
         if buffer:
             cached_chunks.append(buffer)
             yield buffer
 
-        if output_format == "audio" and buffer:
+        if output_format == "audio":
             try:
                 model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
                 processor = AutoProcessor.from_pretrained(TTS_MODEL)
@@ -413,7 +371,7 @@ def request_generation(
         cache[cache_key] = cached_chunks
 
     except Exception as e:
-        logger.exception(f"[Gateway] Streaming failed for model {model_name}: {e}")
+        logger.error(f"[Gateway] Streaming failed for model {model_name}: {e}")
         if selected_api_key != BACKUP_HF_TOKEN and BACKUP_HF_TOKEN:
             logger.warning(f"Retrying with backup token for {model_name}")
             for chunk in request_generation(
@@ -455,6 +413,7 @@ def request_generation(
                     tools=[],
                     tool_choice="none",
                 )
+                buffer = ""  # تعريف buffer للنموذج البديل
                 for chunk in stream:
                     if chunk.choices[0].delta.content:
                         content = chunk.choices[0].delta.content
@@ -480,27 +439,27 @@ def request_generation(
                             buffer = ""
                         continue
 
-                        if chunk.choices[0].finish_reason in ("stop", "error", "length"):
-                            if buffer:
-                                cached_chunks.append(buffer)
-                                yield buffer
-                                buffer = ""
+                    if chunk.choices[0].finish_reason in ("stop", "error", "length"):
+                        if buffer:
+                            cached_chunks.append(buffer)
+                            yield buffer
+                            buffer = ""
 
-                            if reasoning_started and not reasoning_closed:
-                                cached_chunks.append("assistantfinal")
-                                yield "assistantfinal"
-                                reasoning_closed = True
+                        if reasoning_started and not reasoning_closed:
+                            cached_chunks.append("assistantfinal")
+                            yield "assistantfinal"
+                            reasoning_closed = True
 
-                            if not saw_visible_output:
-                                cached_chunks.append("No visible output produced.")
-                                yield "No visible output produced."
-                            if chunk.choices[0].finish_reason == "error":
-                                cached_chunks.append(f"Error: Unknown error with fallback model {fallback_model}")
-                                yield f"Error: Unknown error with fallback model {fallback_model}"
-                            elif chunk.choices[0].finish_reason == "length":
-                                cached_chunks.append("Response truncated due to token limit. Please refine your query or request continuation.")
-                                yield "Response truncated due to token limit. Please refine your query or request continuation."
-                            break
+                        if not saw_visible_output:
+                            cached_chunks.append("No visible output produced.")
+                            yield "No visible output produced."
+                        if chunk.choices[0].finish_reason == "error":
+                            cached_chunks.append(f"Error: Unknown error with fallback model {fallback_model}")
+                            yield f"Error: Unknown error with fallback model {fallback_model}"
+                        elif chunk.choices[0].finish_reason == "length":
+                            cached_chunks.append("Response truncated due to token limit.")
+                            yield "Response truncated due to token limit."
+                        break
 
                 if buffer and output_format == "audio":
                     try:
@@ -521,7 +480,7 @@ def request_generation(
                 cache[cache_key] = cached_chunks
 
             except Exception as e2:
-                logger.exception(f"[Gateway] Streaming failed for fallback model {fallback_model}: {e2}")
+                logger.error(f"[Gateway] Streaming failed for fallback model {fallback_model}: {e2}")
                 try:
                     is_available, selected_api_key, selected_endpoint = check_model_availability(TERTIARY_MODEL_NAME, selected_api_key)
                     if not is_available:
@@ -537,6 +496,7 @@ def request_generation(
                         tools=[],
                         tool_choice="none",
                     )
+                    buffer = ""  # تعريف buffer للنموذج الثالث
                     for chunk in stream:
                         if chunk.choices[0].delta.content:
                             content = chunk.choices[0].delta.content
@@ -559,8 +519,8 @@ def request_generation(
                                 cached_chunks.append(f"Error: Unknown error with tertiary model {TERTIARY_MODEL_NAME}")
                                 yield f"Error: Unknown error with tertiary model {TERTIARY_MODEL_NAME}"
                             elif chunk.choices[0].finish_reason == "length":
-                                cached_chunks.append("Response truncated due to token limit. Please refine your query or request continuation.")
-                                yield "Response truncated due to token limit. Please refine your query or request continuation."
+                                cached_chunks.append("Response truncated due to token limit.")
+                                yield "Response truncated due to token limit."
                             break
                     if buffer and output_format == "audio":
                         try:
@@ -579,8 +539,8 @@ def request_generation(
                             yield f"Error: Text-to-speech conversion failed: {e}"
                     cache[cache_key] = cached_chunks
                 except Exception as e3:
-                    logger.exception(f"[Gateway] Streaming failed for tertiary model {TERTIARY_MODEL_NAME}: {e3}")
-                    yield f"Error: Failed to load all models: Primary ({model_name}), Secondary ({fallback_model}), Tertiary ({TERTIARY_MODEL_NAME}). Please check your model configurations."
+                    logger.error(f"[Gateway] Streaming failed for tertiary model {TERTIARY_MODEL_NAME}: {e3}")
+                    yield f"Error: Failed to load all models: Primary ({model_name}), Secondary ({fallback_model}), Tertiary ({TERTIARY_MODEL_NAME})."
                     return
         else:
             yield f"Error: Failed to load model {model_name}: {e}"
@@ -634,7 +594,7 @@ def generate(message, history, system_prompt, temperature, reasoning_effort, ena
             "type": "function",
             "function": {
                 "name": "code_generation",
-                "description": "Generate or modify code for various frameworks (React, Django, Flask, etc.)",
+                "description": "Generate or modify code for various frameworks",
                 "parameters": {
                     "type": "object",
                     "properties": {
