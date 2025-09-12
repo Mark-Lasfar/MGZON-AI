@@ -17,6 +17,8 @@ class UserRead(schemas.BaseUser[int]):
     additional_info: Optional[str] = None
     conversation_style: Optional[str] = None
 
+    model_config = {"from_attributes": True}
+
 class UserCreate(schemas.BaseUserCreate):
     email: str
     password: str
@@ -30,6 +32,8 @@ class UserCreate(schemas.BaseUserCreate):
     additional_info: Optional[str] = None
     conversation_style: Optional[str] = None
 
+    model_config = {"from_attributes": True}
+
 # Pydantic schema for updating user settings
 class UserUpdate(BaseModel):
     display_name: Optional[str] = None
@@ -40,12 +44,16 @@ class UserUpdate(BaseModel):
     additional_info: Optional[str] = None
     conversation_style: Optional[str] = None
 
+    model_config = {"from_attributes": True}
+
 # Pydantic schemas للمحادثات
 class MessageOut(BaseModel):
     id: int
     role: str
     content: str
     created_at: datetime
+
+    model_config = {"from_attributes": True}
 
 class ConversationCreate(BaseModel):
     title: Optional[str] = None
@@ -58,6 +66,8 @@ class ConversationOut(BaseModel):
     updated_at: datetime
     messages: List[MessageOut] = []
 
+    model_config = {"from_attributes": True}
+
 # نموذج طلب الاستعلام
 class QueryRequest(BaseModel):
     message: str
@@ -67,7 +77,7 @@ class QueryRequest(BaseModel):
     max_new_tokens: Optional[int] = 2048
     enable_browsing: Optional[bool] = True
     output_format: Optional[str] = "text"
-    title: Optional[str] = None  
+    title: Optional[str] = None
 
 ConversationOut.model_revalidate = True
 MessageOut.model_revalidate = True

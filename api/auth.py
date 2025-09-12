@@ -3,6 +3,7 @@ from fastapi_users.authentication import CookieTransport, JWTStrategy, Authentic
 from fastapi_users.db import SQLAlchemyUserDatabase
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
+from fastapi_users.router.oauth import get_oauth_router
 from api.database import User, OAuthAccount, get_user_db, get_db
 from api.models import UserRead, UserCreate, UserUpdate
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
@@ -13,6 +14,7 @@ from fastapi_users.models import UP
 from typing import Optional, Dict, Any
 import os
 import logging
+import secrets
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -48,6 +50,10 @@ logger.info("GITHUB_CLIENT_SECRET is set: %s", bool(GITHUB_CLIENT_SECRET))
 if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET]):
     logger.error("One or more OAuth environment variables are missing.")
     raise ValueError("All OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET) are required.")
+
+# OAuth redirect URLs
+GOOGLE_REDIRECT_URL = os.getenv("GOOGLE_REDIRECT_URL", "https://mgzon-mgzon-app.hf.space/auth/google/callback")
+GITHUB_REDIRECT_URL = os.getenv("GITHUB_REDIRECT_URL", "https://mgzon-mgzon-app.hf.space/auth/github/callback")
 
 google_oauth_client = GoogleOAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
 github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
@@ -157,7 +163,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
         user_dict = {
             "email": account_email,
-            "hashed_password": self.password_helper.hash("dummy_password"),
+            "hashed_password": self.password_helper.hash(secrets.token_hex(32)),  # Improved random password
             "is_active": True,
             "is_verified": is_verified_by_default,
         }
@@ -167,10 +173,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         logger.info(f"Created new user {user.email}")
         return await self.on_after_login(user, request)
 
-async def get_user_db(session: AsyncSession = Depends(get_db)):
-    yield CustomSQLAlchemyUserDatabase(session, User, OAuthAccount)
-
-async def get_user_manager(user_db: CustomSQLAlchemyUserDatabase = Depends(get_user_db)):
+async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
 google_oauth_router = get_oauth_router(
@@ -179,8 +182,9 @@ google_oauth_router = get_oauth_router(
     get_user_manager,
     state_secret=SECRET,
     associate_by_email=True,
-    redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback",
+    redirect_url=GOOGLE_REDIRECT_URL,
 )
+logger.info("Google OAuth router initialized successfully")
 
 github_oauth_router = get_oauth_router(
     github_oauth_client,
@@ -188,8 +192,9 @@ github_oauth_router = get_oauth_router(
     get_user_manager,
     state_secret=SECRET,
     associate_by_email=True,
-    redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback",
+    redirect_url=GITHUB_REDIRECT_URL,
 )
+logger.info("GitHub OAuth router initialized successfully")
 
 fastapi_users = FastAPIUsers[User, int](
     get_user_db,

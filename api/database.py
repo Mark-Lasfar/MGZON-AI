@@ -1,26 +1,27 @@
 import os
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy import create_engine
-from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.orm import relationship, declarative_base
+from fastapi_users.db import SQLAlchemyUserDatabase
 from typing import AsyncGenerator
 from fastapi import Depends
 from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
+
 # جلب URL قاعدة البيانات من المتغيرات البيئية
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
     raise ValueError("SQLALCHEMY_DATABASE_URL is not set in environment variables.")
 
-# إنشاء المحرك
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+# إنشاء محرك async
+async_engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 
-# إعداد الجلسة
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# إعداد جلسة async
+AsyncSessionLocal = async_sessionmaker(
+    async_engine, expire_on_commit=False, class_=AsyncSession
+)
 
 # قاعدة أساسية للنماذج
 Base = declarative_base()
@@ -75,20 +76,23 @@ class Message(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     conversation = relationship("Conversation", back_populates="messages")
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionLocal() as db:
+        try:
+            yield db
+        finally:
+            await db.close()
 
-async def get_user_db(session: Session = Depends(get_db)):
+async def get_user_db(session: AsyncSession = Depends(get_db)):
     yield SQLAlchemyUserDatabase(session, User, OAuthAccount)
 
-# إنشاء الجداول
-try:
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database tables created successfully")
-except Exception as e:
-    logger.error(f"Error creating database tables: {e}")
-    raise
+# إنشاء الجداول بشكل async
+async def init_db():
+    try:
+        async with async_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables created successfully")
+    except Exception as e:
+        logger.error(f"Error creating database tables: {e}")
+        raise
+
