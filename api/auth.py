@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+# SPDX-License-Identifier: Apache-2.0
+
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
 from fastapi_users.db import SQLAlchemyUserDatabase
@@ -52,7 +55,6 @@ GITHUB_REDIRECT_URL = os.getenv("GITHUB_REDIRECT_URL", "https://mgzon-mgzon-app.
 google_oauth_client = GoogleOAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
 github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
 
-
 # قاعدة بيانات المستخدم
 class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
     async def get_by_email(self, email: str) -> Optional[User]:
@@ -68,7 +70,6 @@ class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
         await self.session.commit()
         await self.session.refresh(user)
         return user
-
 
 # مدير المستخدمين
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
@@ -116,17 +117,31 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
         existing_oauth_account = await self.get_by_oauth_account(oauth_name, account_id)
         if existing_oauth_account:
-            await self.on_after_login(existing_oauth_account.user, request)
-            return existing_oauth_account.user
+            # جلب المستخدم يدويًا باستعلام async صريح
+            logger.info(f"Fetching user for OAuth account with user_id: {existing_oauth_account.user_id}")
+            statement = select(User).where(User.id == existing_oauth_account.user_id)
+            result = await self.user_db.session.execute(statement)
+            user = result.scalar_one_or_none()
+
+            if user:
+                logger.info(f"User found: {user.email}, proceeding with on_after_login")
+                await self.on_after_login(user, request)
+                return user
+            else:
+                logger.error(f"No user found for OAuth account with user_id: {existing_oauth_account.user_id}")
+                raise ValueError("User not found for existing OAuth account")
 
         if associate_by_email:
+            logger.info(f"Associating OAuth account by email: {account_email}")
             user = await self.user_db.get_by_email(account_email)
             if user:
                 oauth_account.user_id = user.id
                 await self.add_oauth_account(oauth_account)
+                logger.info(f"User associated: {user.email}, proceeding with on_after_login")
                 await self.on_after_login(user, request)
                 return user
 
+        logger.info(f"Creating new user for email: {account_email}")
         user_dict = {
             "email": account_email,
             "hashed_password": self.password_helper.hash(secrets.token_hex(32)),
@@ -137,14 +152,13 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         user = await self.user_db.create(user_dict)
         oauth_account.user_id = user.id
         await self.add_oauth_account(oauth_account)
+        logger.info(f"New user created: {user.email}, proceeding with on_after_login")
         await self.on_after_login(user, request)
         return user
-
 
 # استدعاء user manager من get_user_db
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
-
 
 # OAuth Routers
 google_oauth_router = get_oauth_router(
@@ -181,4 +195,3 @@ def get_auth_router(app: FastAPI):
     app.include_router(fastapi_users.get_reset_password_router(), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_verify_router(UserRead), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate), prefix="/users", tags=["users"])
-

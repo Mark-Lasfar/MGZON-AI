@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 import logging
 from datetime import datetime
@@ -52,7 +55,7 @@ class OAuthAccount(Base):
     account_id = Column(String, index=True, nullable=False)
     account_email = Column(String, nullable=False)
 
-    user = relationship("User", back_populates="oauth_accounts")
+    user = relationship("User", back_populates="oauth_accounts", lazy="selectin")
 
 class User(SQLAlchemyBaseUserTable[int], Base):
     __tablename__ = "user"
@@ -116,4 +119,3 @@ async def init_db():
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
         raise
-
