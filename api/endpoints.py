@@ -141,6 +141,7 @@ async def performance_stats():
         "uptime": os.popen("uptime").read().strip()
     }
 
+
 @router.post("/api/chat")
 async def chat_endpoint(
     request: Request,
@@ -178,10 +179,15 @@ async def chat_endpoint(
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model(req.message, input_type="text", preferred_model=preferred_model)
     
+    # جرب النموذج الأساسي
     is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
     if not is_available:
-        logger.error(f"Model {model_name} is not available at {api_endpoint}")
-        raise HTTPException(status_code=503, detail=f"Model {model_name} is not available. Please try another model.")
+        logger.warning(f"Model {model_name} is not available at {api_endpoint}, trying fallback model.")
+        model_name = SECONDARY_MODEL_NAME  # جرب النموذج البديل
+        is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
+        if not is_available:
+            logger.error(f"Fallback model {model_name} is not available at {selected_endpoint}")
+            raise HTTPException(status_code=503, detail=f"No available models. Tried {MODEL_NAME} and {SECONDARY_MODEL_NAME}.")
     
     system_prompt = enhance_system_prompt(req.system_prompt, req.message, user)
     
@@ -209,12 +215,12 @@ async def chat_endpoint(
                     logger.warning(f"Unexpected non-bytes chunk in audio stream: {chunk}")
             if not audio_chunks:
                 logger.error("No audio data generated.")
-                raise HTTPException(status_code=500, detail="No audio data generated.")
+                raise HTTPException(status_code=502, detail="No audio data generated. Model may be unavailable.")
             audio_data = b"".join(audio_chunks)
             return StreamingResponse(io.BytesIO(audio_data), media_type="audio/wav")
         except Exception as e:
             logger.error(f"Audio generation failed: {e}")
-            raise HTTPException(status_code=500, detail=f"Audio generation failed: {str(e)}")
+            raise HTTPException(status_code=502, detail=f"Audio generation failed: {str(e)}")
     
     response_chunks = []
     try:
@@ -225,8 +231,37 @@ async def chat_endpoint(
                 logger.warning(f"Unexpected non-string chunk in text stream: {chunk}")
         response = "".join(response_chunks)
         if not response.strip():
-            logger.error("Empty response generated.")
-            raise HTTPException(status_code=500, detail="Empty response generated from model.")
+            logger.warning(f"Empty response from {model_name}. Trying fallback model {SECONDARY_MODEL_NAME}.")
+            # جرب النموذج البديل
+            model_name = SECONDARY_MODEL_NAME
+            is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
+            if not is_available:
+                logger.error(f"Fallback model {model_name} is not available at {selected_endpoint}")
+                raise HTTPException(status_code=503, detail=f"No available models. Tried {MODEL_NAME} and {SECONDARY_MODEL_NAME}.")
+            
+            stream = request_generation(
+                api_key=api_key,
+                api_base=selected_endpoint,
+                message=req.message,
+                system_prompt=system_prompt,
+                model_name=model_name,
+                chat_history=req.history,
+                temperature=req.temperature,
+                max_new_tokens=req.max_new_tokens or 2048,
+                deep_search=req.enable_browsing,
+                input_type="text",
+                output_format=req.output_format
+            )
+            response_chunks = []
+            for chunk in stream:
+                if isinstance(chunk, str):
+                    response_chunks.append(chunk)
+                else:
+                    logger.warning(f"Unexpected non-string chunk in text stream: {chunk}")
+            response = "".join(response_chunks)
+            if not response.strip():
+                logger.error(f"Empty response from fallback model {model_name}.")
+                raise HTTPException(status_code=502, detail=f"Empty response from both {MODEL_NAME} and {SECONDARY_MODEL_NAME}.")
         logger.info(f"Chat response: {response[:100]}...")
     except Exception as e:
         logger.error(f"Chat generation failed: {e}")
@@ -246,7 +281,6 @@ async def chat_endpoint(
         }
     
     return {"response": response}
-
 @router.post("/api/audio-transcription")
 async def audio_transcription_endpoint(
     request: Request,
