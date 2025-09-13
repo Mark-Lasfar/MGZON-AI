@@ -1,3 +1,4 @@
+# api/database.py
 # SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,10 +11,9 @@ from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, T
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
 from fastapi import Depends
 import aiosqlite
-from api.auth import CustomSQLAlchemyUserDatabase  # أضف هذا الـ import
+from api.user_db import CustomSQLAlchemyUserDatabase, get_user_db  # استيراد من user_db.py
 
 # إعداد اللوج
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class OAuthAccount(Base):
 
     user = relationship("User", back_populates="oauth_accounts", lazy="selectin")
 
-class User(SQLAlchemyBaseUserTable[int], Base):
+class User(Base):  # إزالة SQLAlchemyBaseUserTable لأن fastapi-users بيستخدم CustomSQLAlchemyUserDatabase
     __tablename__ = "user"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)

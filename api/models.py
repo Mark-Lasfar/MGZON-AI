@@ -1,3 +1,4 @@
+# api/models.py
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from fastapi_users import schemas
@@ -34,6 +35,7 @@ class UserCreate(schemas.BaseUserCreate):
 
     model_config = {"from_attributes": True}
 
+# Pydantic schema for updating user settings
 class UserUpdate(BaseModel):
     display_name: Optional[str] = None
     preferred_model: Optional[str] = None

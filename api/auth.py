@@ -1,23 +1,25 @@
+# api/auth.py
 # SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
 # SPDX-License-Identifier: Apache-2.0
 
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
-from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
+from fastapi_users.router.oauth import get_oauth_router
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
-from fastapi_users.router.oauth import get_oauth_router
-from api.database import User, OAuthAccount, get_user_db
-from api.models import UserRead, UserCreate, UserUpdate
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
 from fastapi import Depends, Request, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi_users.models import UP
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 import os
 import logging
 import secrets
+
+from api.user_db import CustomSQLAlchemyUserDatabase, get_user_db  # استيراد من user_db.py
+from api.database import User, OAuthAccount
+from api.models import UserRead, UserCreate, UserUpdate
 
 # إعداد اللوقينج
 logger = logging.getLogger(__name__)
@@ -54,27 +56,6 @@ GITHUB_REDIRECT_URL = os.getenv("GITHUB_REDIRECT_URL", "https://mgzon-mgzon-app.
 
 google_oauth_client = GoogleOAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
 github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
-
-# قاعدة بيانات المستخدم
-class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
-    def parse_id(self, value: Any) -> int:
-        """تحويل الـ ID من string إلى int لتوافق JWTStrategy"""
-        logger.debug(f"Parsing ID: {value} (type: {type(value)})")
-        return int(value) if isinstance(value, str) else value
-
-    async def get_by_email(self, email: str) -> Optional[User]:
-        logger.info(f"Checking for user with email: {email}")
-        statement = select(self.user_table).where(self.user_table.email == email)
-        result = await self.session.execute(statement)
-        return result.scalar_one_or_none()
-
-    async def create(self, create_dict: Dict[str, Any]) -> User:
-        logger.info(f"Creating user with email: {create_dict.get('email')}")
-        user = self.user_table(**create_dict)
-        self.session.add(user)
-        await self.session.commit()
-        await self.session.refresh(user)
-        return user
 
 # مدير المستخدمين
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
