@@ -1,3 +1,7 @@
+# utils/generation.py
+# SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 import re
 import json
@@ -34,11 +38,11 @@ LATEX_DELIMS = [
 HF_TOKEN = os.getenv("HF_TOKEN")
 BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co/v1")
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
-TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "meta-llama/Llama-3-8b-chat-hf")  # استبدال Qwen بنموذج متاح
+TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "meta-llama/Llama-3-8b-chat-hf")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
 CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
 ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
@@ -46,7 +50,7 @@ TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
 
 # تعطيل PROVIDER_ENDPOINTS لأننا بنستخدم Hugging Face فقط
 PROVIDER_ENDPOINTS = {
-    "huggingface": API_ENDPOINT  # استخدام Hugging Face فقط
+    "huggingface": API_ENDPOINT
 }
 
 def check_model_availability(model_name: str, api_key: str) -> tuple[bool, str, str]:
@@ -56,6 +60,7 @@ def check_model_availability(model_name: str, api_key: str) -> tuple[bool, str, 
             headers={"Authorization": f"Bearer {api_key}"},
             timeout=30
         )
+        logger.debug(f"Checking model {model_name}: {response.status_code} - {response.text}")
         if response.status_code == 200:
             logger.info(f"Model {model_name} is available at {API_ENDPOINT}")
             return True, api_key, API_ENDPOINT
@@ -76,7 +81,7 @@ def select_model(query: str, input_type: str = "text", preferred_model: Optional
         model_name = MODEL_ALIASES[preferred_model]
         is_available, _, endpoint = check_model_availability(model_name, HF_TOKEN)
         if is_available:
-            logger.info(f"Selected preferred model {model_name} with endpoint {endpoint} for query: {query}")
+            logger.info(f"Selected preferred model {model_name} with endpoint {endpoint} for query: {query[:50]}...")
             return model_name, endpoint
 
     query_lower = query.lower()
@@ -92,7 +97,7 @@ def select_model(query: str, input_type: str = "text", preferred_model: Optional
     ]
     for pattern in image_patterns:
         if re.search(pattern, query_lower, re.IGNORECASE):
-            logger.info(f"Selected {CLIP_BASE_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for image-related query: {query}")
+            logger.info(f"Selected {CLIP_BASE_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for image-related query: {query[:50]}...")
             return CLIP_BASE_MODEL, FALLBACK_API_ENDPOINT
     available_models = [
         (MODEL_NAME, API_ENDPOINT),
@@ -102,7 +107,7 @@ def select_model(query: str, input_type: str = "text", preferred_model: Optional
     for model_name, api_endpoint in available_models:
         is_available, _, endpoint = check_model_availability(model_name, HF_TOKEN)
         if is_available:
-            logger.info(f"Selected {model_name} with endpoint {endpoint} for query: {query}")
+            logger.info(f"Selected {model_name} with endpoint {endpoint} for query: {query[:50]}...")
             return model_name, endpoint
     logger.error("No models available. Falling back to default.")
     return MODEL_NAME, API_ENDPOINT
@@ -150,7 +155,7 @@ def request_generation(
     client = OpenAI(api_key=selected_api_key, base_url=selected_endpoint, timeout=120.0)
     task_type = "general"
     enhanced_system_prompt = system_prompt
-    buffer = ""  # تعريف buffer هنا لتجنب UnboundLocalError
+    buffer = ""
 
     if model_name == ASR_MODEL and audio_data:
         task_type = "audio_transcription"
@@ -166,6 +171,7 @@ def request_generation(
                 file=audio_file,
                 response_format="text"
             )
+            logger.debug(f"Transcription response: {transcription}")
             yield transcription
             cache[cache_key] = [transcription]
             return
@@ -185,6 +191,7 @@ def request_generation(
             torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
             audio_file.seek(0)
             audio_data = audio_file.read()
+            logger.debug(f"Generated audio data of length: {len(audio_data)} bytes")
             yield audio_data
             cache[cache_key] = [audio_data]
             return
@@ -204,6 +211,7 @@ def request_generation(
             logits_per_image = outputs.logits_per_image
             probs = logits_per_image.softmax(dim=1)
             result = f"Image analysis result: {probs.tolist()}"
+            logger.debug(f"Image analysis result: {result}")
             if output_format == "audio":
                 model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
                 processor = AutoProcessor.from_pretrained(TTS_MODEL)
@@ -267,16 +275,18 @@ def request_generation(
 
     cached_chunks = []
     try:
-        stream = client.chat.completions.create(
-            model=model_name,
-            messages=input_messages,
-            temperature=temperature,
-            max_tokens=max_new_tokens,
-            stream=True,
-            tools=tools,
-            tool_choice=tool_choice,
-        )
-
+        payload = {
+            "model": model_name,
+            "messages": input_messages,
+            "temperature": temperature,
+            "max_tokens": max_new_tokens,
+            "stream": True,
+            "tools": tools,
+            "tool_choice": tool_choice
+        }
+        logger.debug(f"Sending payload to {selected_endpoint}/chat/completions: {json.dumps(payload, indent=2, ensure_ascii=False)}")
+        
+        stream = client.chat.completions.create(**payload)
         reasoning_started = False
         reasoning_closed = False
         saw_visible_output = False
@@ -284,7 +294,8 @@ def request_generation(
         last_tool_args = None
 
         for chunk in stream:
-            if chunk.choices[0].delta.content:
+            logger.debug(f"Received chunk: {chunk}")
+            if chunk.choices and chunk.choices[0].delta.content:
                 content = chunk.choices[0].delta.content
                 if content == "<|channel|>analysis<|message|>":
                     if not reasoning_started:
@@ -308,7 +319,7 @@ def request_generation(
                     buffer = ""
                 continue
 
-            if chunk.choices[0].delta.tool_calls and model_name in [MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME]:
+            if chunk.choices and chunk.choices[0].delta.tool_calls and model_name in [MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME]:
                 tool_call = chunk.choices[0].delta.tool_calls[0]
                 name = getattr(tool_call, "function", {}).get("name", None)
                 args = getattr(tool_call, "function", {}).get("arguments", None)
@@ -318,7 +329,7 @@ def request_generation(
                     last_tool_args = args
                 continue
 
-            if chunk.choices[0].finish_reason in ("stop", "tool_calls", "error", "length"):
+            if chunk.choices and chunk.choices[0].finish_reason in ("stop", "tool_calls", "error", "length"):
                 if buffer:
                     cached_chunks.append(buffer)
                     yield buffer
@@ -404,18 +415,21 @@ def request_generation(
                     yield f"Error: Fallback model {fallback_model} is not available."
                     return
                 client = OpenAI(api_key=selected_api_key, base_url=selected_endpoint, timeout=120.0)
-                stream = client.chat.completions.create(
-                    model=fallback_model,
-                    messages=input_messages,
-                    temperature=temperature,
-                    max_tokens=max_new_tokens,
-                    stream=True,
-                    tools=[],
-                    tool_choice="none",
-                )
-                buffer = ""  # تعريف buffer للنموذج البديل
+                payload = {
+                    "model": fallback_model,
+                    "messages": input_messages,
+                    "temperature": temperature,
+                    "max_tokens": max_new_tokens,
+                    "stream": True,
+                    "tools": [],
+                    "tool_choice": "none"
+                }
+                logger.debug(f"Sending payload to {selected_endpoint}/chat/completions: {json.dumps(payload, indent=2, ensure_ascii=False)}")
+                stream = client.chat.completions.create(**payload)
+                buffer = ""
                 for chunk in stream:
-                    if chunk.choices[0].delta.content:
+                    logger.debug(f"Received chunk from fallback: {chunk}")
+                    if chunk.choices and chunk.choices[0].delta.content:
                         content = chunk.choices[0].delta.content
                         if content == "<|channel|>analysis<|message|>":
                             if not reasoning_started:
@@ -439,7 +453,7 @@ def request_generation(
                             buffer = ""
                         continue
 
-                    if chunk.choices[0].finish_reason in ("stop", "error", "length"):
+                    if chunk.choices and chunk.choices[0].finish_reason in ("stop", "error", "length"):
                         if buffer:
                             cached_chunks.append(buffer)
                             yield buffer
@@ -487,18 +501,21 @@ def request_generation(
                         yield f"Error: Tertiary model {TERTIARY_MODEL_NAME} is not available."
                         return
                     client = OpenAI(api_key=selected_api_key, base_url=selected_endpoint, timeout=120.0)
-                    stream = client.chat.completions.create(
-                        model=TERTIARY_MODEL_NAME,
-                        messages=input_messages,
-                        temperature=temperature,
-                        max_tokens=max_new_tokens,
-                        stream=True,
-                        tools=[],
-                        tool_choice="none",
-                    )
-                    buffer = ""  # تعريف buffer للنموذج الثالث
+                    payload = {
+                        "model": TERTIARY_MODEL_NAME,
+                        "messages": input_messages,
+                        "temperature": temperature,
+                        "max_tokens": max_new_tokens,
+                        "stream": True,
+                        "tools": [],
+                        "tool_choice": "none"
+                    }
+                    logger.debug(f"Sending payload to {selected_endpoint}/chat/completions: {json.dumps(payload, indent=2, ensure_ascii=False)}")
+                    stream = client.chat.completions.create(**payload)
+                    buffer = ""
                     for chunk in stream:
-                        if chunk.choices[0].delta.content:
+                        logger.debug(f"Received chunk from tertiary: {chunk}")
+                        if chunk.choices and chunk.choices[0].delta.content:
                             content = chunk.choices[0].delta.content
                             saw_visible_output = True
                             buffer += content
@@ -507,7 +524,7 @@ def request_generation(
                                 yield buffer
                                 buffer = ""
                             continue
-                        if chunk.choices[0].finish_reason in ("stop", "error", "length"):
+                        if chunk.choices and chunk.choices[0].finish_reason in ("stop", "error", "length"):
                             if buffer:
                                 cached_chunks.append(buffer)
                                 yield buffer
