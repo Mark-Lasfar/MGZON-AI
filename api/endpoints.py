@@ -1,3 +1,7 @@
+# api/endpoints.py
+# SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File
@@ -31,9 +35,9 @@ if not BACKUP_HF_TOKEN:
     logger.warning("BACKUP_HF_TOKEN is not set. Fallback to secondary model will not work if primary token fails.")
 
 ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "https://api-inference.huggingface.co/v1")
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
 TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "meta-llama/Llama-3-8b-chat-hf")
 CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
@@ -141,7 +145,6 @@ async def performance_stats():
         "uptime": os.popen("uptime").read().strip()
     }
 
-
 @router.post("/api/chat")
 async def chat_endpoint(
     request: Request,
@@ -183,7 +186,7 @@ async def chat_endpoint(
     is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
     if not is_available:
         logger.warning(f"Model {model_name} is not available at {api_endpoint}, trying fallback model.")
-        model_name = SECONDARY_MODEL_NAME  # جرب النموذج البديل
+        model_name = SECONDARY_MODEL_NAME
         is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
         if not is_available:
             logger.error(f"Fallback model {model_name} is not available at {selected_endpoint}")
@@ -209,6 +212,7 @@ async def chat_endpoint(
         audio_chunks = []
         try:
             for chunk in stream:
+                logger.debug(f"Processing audio chunk: {chunk[:100] if isinstance(chunk, str) else 'bytes'}")
                 if isinstance(chunk, bytes):
                     audio_chunks.append(chunk)
                 else:
@@ -225,14 +229,14 @@ async def chat_endpoint(
     response_chunks = []
     try:
         for chunk in stream:
-            if isinstance(chunk, str):
+            logger.debug(f"Processing text chunk: {chunk[:100]}...")
+            if isinstance(chunk, str) and chunk.strip() and chunk not in ["analysis", "assistantfinal"]:
                 response_chunks.append(chunk)
             else:
-                logger.warning(f"Unexpected non-string chunk in text stream: {chunk}")
+                logger.warning(f"Skipping chunk: {chunk}")
         response = "".join(response_chunks)
         if not response.strip():
             logger.warning(f"Empty response from {model_name}. Trying fallback model {SECONDARY_MODEL_NAME}.")
-            # جرب النموذج البديل
             model_name = SECONDARY_MODEL_NAME
             is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
             if not is_available:
@@ -254,10 +258,11 @@ async def chat_endpoint(
             )
             response_chunks = []
             for chunk in stream:
-                if isinstance(chunk, str):
+                logger.debug(f"Processing fallback text chunk: {chunk[:100]}...")
+                if isinstance(chunk, str) and chunk.strip() and chunk not in ["analysis", "assistantfinal"]:
                     response_chunks.append(chunk)
                 else:
-                    logger.warning(f"Unexpected non-string chunk in text stream: {chunk}")
+                    logger.warning(f"Skipping fallback chunk: {chunk}")
             response = "".join(response_chunks)
             if not response.strip():
                 logger.error(f"Empty response from fallback model {model_name}.")
@@ -281,6 +286,7 @@ async def chat_endpoint(
         }
     
     return {"response": response}
+
 @router.post("/api/audio-transcription")
 async def audio_transcription_endpoint(
     request: Request,
@@ -338,6 +344,7 @@ async def audio_transcription_endpoint(
     response_chunks = []
     try:
         for chunk in stream:
+            logger.debug(f"Processing transcription chunk: {chunk[:100]}...")
             if isinstance(chunk, str):
                 response_chunks.append(chunk)
             else:
@@ -401,6 +408,7 @@ async def text_to_speech_endpoint(
     audio_chunks = []
     try:
         for chunk in stream:
+            logger.debug(f"Processing TTS chunk: {chunk[:100] if isinstance(chunk, str) else 'bytes'}")
             if isinstance(chunk, bytes):
                 audio_chunks.append(chunk)
             else:
@@ -460,6 +468,7 @@ async def code_endpoint(
         audio_chunks = []
         try:
             for chunk in stream:
+                logger.debug(f"Processing code audio chunk: {chunk[:100] if isinstance(chunk, str) else 'bytes'}")
                 if isinstance(chunk, bytes):
                     audio_chunks.append(chunk)
                 else:
@@ -476,10 +485,11 @@ async def code_endpoint(
     response_chunks = []
     try:
         for chunk in stream:
-            if isinstance(chunk, str):
+            logger.debug(f"Processing code text chunk: {chunk[:100]}...")
+            if isinstance(chunk, str) and chunk.strip() and chunk not in ["analysis", "assistantfinal"]:
                 response_chunks.append(chunk)
             else:
-                logger.warning(f"Unexpected non-string chunk in code stream: {chunk}")
+                logger.warning(f"Skipping code chunk: {chunk}")
         response = "".join(response_chunks)
         if not response.strip():
             logger.error("Empty code response generated.")
@@ -532,6 +542,7 @@ async def analysis_endpoint(
         audio_chunks = []
         try:
             for chunk in stream:
+                logger.debug(f"Processing analysis audio chunk: {chunk[:100] if isinstance(chunk, str) else 'bytes'}")
                 if isinstance(chunk, bytes):
                     audio_chunks.append(chunk)
                 else:
@@ -548,10 +559,11 @@ async def analysis_endpoint(
     response_chunks = []
     try:
         for chunk in stream:
-            if isinstance(chunk, str):
+            logger.debug(f"Processing analysis text chunk: {chunk[:100]}...")
+            if isinstance(chunk, str) and chunk.strip() and chunk not in ["analysis", "assistantfinal"]:
                 response_chunks.append(chunk)
             else:
-                logger.warning(f"Unexpected non-string chunk in analysis stream: {chunk}")
+                logger.warning(f"Skipping analysis chunk: {chunk}")
         response = "".join(response_chunks)
         if not response.strip():
             logger.error("Empty analysis response generated.")
@@ -624,6 +636,7 @@ async def image_analysis_endpoint(
         audio_chunks = []
         try:
             for chunk in stream:
+                logger.debug(f"Processing image analysis audio chunk: {chunk[:100] if isinstance(chunk, str) else 'bytes'}")
                 if isinstance(chunk, bytes):
                     audio_chunks.append(chunk)
                 else:
@@ -640,10 +653,11 @@ async def image_analysis_endpoint(
     response_chunks = []
     try:
         for chunk in stream:
-            if isinstance(chunk, str):
+            logger.debug(f"Processing image analysis text chunk: {chunk[:100]}...")
+            if isinstance(chunk, str) and chunk.strip() and chunk not in ["analysis", "assistantfinal"]:
                 response_chunks.append(chunk)
             else:
-                logger.warning(f"Unexpected non-string chunk in image analysis stream: {chunk}")
+                logger.warning(f"Skipping image analysis chunk: {chunk}")
         response = "".join(response_chunks)
         if not response.strip():
             logger.error("Empty image analysis response generated.")
@@ -681,6 +695,7 @@ async def test_model(model: str = MODEL_NAME, endpoint: str = API_ENDPOINT):
             messages=[{"role": "user", "content": "Test"}],
             max_tokens=50
         )
+        logger.debug(f"Test model response: {response.choices[0].message.content}")
         return {"status": "success", "response": response.choices[0].message.content}
     except Exception as e:
         logger.error(f"Test model failed: {e}")

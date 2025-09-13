@@ -1,3 +1,4 @@
+# main.py
 # SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
 # SPDX-License-Identifier: Apache-2.0
 
@@ -27,18 +28,23 @@ from hashlib import md5
 from datetime import datetime
 from httpx_oauth.exceptions import GetIdEmailError
 import re
-import anyio  # أضف هذا الـ import
+import anyio
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)  # غيّرنا لـ DEBUG عشان نعرف نتبع كل حاجة
 logger = logging.getLogger(__name__)
-logger.info("Files in current dir: %s", os.listdir(os.getcwd()))
+logger.info("Starting application...")
+logger.debug("Files in current directory: %s", os.listdir(os.getcwd()))
 
 # Check environment variables
 HF_TOKEN = os.getenv("HF_TOKEN")
 if not HF_TOKEN:
     logger.error("HF_TOKEN is not set in environment variables.")
     raise ValueError("HF_TOKEN is required for Inference API.")
+
+BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
+if not BACKUP_HF_TOKEN:
+    logger.warning("BACKUP_HF_TOKEN is not set. Fallback to secondary model will not work if primary token fails.")
 
 MONGO_URI = os.getenv("MONGODB_URI")
 if not MONGO_URI:
@@ -50,6 +56,9 @@ if not JWT_SECRET or len(JWT_SECRET) < 32:
     logger.error("JWT_SECRET is not set or too short.")
     raise ValueError("JWT_SECRET is required (at least 32 characters).")
 
+ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
+logger.debug(f"ROUTER_API_URL set to: {ROUTER_API_URL}")
+
 # MongoDB setup
 client = AsyncIOMotorClient(MONGO_URI)
 mongo_db = client["hager"]
@@ -57,9 +66,14 @@ session_message_counts = mongo_db["session_message_counts"]
 
 # Create MongoDB index
 async def setup_mongo_index():
-    await session_message_counts.create_index("session_id", unique=True)
+    try:
+        await session_message_counts.create_index("session_id", unique=True)
+        logger.info("MongoDB index created successfully for session_id")
+    except Exception as e:
+        logger.error(f"Failed to create MongoDB index: {e}")
 
 # Jinja2 setup
+os.makedirs("templates", exist_ok=True)  # تأكد إن مجلد templates موجود
 templates = Jinja2Templates(directory="templates")
 templates.env.filters['markdown'] = lambda text: markdown2.markdown(text)
 
@@ -75,22 +89,27 @@ class BlogPost(BaseModel):
 # Application settings
 QUEUE_SIZE = int(os.getenv("QUEUE_SIZE", 80))
 CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
+logger.debug(f"Application settings: QUEUE_SIZE={QUEUE_SIZE}, CONCURRENCY_LIMIT={CONCURRENCY_LIMIT}")
 
 # Initialize FastAPI app
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()  # استدعاء دالة init_db بشكل async
+    logger.info("Initializing database and MongoDB index...")
+    await init_db()
     await setup_mongo_index()
     yield
+    logger.info("Shutting down application...")
 
 app = FastAPI(title="MGZon Chatbot API", lifespan=lifespan)
 
 # Add SessionMiddleware
 app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET)
+logger.debug("SessionMiddleware added with JWT_SECRET")
 
 # Mount static files
 os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+logger.debug("Static files mounted at /static")
 
 # CORS setup
 app.add_middleware(
@@ -98,21 +117,25 @@ app.add_middleware(
     allow_origins=[
         "https://mgzon-mgzon-app.hf.space",
         "http://localhost:7860",
+        "http://localhost:8000",  # أضفنا ده للتستيج المحلي
         "https://mgzon-mgzon-app.hf.space/auth/google/callback",
         "https://mgzon-mgzon-app.hf.space/auth/github/callback",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Accept", "Content-Type", "Authorization"],
+    allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+    allow_headers=["Accept", "Content-Type", "Authorization", "X-Requested-With"],
 )
+logger.debug("CORS middleware configured with allowed origins")
 
 # Include routers
 app.include_router(api_router)
 get_auth_router(app)  # Add OAuth and auth routers
+logger.debug("API and auth routers included")
 
 # Add logout endpoint
 @app.get("/logout")
 async def logout(request: Request):
+    logger.info("User logout requested")
     request.session.clear()
     response = RedirectResponse("/login")
     response.delete_cookie("access_token")
@@ -121,6 +144,7 @@ async def logout(request: Request):
 # Debug routes endpoint
 @app.get("/debug/routes", response_class=PlainTextResponse)
 async def debug_routes():
+    logger.debug("Fetching debug routes")
     routes = []
     for route in app.routes:
         methods = getattr(route, "methods", [])
@@ -160,6 +184,7 @@ class NotFoundMiddleware(BaseHTTPMiddleware):
             )
 
 app.add_middleware(NotFoundMiddleware)
+logger.debug("NotFoundMiddleware added")
 
 # OAuth error handler
 @app.exception_handler(GetIdEmailError)
@@ -174,30 +199,37 @@ async def handle_oauth_error(request: Request, exc: GetIdEmailError):
 # Root endpoint
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, user: User = Depends(current_active_user)):
+    logger.debug(f"Root endpoint accessed by user: {user.email if user else 'Anonymous'}")
     return templates.TemplateResponse("index.html", {"request": request, "user": user})
 
 # Google verification
 @app.get("/google97468ef1f6b6e804.html", response_class=PlainTextResponse)
 async def google_verification():
+    logger.debug("Google verification endpoint accessed")
     return "google-site-verification: google97468ef1f6b6e804.html"
 
 # Login page
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request, user: User = Depends(current_active_user)):
     if user:
+        logger.debug(f"User {user.email} already logged in, redirecting to /chat")
         return RedirectResponse(url="/chat", status_code=302)
+    logger.debug("Login page accessed")
     return templates.TemplateResponse("login.html", {"request": request})
 
 # Register page
 @app.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request, user: User = Depends(current_active_user)):
     if user:
+        logger.debug(f"User {user.email} already logged in, redirecting to /chat")
         return RedirectResponse(url="/chat", status_code=302)
+    logger.debug("Register page accessed")
     return templates.TemplateResponse("register.html", {"request": request})
 
 # Chat page
 @app.get("/chat", response_class=HTMLResponse)
 async def chat(request: Request, user: User = Depends(current_active_user)):
+    logger.debug(f"Chat page accessed by user: {user.email if user else 'Anonymous'}")
     return templates.TemplateResponse("chat.html", {"request": request, "user": user})
 
 # Specific conversation page
@@ -209,6 +241,7 @@ async def chat_conversation(
     db: AsyncSession = Depends(get_db)
 ):
     if not user:
+        logger.debug("Anonymous user attempted to access conversation page, redirecting to /login")
         return RedirectResponse(url="/login", status_code=302)
     
     conversation = await db.execute(
@@ -219,7 +252,10 @@ async def chat_conversation(
     )
     conversation = conversation.scalar_one_or_none()
     if not conversation:
+        logger.warning(f"Conversation {conversation_id} not found for user {user.email}")
         raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    logger.debug(f"Conversation page accessed: {conversation_id} by user: {user.email}")
     return templates.TemplateResponse(
         "chat.html",
         {
@@ -233,6 +269,7 @@ async def chat_conversation(
 # About page
 @app.get("/about", response_class=HTMLResponse)
 async def about(request: Request, user: User = Depends(current_active_user)):
+    logger.debug(f"About page accessed by user: {user.email if user else 'Anonymous'}")
     return templates.TemplateResponse("about.html", {"request": request, "user": user})
 
 # Serve static files
@@ -241,6 +278,7 @@ async def serve_static(path: str):
     clean_path = re.sub(r'\?.*', '', path)
     file_path = Path("static") / clean_path
     if not file_path.exists():
+        logger.warning(f"Static file not found: {file_path}")
         raise HTTPException(status_code=404, detail="File not found")
     cache_duration = 31536000 if not clean_path.endswith(('.js', '.css')) else 3600
     with open(file_path, "rb") as f:
@@ -250,35 +288,42 @@ async def serve_static(path: str):
         "ETag": file_hash,
         "Last-Modified": datetime.utcfromtimestamp(file_path.stat().st_mtime).strftime('%a, %d %b %Y %H:%M:%S GMT')
     }
+    logger.debug(f"Serving static file: {file_path}")
     return FileResponse(file_path, headers=headers)
 
 # Blog page
 @app.get("/blog", response_class=HTMLResponse)
 async def blog(request: Request, skip: int = Query(0, ge=0), limit: int = Query(10, ge=1, le=100)):
+    logger.debug(f"Blog page accessed with skip={skip}, limit={limit}")
     posts = await mongo_db.blog_posts.find().skip(skip).limit(limit).to_list(limit)
     return templates.TemplateResponse("blog.html", {"request": request, "posts": posts})
 
 # Individual blog post
 @app.get("/blog/{post_id}", response_class=HTMLResponse)
 async def blog_post(request: Request, post_id: str):
+    logger.debug(f"Blog post accessed: {post_id}")
     post = await mongo_db.blog_posts.find_one({"id": post_id})
     if not post:
+        logger.warning(f"Blog post not found: {post_id}")
         raise HTTPException(status_code=404, detail="Post not found")
     return templates.TemplateResponse("blog_post.html", {"request": request, "post": post})
 
 # Docs page
 @app.get("/docs", response_class=HTMLResponse)
 async def docs(request: Request):
+    logger.debug("Docs page accessed")
     return templates.TemplateResponse("docs.html", {"request": request})
 
 # Swagger UI
 @app.get("/swagger", response_class=HTMLResponse)
 async def swagger_ui():
+    logger.debug("Swagger UI accessed")
     return get_swagger_ui_html(openapi_url="/openapi.json", title="MGZon API Documentation")
 
 # Sitemap
 @app.get("/sitemap.xml", response_class=PlainTextResponse)
 async def sitemap():
+    logger.debug("Sitemap accessed")
     posts = await mongo_db.blog_posts.find().to_list(100)
     current_date = datetime.utcnow().strftime('%Y-%m-%d')
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -338,7 +383,15 @@ async def sitemap():
 # Redirect /gradio to /chat
 @app.get("/gradio", response_class=RedirectResponse)
 async def launch_chatbot():
+    logger.debug("Redirecting /gradio to /chat")
     return RedirectResponse(url="/chat", status_code=302)
 
+# Health check endpoint
+@app.get("/health", response_class=PlainTextResponse)
+async def health_check():
+    logger.debug("Health check endpoint accessed")
+    return "OK"
+
 if __name__ == "__main__":
+    logger.info(f"Starting uvicorn server on port {os.getenv('PORT', 7860)}")
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 7860)))
