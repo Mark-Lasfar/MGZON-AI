@@ -1,29 +1,29 @@
 # api/database.py
 # SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-License: Apache-2.0
 
 import os
 import logging
 from datetime import datetime
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional, Dict, Any
 
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, Text
+from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, Text, select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from fastapi import Depends
+from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
 import aiosqlite
-from api.user_db import CustomSQLAlchemyUserDatabase, get_user_db  # استيراد من user_db.py
 
 # إعداد اللوج
 logger = logging.getLogger(__name__)
 
-# ✅ استخدم القيمة مباشرة إذا لم يكن هناك متغير بيئة
+# استخدم القيمة مباشرة إذا لم يكن هناك متغير بيئة
 SQLALCHEMY_DATABASE_URL = os.environ.get(
     "SQLALCHEMY_DATABASE_URL"
 ) or "sqlite+aiosqlite:///./data/mgzon_users.db"
 
-# ✅ تأكد أن الدرايفر async
+# تأكد أن الدرايفر async
 if "aiosqlite" not in SQLALCHEMY_DATABASE_URL:
     raise ValueError("Database URL must use 'sqlite+aiosqlite' for async support")
 
@@ -58,7 +58,7 @@ class OAuthAccount(Base):
 
     user = relationship("User", back_populates="oauth_accounts", lazy="selectin")
 
-class User(Base):  # إزالة SQLAlchemyBaseUserTable لأن fastapi-users بيستخدم CustomSQLAlchemyUserDatabase
+class User(SQLAlchemyBaseUserTable[int], Base):
     __tablename__ = "user"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
@@ -99,6 +99,30 @@ class Message(Base):
 
     conversation = relationship("Conversation", back_populates="messages")
 
+# قاعدة بيانات المستخدم المخصصة (نقلناها من user_db.py)
+class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase[User, int]):
+    """
+    قاعدة بيانات مخصَّصة لمكتبة fastapi-users.
+    تضيف طريقة parse_id التي تُحوِّل الـ ID من str → int.
+    """
+    def parse_id(self, value: Any) -> int:
+        logger.debug(f"Parsing user id: {value} (type={type(value)})")
+        return int(value) if isinstance(value, str) else value
+
+    async def get_by_email(self, email: str) -> Optional[User]:
+        logger.info(f"Looking for user with email: {email}")
+        stmt = select(self.user_table).where(self.user_table.email == email)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def create(self, create_dict: Dict[str, Any]) -> User:
+        logger.info(f"Creating new user: {create_dict.get('email')}")
+        user = self.user_table(**create_dict)
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
 # دالة لجلب الجلسة async
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
@@ -111,7 +135,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def get_user_db(session: AsyncSession = Depends(get_db)) -> AsyncGenerator[CustomSQLAlchemyUserDatabase, None]:
     yield CustomSQLAlchemyUserDatabase(session, User, OAuthAccount)
 
-# (اختياري) دالة لإنشاء الجداول
+# دالة لإنشاء الجداول
 async def init_db():
     try:
         async with async_engine.begin() as conn:
