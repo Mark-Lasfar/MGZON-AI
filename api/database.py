@@ -12,7 +12,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
 from fastapi import Depends
-import aiosqlite  # مهم جداً: حتى يضمن استخدام aiosqlite وليس pysqlite
+import aiosqlite
+from api.auth import CustomSQLAlchemyUserDatabase  # أضف هذا الـ import
 
 # إعداد اللوج
 logger = logging.getLogger(__name__)
@@ -107,8 +108,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 # دالة لجلب قاعدة بيانات المستخدمين لـ fastapi-users
-async def get_user_db(session: AsyncSession = Depends(get_db)) -> AsyncGenerator[SQLAlchemyUserDatabase, None]:
-    yield SQLAlchemyUserDatabase(session, User, OAuthAccount)
+async def get_user_db(session: AsyncSession = Depends(get_db)) -> AsyncGenerator[CustomSQLAlchemyUserDatabase, None]:
+    yield CustomSQLAlchemyUserDatabase(session, User, OAuthAccount)
 
 # (اختياري) دالة لإنشاء الجداول
 async def init_db():
