@@ -27,6 +27,7 @@ from hashlib import md5
 from datetime import datetime
 from httpx_oauth.exceptions import GetIdEmailError
 import re
+import anyio  # أضف هذا الـ import
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -137,9 +138,21 @@ class NotFoundMiddleware(BaseHTTPMiddleware):
                 return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
             return response
         except Exception as e:
-            logger.exception(f"Error processing request {request.url}: {e}")
-            if "ChunkedIteratorResult" in str(e):
-                logger.error("ChunkedIteratorResult error detected - check SQLAlchemy async execution")
+            logger.exception(f"Error processing request {request.url}: {str(e)}")
+            if isinstance(e, anyio.EndOfStream):
+                logger.error("EndOfStream error detected - likely async context issue")
+                return templates.TemplateResponse(
+                    "500.html",
+                    {"request": request, "error": "Async context error"},
+                    status_code=500
+                )
+            elif "SQLAlchemyUserDatabase' object has no attribute 'parse_id" in str(e):
+                logger.error("JWT error: Missing parse_id in UserDatabase. Check api/database.py configuration.")
+                return templates.TemplateResponse(
+                    "500.html",
+                    {"request": request, "error": "JWT authentication configuration error"},
+                    status_code=500
+                )
             return templates.TemplateResponse(
                 "500.html",
                 {"request": request, "error": str(e)},
