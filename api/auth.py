@@ -3,7 +3,7 @@
 
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
-from fastapi_users.db import SQLAlchemyUserDatabase
+from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from fastapi_users.router.oauth import get_oauth_router
@@ -57,6 +57,11 @@ github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
 
 # قاعدة بيانات المستخدم
 class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
+    def parse_id(self, value: Any) -> int:
+        """تحويل الـ ID من string إلى int لتوافق JWTStrategy"""
+        logger.debug(f"Parsing ID: {value} (type: {type(value)})")
+        return int(value) if isinstance(value, str) else value
+
     async def get_by_email(self, email: str) -> Optional[User]:
         logger.info(f"Checking for user with email: {email}")
         statement = select(self.user_table).where(self.user_table.email == email)
@@ -117,7 +122,6 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
         existing_oauth_account = await self.get_by_oauth_account(oauth_name, account_id)
         if existing_oauth_account:
-            # جلب المستخدم يدويًا باستعلام async صريح
             logger.info(f"Fetching user for OAuth account with user_id: {existing_oauth_account.user_id}")
             statement = select(User).where(User.id == existing_oauth_account.user_id)
             result = await self.user_db.session.execute(statement)
@@ -157,10 +161,10 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         return user
 
 # استدعاء user manager من get_user_db
-async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
+async def get_user_manager(user_db: CustomSQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
-# OAuth Routers
+# OAuth Routers مع معالجة مخصصة لـ GitHub
 google_oauth_router = get_oauth_router(
     google_oauth_client,
     auth_backend,
@@ -170,6 +174,8 @@ google_oauth_router = get_oauth_router(
     redirect_url=GOOGLE_REDIRECT_URL,
 )
 
+github_oauth_client._access_token_url = "https://github.com/login/oauth/access_token"
+github_oauth_client._access_token_params = {"headers": {"Accept": "application/json"}}
 github_oauth_router = get_oauth_router(
     github_oauth_client,
     auth_backend,
