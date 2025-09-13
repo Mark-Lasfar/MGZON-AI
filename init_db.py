@@ -1,3 +1,7 @@
+# init_db.py
+# SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+# SPDX-License-License: Apache-2.0
+
 import os
 import logging
 import asyncio
@@ -6,7 +10,7 @@ from sqlalchemy import select, delete
 from api.database import async_engine, Base, User, OAuthAccount, Conversation, Message, AsyncSessionLocal
 from passlib.context import CryptContext
 
-# Setup logging
+# إعداد اللوج
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

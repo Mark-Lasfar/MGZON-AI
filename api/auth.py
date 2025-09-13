@@ -1,6 +1,6 @@
 # api/auth.py
 # SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-License: Apache-2.0
 
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
@@ -17,8 +17,7 @@ import os
 import logging
 import secrets
 
-from api.user_db import CustomSQLAlchemyUserDatabase, get_user_db  # استيراد من user_db.py
-from api.database import User, OAuthAccount
+from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db  # استيراد من database.py
 from api.models import UserRead, UserCreate, UserUpdate
 
 # إعداد اللوقينج
