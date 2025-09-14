@@ -31,7 +31,7 @@ import re
 import anyio
 
 # Setup logging
-logging.basicConfig(level=logging.DEBUG)  # غيّرنا لـ DEBUG عشان نعرف نتبع كل حاجة
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.info("Starting application...")
 logger.debug("Files in current directory: %s", os.listdir(os.getcwd()))
@@ -73,7 +73,7 @@ async def setup_mongo_index():
         logger.error(f"Failed to create MongoDB index: {e}")
 
 # Jinja2 setup
-os.makedirs("templates", exist_ok=True)  # تأكد إن مجلد templates موجود
+os.makedirs("templates", exist_ok=True)
 templates = Jinja2Templates(directory="templates")
 templates.env.filters['markdown'] = lambda text: markdown2.markdown(text)
 
@@ -117,28 +117,32 @@ app.add_middleware(
     allow_origins=[
         "https://mgzon-mgzon-app.hf.space",
         "http://localhost:7860",
-        "http://localhost:8000",  # أضفنا ده للتستيج المحلي
+        "http://localhost:8000",
         "https://mgzon-mgzon-app.hf.space/auth/google/callback",
         "https://mgzon-mgzon-app.hf.space/auth/github/callback",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-    allow_headers=["Accept", "Content-Type", "Authorization", "X-Requested-With"],
+    allow_headers=["Accept", "Content-Type", "Authorization", "X-Requested-With", "X-Session-ID"],
 )
 logger.debug("CORS middleware configured with allowed origins")
 
 # Include routers
 app.include_router(api_router)
-get_auth_router(app)  # Add OAuth and auth routers
+get_auth_router(app)
 logger.debug("API and auth routers included")
 
 # Add logout endpoint
 @app.get("/logout")
 async def logout(request: Request):
     logger.info("User logout requested")
+    session_data = request.session.copy()
     request.session.clear()
+    logger.debug(f"Cleared session data: {session_data}")
     response = RedirectResponse("/login")
     response.delete_cookie("access_token")
+    response.delete_cookie("session")
+    logger.debug("Session and access_token cookies deleted")
     return response
 
 # Debug routes endpoint
@@ -200,7 +204,11 @@ async def handle_oauth_error(request: Request, exc: GetIdEmailError):
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, user: User = Depends(current_active_user)):
     logger.debug(f"Root endpoint accessed by user: {user.email if user else 'Anonymous'}")
-    return templates.TemplateResponse("index.html", {"request": request, "user": user})
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "user": user,
+        "is_authenticated": user is not None
+    })
 
 # Google verification
 @app.get("/google97468ef1f6b6e804.html", response_class=PlainTextResponse)

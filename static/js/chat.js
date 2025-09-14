@@ -33,51 +33,24 @@ const uiElements = {
   settingsModal: document.getElementById('settingsModal'),
   closeSettingsBtn: document.getElementById('closeSettingsBtn'),
   settingsForm: document.getElementById('settingsForm'),
-  historyToggle: document.getElementById('historyToggle')
-};
-
-// Track state
-let streamMsg = null;
-let conversationHistory = JSON.parse(sessionStorage.getItem('conversationHistory') || '[]');
-let currentAssistantText = '';
-let isRequestActive = false;
-let abortController = null;
-let mediaRecorder = null;
-let audioChunks = [];
-let isRecording = false;
-let currentConversationId = window.conversationId || null;
-let currentConversationTitle = window.conversationTitle || null;
-let isSidebarOpen = false;
-
-// Auto-resize textarea
-function autoResizeTextarea() {
-  if (uiElements.input) {
-    uiElements.input.style.height = 'auto';
-    uiElements.input.style.height = `${Math.min(uiElements.input.scrollHeight, 200)}px`;
-  }
-}
-
-// Detect Arabic text
-function isArabicText(text) {
-  return /[\u0600-\u06FF]/.test(text);
-}
-
-// Initialize page
-document.addEventListener('DOMContentLoaded', async () => {
-  AOS.init({
+  historyToggle: document.getElementBy AOS.init({
     duration: 800,
     easing: 'ease-out-cubic',
     once: true,
     offset: 50,
   });
   if (currentConversationId && checkAuth()) {
+    console.log('Loading conversation with ID:', currentConversationId);
     await loadConversation(currentConversationId);
   } else if (conversationHistory.length > 0) {
+    console.log('Restoring conversation history from sessionStorage:', conversationHistory);
     enterChatView();
-    conversationHistory.forEach(msg => addMsg(msg.role, msg.content));
-  }
-  if (checkAuth()) {
-    await loadConversations();
+    conversationHistory.forEach(msg => {
+      console.log('Adding message from history:', msg);
+      addMsg(msg.role, msg.content);
+    });
+  } else {
+    console.log('No conversation history or ID, starting fresh');
   }
   autoResizeTextarea();
   updateSendButtonState();
@@ -91,7 +64,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Check authentication token
 function checkAuth() {
-  return localStorage.getItem('token');
+  const token = localStorage.getItem('token');
+  console.log('Auth token:', token ? 'Found' : 'Not found');
+  return token;
+}
+
+// Handle session for non-logged-in users
+async function handleSession() {
+  const sessionId = sessionStorage.getItem('session_id');
+  if (!sessionId) {
+    const newSessionId = crypto.randomUUID();
+    sessionStorage.setItem('session_id', newSessionId);
+    console.log('New session_id created:', newSessionId);
+    return newSessionId;
+  }
+  console.log('Existing session_id:', sessionId);
+  return sessionId;
 }
 
 // Update send button state
@@ -156,11 +144,15 @@ function addMsg(who, text) {
   const div = document.createElement('div');
   div.className = `bubble ${who === 'user' ? 'bubble-user' : 'bubble-assist'} ${isArabicText(text) ? 'rtl' : ''}`;
   div.dataset.text = text;
+  console.log('Adding message:', { who, text });
   renderMarkdown(div);
   if (uiElements.chatBox) {
     uiElements.chatBox.appendChild(div);
     uiElements.chatBox.classList.remove('hidden');
     uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
+    console.log('Message added to chatBox:', div);
+  } else {
+    console.error('chatBox is null');
   }
   return div;
 }
@@ -226,14 +218,22 @@ function previewFile() {
 
 // Voice recording
 function startVoiceRecording() {
-  if (isRequestActive || isRecording) return;
+  if (isRequestActive || isRecording) {
+    console.log('Voice recording blocked: Request active or already recording');
+    return;
+  }
+  console.log('Starting voice recording...');
   isRecording = true;
   if (uiElements.sendBtn) uiElements.sendBtn.classList.add('recording');
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
     mediaRecorder.start();
-    mediaRecorder.addEventListener('dataavailable', event => audioChunks.push(event.data));
+    console.log('MediaRecorder started');
+    mediaRecorder.addEventListener('dataavailable', event => {
+      audioChunks.push(event.data);
+      console.log('Audio chunk received:', event.data);
+    });
   }).catch(err => {
     console.error('Error accessing microphone:', err);
     alert('Failed to access microphone. Please check permissions.');
@@ -248,6 +248,7 @@ function stopVoiceRecording() {
     if (uiElements.sendBtn) uiElements.sendBtn.classList.remove('recording');
     isRecording = false;
     mediaRecorder.addEventListener('stop', async () => {
+      console.log('Stopping voice recording, sending audio...');
       const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
       const formData = new FormData();
       formData.append('file', audioBlob, 'voice-message.webm');
@@ -306,6 +307,8 @@ async function submitAudioMessage(formData) {
 async function sendRequest(endpoint, body, headers = {}) {
   const token = checkAuth();
   if (token) headers['Authorization'] = `Bearer ${token}`;
+  headers['X-Session-ID'] = await handleSession();
+  console.log('Sending request to:', endpoint, 'with headers:', headers);
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -330,9 +333,7 @@ async function sendRequest(endpoint, body, headers = {}) {
     }
     return response;
   } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new Error('Request was aborted');
-    }
+    console.error('Send request error:', error);
     throw error;
   }
 }
@@ -362,6 +363,11 @@ function handleRequestError(error) {
   if (streamMsg) {
     streamMsg.querySelector('.loading')?.remove();
     streamMsg.dataset.text = `Error: ${error.message || 'An error occurred during the request.'}`;
+    const retryBtn = document.createElement('button');
+    retryBtn.innerText = 'Retry';
+    retryBtn.className = 'retry-btn text-sm text-blue-400 hover:text-blue-600';
+    retryBtn.onclick = () => submitMessage();
+    streamMsg.appendChild(retryBtn);
     renderMarkdown(streamMsg);
     streamMsg.dataset.done = '1';
     streamMsg = null;
@@ -372,6 +378,7 @@ function handleRequestError(error) {
   abortController = null;
   if (uiElements.sendBtn) uiElements.sendBtn.style.display = 'inline-flex';
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'none';
+  sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
 }
 
 // Load conversations for sidebar
@@ -627,6 +634,11 @@ async function submitMessage() {
   let outputFormat = 'text';
   let title = null;
 
+  if (!message && !uiElements.fileInput?.files.length && !uiElements.audioInput?.files.length) {
+    console.log('No message, file, or audio to send');
+    return;
+  }
+
   if (uiElements.fileInput?.files.length > 0) {
     const file = uiElements.fileInput.files[0];
     if (file.type.startsWith('image/')) {
@@ -660,8 +672,6 @@ async function submitMessage() {
       title: title
     };
     headers['Content-Type'] = 'application/json';
-  } else {
-    return;
   }
 
   enterChatView();
@@ -794,6 +804,31 @@ function stopStream(forceCancel = false) {
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'none';
   if (uiElements.sendBtn) uiElements.sendBtn.style.display = 'inline-flex';
   if (uiElements.stopBtn) uiElements.stopBtn.style.pointerEvents = 'auto';
+}
+
+// Logout handler
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', async () => {
+    console.log('Logout button clicked');
+    try {
+      const response = await fetch('/logout', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        localStorage.removeItem('token');
+        console.log('Token removed from localStorage');
+        window.location.href = '/login';
+      } else {
+        console.error('Logout failed:', response.status);
+        alert('Failed to log out. Please try again.');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      alert('Error during logout: ' + error.message);
+    }
+  });
 }
 
 // Settings Modal
@@ -933,36 +968,60 @@ if (uiElements.fileInput) uiElements.fileInput.addEventListener('change', previe
 if (uiElements.audioInput) uiElements.audioInput.addEventListener('change', previewFile);
 
 if (uiElements.sendBtn) {
-  uiElements.sendBtn.addEventListener('mousedown', e => {
-    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
-    startVoiceRecording();
-  });
-  uiElements.sendBtn.addEventListener('mouseup', () => isRecording && stopVoiceRecording());
-  uiElements.sendBtn.addEventListener('mouseleave', () => isRecording && stopVoiceRecording());
-  uiElements.sendBtn.addEventListener('touchstart', e => {
+  uiElements.sendBtn.addEventListener('click', (e) => {
     e.preventDefault();
     if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
-    startVoiceRecording();
+    if (uiElements.input.value.trim()) {
+      submitMessage();
+    }
   });
-  uiElements.sendBtn.addEventListener('touchend', e => {
-    e.preventDefault();
+
+  let pressTimer;
+  uiElements.sendBtn.addEventListener('mousedown', (e) => {
+    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
+    pressTimer = setTimeout(() => {
+      startVoiceRecording();
+    }, 500);
+  });
+  uiElements.sendBtn.addEventListener('mouseup', () => {
+    clearTimeout(pressTimer);
     if (isRecording) stopVoiceRecording();
   });
-  uiElements.sendBtn.addEventListener('touchcancel', e => {
+  uiElements.sendBtn.addEventListener('mouseleave', () => {
+    clearTimeout(pressTimer);
+    if (isRecording) stopVoiceRecording();
+  });
+
+  uiElements.sendBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
+    pressTimer = setTimeout(() => {
+      startVoiceRecording();
+    }, 500);
+  });
+  uiElements.sendBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    clearTimeout(pressTimer);
+    if (isRecording) stopVoiceRecording();
+  });
+  uiElements.sendBtn.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    clearTimeout(pressTimer);
     if (isRecording) stopVoiceRecording();
   });
 }
 
 if (uiElements.form) {
-  uiElements.form.addEventListener('submit', e => {
+  uiElements.form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!isRecording) submitMessage();
+    if (!isRecording && uiElements.input.value.trim()) {
+      submitMessage();
+    }
   });
 }
 
 if (uiElements.input) {
-  uiElements.input.addEventListener('keydown', e => {
+  uiElements.input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!isRecording && !uiElements.sendBtn.disabled) submitMessage();
@@ -1000,3 +1059,10 @@ if (uiElements.sidebarToggle) {
 if (uiElements.newConversationBtn) {
   uiElements.newConversationBtn.addEventListener('click', createNewConversation);
 }
+
+// Debug localStorage
+const originalRemoveItem = localStorage.removeItem;
+localStorage.removeItem = function(key) {
+  console.log('Removing from localStorage:', key);
+  originalRemoveItem.apply(this, arguments);
+};

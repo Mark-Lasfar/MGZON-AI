@@ -4,24 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="MGZon Chatbot – AI-powered assistant for code generation, web search, and e-commerce solutions by Mark Al-Asfar from Alexandria, Egypt.">
-  <meta name="keywords" content="MGZon Chatbot, AI assistant, code generation, e-commerce, Mark Al-Asfar, 
-United States, FastAPI, Gradio">
+  <meta name="keywords" content="MGZon Chatbot, AI assistant, code generation, e-commerce, Mark Al-Asfar, United States, FastAPI, Gradio">
   <meta name="author" content="Mark Al-Asfar">
   <meta name="robots" content="index, follow">
   <title>MGZon Chatbot – Powered by AI</title>
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-<!-- manifest for Android/Chrome -->
-<link rel="manifest" href="/static/manifest.json">
-
-<!-- iOS Web App Support -->
-<link rel="apple-touch-icon" sizes="180x180" href="/static/images/icons/mg-180.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="MGZon">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- General Theme -->
-<meta name="theme-color" content="#2d3748">
-
+  <!-- manifest for Android/Chrome -->
+  <link rel="manifest" href="/static/manifest.json">
+  <!-- iOS Web App Support -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/images/mg-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MGZon">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- General Theme -->
+  <meta name="theme-color" content="#2d3748">
   <!-- Open Graph -->
   <meta property="og:title" content="MGZon Chatbot – AI-Powered Solutions">
   <meta property="og:description" content="Explore MGZon Chatbot for code generation, web search, and e-commerce solutions by Mark Al-Asfar.">
@@ -34,29 +30,29 @@ United States, FastAPI, Gradio">
   <meta name="twitter:description" content="Explore MGZon Chatbot for code generation, web search, and e-commerce solutions by Mark Al-Asfar.">
   <meta name="twitter:image" content="/static/images/mg.svg">
   <!-- JSON-LD -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "MGZon Chatbot",
-  "url": "https://mgzon-mgzon-app.hf.space/",
-  "description": "MGZon Chatbot by Mark Al-Asfar: Your AI assistant for code generation, real-time web search, and e-commerce solutions.",
-  "keywords": ["MGZon Chatbot", "AI chatbot", "Code generation AI", "E-commerce AI solutions", "Mark Al-Asfar", "AI assistant for developers", "FastAPI chatbot", "Real-time web search AI", "MGZon AI", "Python AI chatbot", "AI for coding", "E-commerce automation", "Hugging Face AI", "2025 AI trends", "chatgpt", "grok", "deepseek", "text generation"],
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
-    "query-input": "required name=search_term_string"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "MGZon AI",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "/static/images/mg.svg"
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "MGZon Chatbot",
+    "url": "https://mgzon-mgzon-app.hf.space/",
+    "description": "MGZon Chatbot by Mark Al-Asfar: Your AI assistant for code generation, real-time web search, and e-commerce solutions.",
+    "keywords": ["MGZon Chatbot", "AI chatbot", "Code generation AI", "E-commerce AI solutions", "Mark Al-Asfar", "AI assistant for developers", "FastAPI chatbot", "Real-time web search AI", "MGZon AI", "Python AI chatbot", "AI for coding", "E-commerce automation", "Hugging Face AI", "2025 AI trends", "chatgpt", "grok", "deepseek", "text generation"],
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "MGZon AI",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "/static/images/mg.svg"
+      }
     }
   }
-}
-</script>
+  </script>
   <!-- Tailwind (v3) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Boxicons -->
@@ -134,8 +130,13 @@ United States, FastAPI, Gradio">
       <a href="/" class="px-4 py-2 rounded-lg bg-emerald-600">Home</a>
       <a href="/docs" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">API Documentation</a>
       <a href="/about" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">About MGZon</a>
-      <a href="/login" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Login</a>
-      <a href="/register" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Register</a>
+      {% if is_authenticated %}
+        <a href="/chat" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Chat</a>
+        <a id="logoutBtn" href="/logout" class="px-4 py-2 rounded-lg hover:bg-red-600 transition">Logout</a>
+      {% else %}
+        <a href="/login" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Login</a>
+        <a href="/register" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Register</a>
+      {% endif %}
       <a href="https://hager-zon.vercel.app/community" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Community</a>
       <a href="https://mark-elasfar.web.app/" target="_blank" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Mark Al-Asfar</a>
     </nav>
@@ -150,17 +151,15 @@ United States, FastAPI, Gradio">
           Welcome to MGZon Chatbot 🚀
         </h1>
         <p class="text-lg max-w-2xl mx-auto mb-8">
-          MGZon Chatbot is an AI-powered assistant for code generation, web search, and e-commerce solutions. Built with Gradio and FastAPI by Mark Al-Asfar from 
-United States. Ready to code smarter and shop better?
-  Discover MGZon Chatbot, an AI-powered assistant by Mark Al-Asfar for code generation, real-time web search, and e-commerce automation. Built with FastAPI and Hugging Face AI, MGZon rivals tools like ChatGPT, Grok, and DeepSeek.
+          MGZon Chatbot is an AI-powered assistant for code generation, web search, and e-commerce solutions. Built with Gradio and FastAPI by Mark Al-Asfar from United States. Ready to code smarter and shop better? Discover MGZon Chatbot, an AI-powered assistant by Mark Al-Asfar for code generation, real-time web search, and e-commerce automation. Built with FastAPI and Hugging Face AI, MGZon rivals tools like ChatGPT, Grok, and DeepSeek.
         </p>
-        {% if user %}
+        {% if is_authenticated %}
           <div class="flex justify-center gap-4">
             <a href="/chat" id="launchBtn" class="inline-flex items-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl">
               Launch Chatbot <i class="bx bx-rocket ml-2"></i>
               <span id="spinner" class="loading hidden"></span>
             </a>
-            <a href="/auth/jwt/logout" class="inline-flex items-center bg-gradient-to-r from-red-500 to-orange-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl">
+            <a id="logoutBtn" href="/logout" class="inline-flex items-center bg-gradient-to-r from-red-500 to-orange-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl">
               Logout <i class="bx bx-log-out ml-2"></i>
             </a>
           </div>
@@ -246,7 +245,7 @@ United States. Ready to code smarter and shop better?
   <!-- Footer -->
   <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 mt-8">
     <div class="container max-w-6xl mx-auto text-center">
-     <img src="/static/images/mg.svg" alt="MGZon Chatbot Logo by Mark Al-Asfar" class="w-32 h-32 mx-auto mb-6 animate-bounce">
+      <img src="/static/images/mg.svg" alt="MGZon Chatbot Logo by Mark Al-Asfar" class="w-32 h-32 mx-auto mb-6 animate-bounce">
       <p class="mb-4">
         Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
         | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
@@ -314,75 +313,132 @@ United States. Ready to code smarter and shop better?
       </div>
       <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
     </div>
-        <button id="installAppBtn" style="display: none;" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
+    <button id="installAppBtn" style="display: none;" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
       📲 Install MG Chat
     </button>
   </footer>
   <script>
+    // Sidebar toggle
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebarToggle');
     const closeSidebarBtn = document.getElementById('closeSidebar');
-    toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
-      sidebar.classList.toggle('-translate-x-full');
-      sidebar.classList.toggle('translate-x-0');
-    });
-    closeSidebarBtn.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-      sidebar.classList.add('-translate-x-full');
-      sidebar.classList.remove('translate-x-0');
-    });
+
+    if (toggleBtn && sidebar) {
+      toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+        sidebar.classList.toggle('-translate-x-full');
+        sidebar.classList.toggle('translate-x-0');
+        console.log('Sidebar toggled');
+      });
+    } else {
+      console.warn('Sidebar or toggle button not found');
+    }
+
+    if (closeSidebarBtn && sidebar) {
+      closeSidebarBtn.addEventListener('click', () => {
+        sidebar.classList.remove('active');
+        sidebar.classList.add('-translate-x-full');
+        sidebar.classList.remove('translate-x-0');
+        console.log('Sidebar closed');
+      });
+    }
+
+    // Close sidebar when clicking outside on mobile
     document.addEventListener('click', (e) => {
       if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target) && window.innerWidth < 768) {
         sidebar.classList.remove('active');
         sidebar.classList.add('-translate-x-full');
         sidebar.classList.remove('translate-x-0');
+        console.log('Sidebar closed due to outside click');
       }
     });
+
+    // Show/hide card details
     function showCardDetails(cardId) {
       document.getElementById(`${cardId}-details`).classList.remove('hidden');
     }
+
     function closeCardDetails(cardId) {
       document.getElementById(`${cardId}-details`).classList.add('hidden');
     }
+
+    // Launch button spinner
     const launchBtn = document.getElementById('launchBtn');
     const spinner = document.getElementById('spinner');
-    launchBtn.addEventListener('click', (e) => {
-      spinner.classList.remove('hidden');
-      setTimeout(() => spinner.classList.add('hidden'), 2000);
-    });
-    
-    if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/js/sw.js')
-      .then(function(reg) {
-        console.log('✅ Service Worker Registered', reg);
-      }).catch(function(err) {
-        console.error('❌ Service Worker registration failed', err);
-      });
-  }
-
-  // التعامل مع حدث beforeinstallprompt لتثبيت التطبيق
-  let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const installBtn = document.getElementById('installAppBtn');
-    if (installBtn) {
-      installBtn.style.display = 'block';
-
-      installBtn.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(choice => {
-          if (choice.outcome === 'accepted') {
-            console.log('✅ User accepted the install prompt');
-          } else {
-            console.log('❌ User dismissed the install prompt');
-          }
-          deferredPrompt = null;
-        });
+    if (launchBtn && spinner) {
+      launchBtn.addEventListener('click', (e) => {
+        spinner.classList.remove('hidden');
+        setTimeout(() => spinner.classList.add('hidden'), 2000);
       });
     }
-  });
+
+    // Logout handler
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        console.log('Logout button clicked');
+        try {
+          const response = await fetch('/logout', {
+            method: 'GET',
+            credentials: 'include'
+          });
+          if (response.ok) {
+            localStorage.removeItem('token');
+            console.log('Token removed from localStorage');
+            window.location.href = '/login';
+          } else {
+            console.error('Logout failed:', response.status);
+            alert('Failed to log out. Please try again.');
+          }
+        } catch (error) {
+          console.error('Logout error:', error);
+          alert('Error during logout: ' + error.message);
+        }
+      });
+    }
+
+    // Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/js/sw.js')
+        .then(function(reg) {
+          console.log('✅ Service Worker Registered', reg);
+        }).catch(function(err) {
+          console.error('❌ Service Worker registration failed', err);
+        });
+    }
+
+    // Handle beforeinstallprompt for PWA
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('installAppBtn');
+      if (installBtn) {
+        installBtn.style.display = 'block';
+        installBtn.addEventListener('click', () => {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(choice => {
+            if (choice.outcome === 'accepted') {
+              console.log('✅ User accepted the install prompt');
+            } else {
+              console.log('❌ User dismissed the install prompt');
+            }
+            deferredPrompt = null;
+          });
+        });
+      }
+    });
+
+    // Card animations
+    document.querySelectorAll('.glass').forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'scale(1.05) rotate(1deg)';
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'scale(1) rotate(0deg)';
+      });
+    });
   </script>
 </body>
 </html>
