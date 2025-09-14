@@ -133,12 +133,6 @@ app.include_router(api_router)
 get_auth_router(app)
 logger.debug("API and auth routers included")
 
-# Add check-auth endpoint
-@app.get("/api/check-auth")
-async def check_auth(user: User = Depends(current_active_user)):
-    logger.debug(f"Checking auth for user: {user.email if user else 'Anonymous'}")
-    return {"is_authenticated": user is not None, "email": user.email if user else None}
-
 # Add logout endpoint
 @app.get("/logout")
 async def logout(request: Request):

@@ -17,7 +17,7 @@ import os
 import logging
 import secrets
 
-from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db
+from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db  # استيراد من database.py
 from api.models import UserRead, UserCreate, UserUpdate
 
 # إعداد اللوقينج
@@ -110,10 +110,6 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             if user:
                 logger.info(f"User found: {user.email}, proceeding with on_after_login")
                 await self.on_after_login(user, request)
-                if request:
-                    request.session["user_id"] = str(user.id)
-                    response = RedirectResponse(url="/chat", status_code=302)
-                    return response
                 return user
             else:
                 logger.error(f"No user found for OAuth account with user_id: {existing_oauth_account.user_id}")
@@ -127,10 +123,6 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 await self.add_oauth_account(oauth_account)
                 logger.info(f"User associated: {user.email}, proceeding with on_after_login")
                 await self.on_after_login(user, request)
-                if request:
-                    request.session["user_id"] = str(user.id)
-                    response = RedirectResponse(url="/chat", status_code=302)
-                    return response
                 return user
 
         logger.info(f"Creating new user for email: {account_email}")
@@ -146,15 +138,13 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         await self.add_oauth_account(oauth_account)
         logger.info(f"New user created: {user.email}, proceeding with on_after_login")
         await self.on_after_login(user, request)
-        if request:
-            request.session["user_id"] = str(user.id)
-            response = RedirectResponse(url="/chat", status_code=302)
-            return response
         return user
 
+# استدعاء user manager من get_user_db
 async def get_user_manager(user_db: CustomSQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
+# OAuth Routers مع معالجة مخصصة لـ GitHub
 google_oauth_router = get_oauth_router(
     google_oauth_client,
     auth_backend,
@@ -182,6 +172,7 @@ fastapi_users = FastAPIUsers[User, int](
 
 current_active_user = fastapi_users.current_user(active=True, optional=True)
 
+# تضمين الراوترات داخل التطبيق
 def get_auth_router(app: FastAPI):
     app.include_router(google_oauth_router, prefix="/auth/google", tags=["auth"])
     app.include_router(github_oauth_router, prefix="/auth/github", tags=["auth"])
