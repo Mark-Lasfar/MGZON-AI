@@ -200,6 +200,24 @@
   const googleLoginBtn = document.getElementById('googleLoginBtn');
   const githubLoginBtn = document.getElementById('githubLoginBtn');
 
+  // Check authentication status on page load
+  async function checkAuthStatus() {
+    try {
+      const response = await fetch('/api/check-auth', {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Accept': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.is_authenticated) {
+        console.log('User is authenticated, redirecting to /chat');
+        window.location.href = '/chat';
+      }
+    } catch (error) {
+      console.error('Error checking auth status:', error);
+    }
+  }
+
   // Handle email/password login
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -294,7 +312,8 @@
 
   // Check for error query parameters on page load (for OAuth errors)
   window.addEventListener('load', () => {
-    console.log('Page loaded, checking for errors'); // Debugging
+    console.log('Page loaded, checking auth status');
+    checkAuthStatus();
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get('error');
     if (error) {

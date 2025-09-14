@@ -118,6 +118,7 @@ app.add_middleware(
         "https://mgzon-mgzon-app.hf.space",
         "http://localhost:7860",
         "http://localhost:8000",
+        "https://hager-zon.vercel.app",
         "https://mgzon-mgzon-app.hf.space/auth/google/callback",
         "https://mgzon-mgzon-app.hf.space/auth/github/callback",
     ],
@@ -131,6 +132,12 @@ logger.debug("CORS middleware configured with allowed origins")
 app.include_router(api_router)
 get_auth_router(app)
 logger.debug("API and auth routers included")
+
+# Add check-auth endpoint
+@app.get("/api/check-auth")
+async def check_auth(user: User = Depends(current_active_user)):
+    logger.debug(f"Checking auth for user: {user.email if user else 'Anonymous'}")
+    return {"is_authenticated": user is not None, "email": user.email if user else None}
 
 # Add logout endpoint
 @app.get("/logout")
