@@ -134,13 +134,13 @@ get_auth_router(app)
 logger.debug("API and auth routers included")
 
 # Add logout endpoint
-@app.get("/logout")
+@app.post("/logout")
 async def logout(request: Request):
     logger.info("User logout requested")
     session_data = request.session.copy()
     request.session.clear()
     logger.debug(f"Cleared session data: {session_data}")
-    response = RedirectResponse("/login")
+    response = RedirectResponse("/login", status_code=302)
     response.delete_cookie("access_token")
     response.delete_cookie("session")
     logger.debug("Session and access_token cookies deleted")

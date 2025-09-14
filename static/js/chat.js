@@ -39,27 +39,27 @@ const uiElements = {
     once: true,
     offset: 50,
   });
-  if (currentConversationId && checkAuth()) {
+  if(currentConversationId && checkAuth()) {
     console.log('Loading conversation with ID:', currentConversationId);
-    await loadConversation(currentConversationId);
+await loadConversation(currentConversationId);
   } else if (conversationHistory.length > 0) {
-    console.log('Restoring conversation history from sessionStorage:', conversationHistory);
-    enterChatView();
-    conversationHistory.forEach(msg => {
-      console.log('Adding message from history:', msg);
-      addMsg(msg.role, msg.content);
-    });
-  } else {
-    console.log('No conversation history or ID, starting fresh');
-  }
-  autoResizeTextarea();
-  updateSendButtonState();
-  if (uiElements.swipeHint) {
-    setTimeout(() => {
-      uiElements.swipeHint.style.display = 'none';
-    }, 3000);
-  }
-  setupTouchGestures();
+  console.log('Restoring conversation history from sessionStorage:', conversationHistory);
+  enterChatView();
+  conversationHistory.forEach(msg => {
+    console.log('Adding message from history:', msg);
+    addMsg(msg.role, msg.content);
+  });
+} else {
+  console.log('No conversation history or ID, starting fresh');
+}
+autoResizeTextarea();
+updateSendButtonState();
+if (uiElements.swipeHint) {
+  setTimeout(() => {
+    uiElements.swipeHint.style.display = 'none';
+  }, 3000);
+}
+setupTouchGestures();
 });
 
 // Check authentication token
@@ -526,6 +526,7 @@ async function createNewConversation() {
     console.error('Error creating conversation:', error);
     alert('Failed to create new conversation. Please try again.');
   }
+  if (uiElements.chatBox) uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
 }
 
 // Update conversation title
@@ -689,63 +690,20 @@ async function submitMessage() {
 
   try {
     const response = await sendRequest(endpoint, payload ? JSON.stringify(payload) : formData, headers);
+    let responseText = '';
     if (endpoint === '/api/audio-transcription') {
       const data = await response.json();
       if (!data.transcription) throw new Error('No transcription received from server');
-      const transcription = data.transcription || 'Error: No transcription generated.';
-      if (streamMsg) {
-        streamMsg.dataset.text = transcription;
-        renderMarkdown(streamMsg);
-        streamMsg.dataset.done = '1';
-      }
-      conversationHistory.push({ role: 'assistant', content: transcription });
-      sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
-      if (checkAuth() && currentConversationId) {
-        await saveMessageToConversation(currentConversationId, 'assistant', transcription);
-      }
-      if (checkAuth() && data.conversation_id) {
-        currentConversationId = data.conversation_id;
-        currentConversationTitle = data.conversation_title || 'Untitled Conversation';
-        if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
-        history.pushState(null, '', `/chat/${currentConversationId}`);
-        await loadConversations();
-      }
+      responseText = data.transcription || 'Error: No transcription generated.';
     } else if (endpoint === '/api/image-analysis') {
       const data = await response.json();
-      const analysis = data.image_analysis || 'Error: No analysis generated.';
-      if (streamMsg) {
-        streamMsg.dataset.text = analysis;
-        renderMarkdown(streamMsg);
-        streamMsg.dataset.done = '1';
-      }
-      conversationHistory.push({ role: 'assistant', content: analysis });
-      sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
-      if (checkAuth() && currentConversationId) {
-        await saveMessageToConversation(currentConversationId, 'assistant', analysis);
-      }
-      if (checkAuth() && data.conversation_id) {
-        currentConversationId = data.conversation_id;
-        currentConversationTitle = data.conversation_title || 'Untitled Conversation';
-        if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
-        history.pushState(null, '', `/chat/${currentConversationId}`);
-        await loadConversations();
-      }
+      responseText = data.image_analysis || 'Error: No analysis generated.';
     } else {
       const contentType = response.headers.get('Content-Type');
       if (contentType?.includes('application/json')) {
         const data = await response.json();
-        const responseText = data.response || 'Error: No response generated.';
-        if (streamMsg) {
-          streamMsg.dataset.text = responseText;
-          renderMarkdown(streamMsg);
-          streamMsg.dataset.done = '1';
-        }
-        conversationHistory.push({ role: 'assistant', content: responseText });
-        sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
-        if (checkAuth() && currentConversationId) {
-          await saveMessageToConversation(currentConversationId, 'assistant', responseText);
-        }
-        if (checkAuth() && data.conversation_id) {
+        responseText = data.response || 'Error: No response generated.';
+        if (data.conversation_id) {
           currentConversationId = data.conversation_id;
           currentConversationTitle = data.conversation_title || 'Untitled Conversation';
           if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
@@ -771,13 +729,22 @@ async function submitMessage() {
             if (uiElements.chatBox) uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
           }
         }
-        if (streamMsg) streamMsg.dataset.done = '1';
-        conversationHistory.push({ role: 'assistant', content: buffer });
-        sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
-        if (checkAuth() && currentConversationId) {
-          await saveMessageToConversation(currentConversationId, 'assistant', buffer);
-        }
+        responseText = buffer;
       }
+    }
+
+    if (streamMsg) {
+      streamMsg.dataset.text = responseText;
+      renderMarkdown(streamMsg);
+      streamMsg.dataset.done = '1';
+    }
+    conversationHistory.push({ role: 'assistant', content: responseText });
+    sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+    if (checkAuth() && currentConversationId) {
+      await saveMessageToConversation(currentConversationId, 'assistant', responseText);
+    }
+    if (checkAuth()) {
+      await loadConversations(); // تحديث السايدبار
     }
     finalizeRequest();
   } catch (error) {
@@ -807,13 +774,13 @@ function stopStream(forceCancel = false) {
 }
 
 // Logout handler
-const logoutBtn = document.getElementById('logoutBtn');
+const logoutBtn = document.querySelector('#logoutBtn');
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async () => {
     console.log('Logout button clicked');
     try {
       const response = await fetch('/logout', {
-        method: 'GET',
+        method: 'POST',
         credentials: 'include'
       });
       if (response.ok) {
@@ -831,59 +798,60 @@ if (logoutBtn) {
   });
 }
 
+
+
 // Settings Modal
 if (uiElements.settingsBtn) {
-  uiElements.settingsBtn.addEventListener('click', () => {
+  uiElements.settingsBtn.addEventListener('click', async () => {
     if (!checkAuth()) {
       alert('Please log in to access settings.');
       window.location.href = '/login';
       return;
     }
-    uiElements.settingsModal.classList.remove('hidden');
-    fetch('/api/settings', {
-      headers: { 'Authorization': `Bearer ${checkAuth()}` }
-    })
-      .then(res => {
-        if (!res.ok) {
-          if (res.status === 401) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-          }
-          throw new Error('Failed to fetch settings');
-        }
-        return res.json();
-      })
-      .then(data => {
-        document.getElementById('display_name').value = data.user_settings.display_name || '';
-        document.getElementById('preferred_model').value = data.user_settings.preferred_model || 'standard';
-        document.getElementById('job_title').value = data.user_settings.job_title || '';
-        document.getElementById('education').value = data.user_settings.education || '';
-        document.getElementById('interests').value = data.user_settings.interests || '';
-        document.getElementById('additional_info').value = data.user_settings.additional_info || '';
-        document.getElementById('conversation_style').value = data.user_settings.conversation_style || 'default';
-
-        const modelSelect = document.getElementById('preferred_model');
-        modelSelect.innerHTML = '';
-        data.available_models.forEach(model => {
-          const option = document.createElement('option');
-          option.value = model.alias;
-          option.textContent = `${model.alias} - ${model.description}`;
-          modelSelect.appendChild(option);
-        });
-
-        const styleSelect = document.getElementById('conversation_style');
-        styleSelect.innerHTML = '';
-        data.conversation_styles.forEach(style => {
-          const option = document.createElement('option');
-          option.value = style;
-          option.textContent = style.charAt(0).toUpperCase() + style.slice(1);
-          styleSelect.appendChild(option);
-        });
-      })
-      .catch(err => {
-        console.error('Error fetching settings:', err);
-        alert('Failed to load settings. Please try again.');
+    try {
+      const response = await fetch('/api/settings', {
+        headers: { 'Authorization': `Bearer ${checkAuth()}` }
       });
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+        throw new Error('Failed to fetch settings');
+      }
+      const data = await response.json();
+      document.getElementById('display_name').value = data.user_settings.display_name || '';
+      document.getElementById('preferred_model').value = data.user_settings.preferred_model || 'standard';
+      document.getElementById('job_title').value = data.user_settings.job_title || '';
+      document.getElementById('education').value = data.user_settings.education || '';
+      document.getElementById('interests').value = data.user_settings.interests || '';
+      document.getElementById('additional_info').value = data.user_settings.additional_info || '';
+      document.getElementById('conversation_style').value = data.user_settings.conversation_style || 'default';
+
+      const modelSelect = document.getElementById('preferred_model');
+      modelSelect.innerHTML = '';
+      data.available_models.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model.alias;
+        option.textContent = `${model.alias} - ${model.description}`;
+        modelSelect.appendChild(option);
+      });
+
+      const styleSelect = document.getElementById('conversation_style');
+      styleSelect.innerHTML = '';
+      data.conversation_styles.forEach(style => {
+        const option = document.createElement('option');
+        option.value = style;
+        option.textContent = style.charAt(0).toUpperCase() + style.slice(1);
+        styleSelect.appendChild(option);
+      });
+
+      uiElements.settingsModal.classList.remove('hidden');
+      toggleSidebar(false);
+    } catch (err) {
+      console.error('Error fetching settings:', err);
+      alert('Failed to load settings. Please try again.');
+    }
   });
 }
 
@@ -905,7 +873,7 @@ if (uiElements.settingsForm) {
     const data = Object.fromEntries(formData);
     fetch('/users/me', {
       method: 'PUT',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${checkAuth()}`
       },
@@ -1062,7 +1030,7 @@ if (uiElements.newConversationBtn) {
 
 // Debug localStorage
 const originalRemoveItem = localStorage.removeItem;
-localStorage.removeItem = function(key) {
+localStorage.removeItem = function (key) {
   console.log('Removing from localStorage:', key);
   originalRemoveItem.apply(this, arguments);
 };

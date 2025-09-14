@@ -12,12 +12,13 @@ from fastapi import Depends, Request, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi_users.models import UP
-from typing import Optional, Dict
+from typing import Optional
 import os
 import logging
 import secrets
+from fastapi.responses import RedirectResponse
 
-from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db  # استيراد من database.py
+from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db
 from api.models import UserRead, UserCreate, UserUpdate
 
 # إعداد اللوقينج
@@ -110,7 +111,8 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             if user:
                 logger.info(f"User found: {user.email}, proceeding with on_after_login")
                 await self.on_after_login(user, request)
-                return user
+                logger.info(f"Redirecting user {user.email} to /chat")
+                return RedirectResponse(url="/chat", status_code=302)
             else:
                 logger.error(f"No user found for OAuth account with user_id: {existing_oauth_account.user_id}")
                 raise ValueError("User not found for existing OAuth account")
@@ -123,7 +125,8 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 await self.add_oauth_account(oauth_account)
                 logger.info(f"User associated: {user.email}, proceeding with on_after_login")
                 await self.on_after_login(user, request)
-                return user
+                logger.info(f"Redirecting user {user.email} to /chat")
+                return RedirectResponse(url="/chat", status_code=302)
 
         logger.info(f"Creating new user for email: {account_email}")
         user_dict = {
@@ -138,7 +141,8 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         await self.add_oauth_account(oauth_account)
         logger.info(f"New user created: {user.email}, proceeding with on_after_login")
         await self.on_after_login(user, request)
-        return user
+        logger.info(f"Redirecting new user {user.email} to /chat")
+        return RedirectResponse(url="/chat", status_code=302)
 
 # استدعاء user manager من get_user_db
 async def get_user_manager(user_db: CustomSQLAlchemyUserDatabase = Depends(get_user_db)):

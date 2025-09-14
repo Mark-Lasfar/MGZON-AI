@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools. Sign in with email, Google, or GitHub.">
+  <meta name="description"
+    content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools. Sign in with email, Google, or GitHub.">
   <meta name="keywords" content="MGZon Chatbot, login, AI assistant, code generation, e-commerce, Mark Al-Asfar">
   <meta name="author" content="Mark Al-Asfar">
   <meta name="robots" content="index, follow">
@@ -20,14 +22,16 @@
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
   <!-- Open Graph -->
   <meta property="og:title" content="Login - MGZon Chatbot">
-  <meta property="og:description" content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools.">
+  <meta property="og:description"
+    content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools.">
   <meta property="og:image" content="/static/images/mg.svg">
   <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/login">
   <meta property="og:type" content="website">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Login - MGZon Chatbot">
-  <meta name="twitter:description" content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools.">
+  <meta name="twitter:description"
+    content="Login to MGZon Chatbot to access AI-powered code generation and e-commerce tools.">
   <meta name="twitter:image" content="/static/images/mg.svg">
   <!-- JSON-LD -->
   <script type="application/ld+json">
@@ -51,16 +55,26 @@
   <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <style>
     @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
     }
+
     body {
       background: linear-gradient(135deg, #0f172a, #0e7490, #065f46, #064e3b);
       background-size: 400% 400%;
       animation: gradientShift 15s ease infinite;
       font-family: system-ui, sans-serif;
     }
+
     .glass {
       background: rgba(255, 255, 255, 0.07);
       border-radius: 1rem;
@@ -68,6 +82,7 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
+
     .loading {
       display: inline-block;
       width: 1rem;
@@ -78,9 +93,13 @@
       animation: spin 0.8s linear infinite;
       margin-left: 0.5rem;
     }
+
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
+
     .glass:hover {
       transform: scale(1.05);
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
@@ -88,6 +107,7 @@
     }
   </style>
 </head>
+
 <body class="text-white min-h-screen flex flex-col justify-center items-center">
   <div class="container max-w-md mx-auto text-center py-12">
     <img src="/static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
@@ -96,22 +116,30 @@
     </h1>
     <div class="glass p-8">
       <form id="loginForm" action="/auth/jwt/login" method="POST" class="flex flex-col gap-4">
-        <input type="email" name="username" id="email" placeholder="Email" class="p-3 rounded-lg bg-gray-800/60 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-        <input type="password" name="password" id="password" placeholder="Password" class="p-3 rounded-lg bg-gray-800/60 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-        <button type="submit" id="loginBtn" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+        <input type="email" name="username" id="email" placeholder="Email"
+          class="p-3 rounded-lg bg-gray-800/60 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          required>
+        <input type="password" name="password" id="password" placeholder="Password"
+          class="p-3 rounded-lg bg-gray-800/60 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          required>
+        <button type="submit" id="loginBtn"
+          class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
           Login <i class="bx bx-log-in ml-2"></i>
           <span id="spinner" class="loading hidden"></span>
         </button>
       </form>
       <div class="flex justify-center gap-4 mt-4 flex-wrap">
-        <button id="googleLoginBtn" class="inline-flex items-center bg-gradient-to-r from-white to-gray-200 text-gray-800 px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+        <button id="googleLoginBtn"
+          class="inline-flex items-center bg-gradient-to-r from-white to-gray-200 text-gray-800 px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
           Login with Google <i class="bx bxl-google ml-2"></i>
         </button>
-        <button id="githubLoginBtn" class="inline-flex items-center bg-gradient-to-r from-gray-800 to-black text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
+        <button id="githubLoginBtn"
+          class="inline-flex items-center bg-gradient-to-r from-gray-800 to-black text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition-transform">
           Login with GitHub <i class="bx bxl-github ml-2"></i>
         </button>
       </div>
-      <p class="mt-4">Don't have an account? <a href="/register" class="text-emerald-300 hover:underline">Register</a></p>
+      <p class="mt-4">Don't have an account? <a href="/register" class="text-emerald-300 hover:underline">Register</a>
+      </p>
       <p id="errorMsg" class="text-red-500 mt-4 hidden"></p>
     </div>
   </div>
@@ -119,8 +147,10 @@
     <div class="container max-w-6xl mx-auto text-center">
       <img src="/static/images/mg.svg" alt="MGZon Logo" class="w-24 h-24 mx-auto mb-6 animate-pulse">
       <p class="mb-4">
-        Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
-        | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
+        Developed by <a href="https://mark-elasfar.web.app/" target="_blank"
+          class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
+        | Powered by <a href="https://hager-zon.vercel.app/" target="_blank"
+          class="text-emerald-300 hover:underline">MGZon AI</a>
       </p>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('email')">
@@ -129,7 +159,8 @@
           <p><a href="mailto:support@mgzon.com" class="text-emerald-300 hover:underline">support@mgzon.com</a></p>
           <div id="email-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Reach out to our support team for any inquiries or assistance.</p>
-            <button onclick="closeCardDetails('email')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+            <button onclick="closeCardDetails('email')"
+              class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
           </div>
         </div>
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('phone')">
@@ -138,7 +169,8 @@
           <p>+1-800-123-4567</p>
           <div id="phone-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Contact our support team via phone for immediate assistance.</p>
-            <button onclick="closeCardDetails('phone')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+            <button onclick="closeCardDetails('phone')"
+              class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
           </div>
         </div>
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('community')">
@@ -147,7 +179,8 @@
           <p><a href="https://hager-zon.vercel.app/community" class="text-emerald-300 hover:underline">Join us</a></p>
           <div id="community-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Join our vibrant community to share ideas and collaborate.</p>
-            <button onclick="closeCardDetails('community')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+            <button onclick="closeCardDetails('community')"
+              class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
           </div>
         </div>
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('api-docs')">
@@ -156,16 +189,19 @@
           <p><a href="/docs" class="text-emerald-300 hover:underline">Explore Docs</a></p>
           <div id="api-docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Explore our API documentation for seamless integration.</p>
-            <button onclick="closeCardDetails('api-docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+            <button onclick="closeCardDetails('api-docs')"
+              class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
           </div>
         </div>
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('faq')">
           <i class="bx bx-help-circle text-3xl text-emerald-300 mb-2"></i>
           <h4 class="font-semibold mb-1">FAQ</h4>
-          <p><a href="https://hager-zon.vercel.app/faq" target="_blank" class="text-emerald-300 hover:underline">Read FAQ</a></p>
+          <p><a href="https://hager-zon.vercel.app/faq" target="_blank" class="text-emerald-300 hover:underline">Read
+              FAQ</a></p>
           <div id="faq-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Find answers to common questions in our FAQ section.</p>
-            <button onclick="closeCardDetails('faq')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+            <button onclick="closeCardDetails('faq')"
+              class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
           </div>
         </div>
         <div class="glass p-4 cursor-pointer" onclick="showCardDetails('docs')">
@@ -174,198 +210,203 @@
           <p><a href="/docs" class="text-emerald-300 hover:underline">Full Docs</a></p>
           <div id="docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
             <p>Access comprehensive documentation for MGZon Chatbot.</p>
-            <button onclick="closeCardDetails('docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
+            <button onclick="closeCardDetails('docs')"
+              class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
           </div>
         </div>
       </div>
       <div class="flex justify-center gap-6 mt-6">
-        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-github"></i></a>
-        <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-twitter"></i></a>
-        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-facebook"></i></a>
+        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i
+            class="bx bxl-github"></i></a>
+        <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i
+            class="bx bxl-twitter"></i></a>
+        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/"
+          class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-facebook"></i></a>
       </div>
       <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
     </div>
-    <button id="installAppBtn" style="display: none;" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
+    <button id="installAppBtn" style="display: none;"
+      class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
       📲 Install MG Chat
     </button>
   </footer>
-  
+
   <script>
-  console.log('Login page script loaded'); // Debugging: Ensure script is running
+    console.log('Login page script loaded'); // Debugging: Ensure script is running
 
-  const loginForm = document.getElementById('loginForm');
-  const loginBtn = document.getElementById('loginBtn');
-  const spinner = document.getElementById('spinner');
-  const errorMsg = document.getElementById('errorMsg');
-  const googleLoginBtn = document.getElementById('googleLoginBtn');
-  const githubLoginBtn = document.getElementById('githubLoginBtn');
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const spinner = document.getElementById('spinner');
+    const errorMsg = document.getElementById('errorMsg');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const githubLoginBtn = document.getElementById('githubLoginBtn');
 
-  // Check authentication status on page load
-  async function checkAuthStatus() {
-    try {
-      const response = await fetch('/api/check-auth', {
-        method: 'GET',
-        credentials: 'include',
-        headers: { 'Accept': 'application/json' }
-      });
-      const data = await response.json();
-      if (data.is_authenticated) {
-        console.log('User is authenticated, redirecting to /chat');
-        window.location.href = '/chat';
-      }
-    } catch (error) {
-      console.error('Error checking auth status:', error);
-    }
-  }
-
-  // Handle email/password login
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    console.log('Login form submitted'); // Debugging
-    spinner.classList.remove('hidden');
-    errorMsg.classList.add('hidden');
-    const formData = new FormData(loginForm);
-    try {
-      const response = await fetch('/auth/jwt/login', {
-        method: 'POST',
-        body: formData
-      });
-      spinner.classList.add('hidden');
-      if (response.ok) {
-        console.log('Login successful, redirecting to /chat'); // Debugging
-        window.location.href = '/chat';
-      } else {
-        const error = await response.json();
-        errorMsg.textContent = error.detail || 'Login failed. Please try again.';
-        errorMsg.classList.remove('hidden');
-        console.error('Login failed:', error); // Debugging
-      }
-    } catch (error) {
-      spinner.classList.add('hidden');
-      errorMsg.textContent = 'An error occurred. Please try again.';
-      errorMsg.classList.remove('hidden');
-      console.error('Error during login:', error); // Debugging
-    }
-  });
-
-  // Handle Google OAuth login
-  googleLoginBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    console.log('Google login button clicked'); // Debugging
-    spinner.classList.remove('hidden');
-    errorMsg.classList.add('hidden');
-    try {
-      const response = await fetch('https://mgzon-mgzon-app.hf.space/auth/google/authorize', {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      console.log('Google authorize response:', response); // Debugging
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log('Google authorize data:', data); // Debugging
-      if (data.authorization_url) {
-        console.log('Redirecting to Google:', data.authorization_url); // Debugging
-        window.location.href = data.authorization_url;
-      } else {
-        throw new Error('No authorization URL received');
-      }
-    } catch (error) {
-      spinner.classList.add('hidden');
-      errorMsg.textContent = 'Failed to initiate Google login. Please try again.';
-      errorMsg.classList.remove('hidden');
-      console.error('Error initiating Google login:', error); // Debugging
-    }
-  });
-
-  // Handle GitHub OAuth login
-  githubLoginBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    console.log('GitHub login button clicked'); // Debugging
-    spinner.classList.remove('hidden');
-    errorMsg.classList.add('hidden');
-    try {
-      const response = await fetch('https://mgzon-mgzon-app.hf.space/auth/github/authorize', {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      console.log('GitHub authorize response:', response); // Debugging
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log('GitHub authorize data:', data); // Debugging
-      if (data.authorization_url) {
-        console.log('Redirecting to GitHub:', data.authorization_url); // Debugging
-        window.location.href = data.authorization_url;
-      } else {
-        throw new Error('No authorization URL received');
-      }
-    } catch (error) {
-      spinner.classList.add('hidden');
-      errorMsg.textContent = 'Failed to initiate GitHub login. Please try again.';
-      errorMsg.classList.remove('hidden');
-      console.error('Error initiating GitHub login:', error); // Debugging
-    }
-  });
-
-  // Check for error query parameters on page load (for OAuth errors)
-  window.addEventListener('load', () => {
-    console.log('Page loaded, checking auth status');
-    checkAuthStatus();
-    const urlParams = new URLSearchParams(window.location.search);
-    const error = urlParams.get('error');
-    if (error) {
-      errorMsg.textContent = decodeURIComponent(error);
-      errorMsg.classList.remove('hidden');
-      console.error('OAuth error from URL:', error); // Debugging
-    }
-  });
-
-  // Handle card details toggle
-  function showCardDetails(cardId) {
-    console.log('Showing card details:', cardId); // Debugging
-    document.getElementById(`${cardId}-details`).classList.remove('hidden');
-  }
-
-  function closeCardDetails(cardId) {
-    console.log('Closing card details:', cardId); // Debugging
-    document.getElementById(`${cardId}-details`).classList.add('hidden');
-  }
-
-  // Service Worker for PWA
-  if ('serviceWorker' in navigator) {
-    console.log('Registering service worker'); // Debugging
-    navigator.serviceWorker.register('/static/js/sw.js')
-      .then(reg => console.log('✅ Service Worker Registered', reg))
-      .catch(err => console.error('❌ Service Worker registration failed', err));
-  }
-
-  // Handle PWA install prompt
-  let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    console.log('Before install prompt triggered'); // Debugging
-    e.preventDefault();
-    deferredPrompt = e;
-    const installBtn = document.getElementById('installAppBtn');
-    if (installBtn) {
-      installBtn.style.display = 'block';
-      installBtn.addEventListener('click', () => {
-        console.log('Install button clicked'); // Debugging
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(choice => {
-          if (choice.outcome === 'accepted') {
-            console.log('✅ User accepted the install prompt');
-          } else {
-            console.log('❌ User dismissed the install prompt');
-          }
-          deferredPrompt = null;
+    // Check authentication status on page load
+    async function checkAuthStatus() {
+      try {
+        const response = await fetch('/api/check-auth', {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Accept': 'application/json' }
         });
-      });
+        const data = await response.json();
+        if (data.is_authenticated) {
+          console.log('User is authenticated, redirecting to /chat');
+          window.location.href = '/chat';
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      }
     }
-  });
-</script>
-  
+
+    // Handle email/password login
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      console.log('Login form submitted'); // Debugging
+      spinner.classList.remove('hidden');
+      errorMsg.classList.add('hidden');
+      const formData = new FormData(loginForm);
+      try {
+        const response = await fetch('/auth/jwt/login', {
+          method: 'POST',
+          body: formData
+        });
+        spinner.classList.add('hidden');
+        if (response.ok) {
+          console.log('Login successful, redirecting to /chat'); // Debugging
+          window.location.href = '/chat';
+        } else {
+          const error = await response.json();
+          errorMsg.textContent = error.detail || 'Login failed. Please try again.';
+          errorMsg.classList.remove('hidden');
+          console.error('Login failed:', error); // Debugging
+        }
+      } catch (error) {
+        spinner.classList.add('hidden');
+        errorMsg.textContent = 'An error occurred. Please try again.';
+        errorMsg.classList.remove('hidden');
+        console.error('Error during login:', error); // Debugging
+      }
+    });
+
+    // Handle Google OAuth login
+    googleLoginBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      console.log('Google login button clicked');
+      spinner.classList.remove('hidden');
+      errorMsg.classList.add('hidden');
+      try {
+        const response = await fetch('https://mgzon-mgzon-app.hf.space/auth/google/authorize', {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.authorization_url) {
+          console.log('Redirecting to Google:', data.authorization_url);
+          window.location.href = data.authorization_url;
+        } else {
+          throw new Error('No authorization URL received');
+        }
+      } catch (error) {
+        spinner.classList.add('hidden');
+        errorMsg.textContent = 'Failed to initiate Google login. Please try again.';
+        errorMsg.classList.remove('hidden');
+        console.error('Error initiating Google login:', error);
+      }
+    });
+
+    // Handle GitHub OAuth login
+    githubLoginBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      console.log('GitHub login button clicked');
+      spinner.classList.remove('hidden');
+      errorMsg.classList.add('hidden');
+      try {
+        const response = await fetch('https://mgzon-mgzon-app.hf.space/auth/github/authorize', {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.authorization_url) {
+          console.log('Redirecting to GitHub:', data.authorization_url);
+          window.location.href = data.authorization_url;
+        } else {
+          throw new Error('No authorization URL received');
+        }
+      } catch (error) {
+        spinner.classList.add('hidden');
+        errorMsg.textContent = 'Failed to initiate GitHub login. Please try again.';
+        errorMsg.classList.remove('hidden');
+        console.error('Error initiating GitHub login:', error);
+      }
+    });
+
+    // Check for error query parameters on page load (for OAuth errors)
+    window.addEventListener('load', () => {
+      console.log('Page loaded, checking for OAuth callback');
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get('error');
+      if (error) {
+        errorMsg.textContent = decodeURIComponent(error);
+        errorMsg.classList.remove('hidden');
+        console.error('OAuth error from URL:', error);
+      } else if (urlParams.get('code')) {
+        // If there's a 'code' parameter, it means OAuth login was successful
+        console.log('OAuth login successful, redirecting to /chat');
+        window.location.href = '/chat';
+      }
+    });
+
+    // Handle card details toggle
+    function showCardDetails(cardId) {
+      console.log('Showing card details:', cardId); // Debugging
+      document.getElementById(`${cardId}-details`).classList.remove('hidden');
+    }
+
+    function closeCardDetails(cardId) {
+      console.log('Closing card details:', cardId); // Debugging
+      document.getElementById(`${cardId}-details`).classList.add('hidden');
+    }
+
+    // Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      console.log('Registering service worker'); // Debugging
+      navigator.serviceWorker.register('/static/js/sw.js')
+        .then(reg => console.log('✅ Service Worker Registered', reg))
+        .catch(err => console.error('❌ Service Worker registration failed', err));
+    }
+
+    // Handle PWA install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('Before install prompt triggered'); // Debugging
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('installAppBtn');
+      if (installBtn) {
+        installBtn.style.display = 'block';
+        installBtn.addEventListener('click', () => {
+          console.log('Install button clicked'); // Debugging
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(choice => {
+            if (choice.outcome === 'accepted') {
+              console.log('✅ User accepted the install prompt');
+            } else {
+              console.log('❌ User dismissed the install prompt');
+            }
+            deferredPrompt = null;
+          });
+        });
+      }
+    });
+  </script>
+
 </body>
+
 </html>
