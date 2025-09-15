@@ -7,51 +7,105 @@
   "background_color": "#1a202c",
   "theme_color": "#2d3748",
   "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "utilities", "business"],
+  "shortcuts": [
+    {
+      "name": "New Chat",
+      "short_name": "Chat",
+      "description": "Start a new conversation",
+      "url": "/chat",
+      "icons": [
+        {
+          "src": "/static/images/mg.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "short_name": "Settings",
+      "description": "Open settings",
+      "url": "/chat?settings=open",
+      "icons": [
+        {
+          "src": "/static/images/settings-icon.svg",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "splash_screens": [
+    {
+      "src": "/static/images/splash-screen.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "background_color": "#1a202c",
+      "position": "center"
+    },
+    {
+      "src": "/static/images/splash-screen-750x1334.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "background_color": "#1a202c",
+      "position": "center"
+    }
+  ],
   "icons": [
     {
       "src": "/static/images/mg.svg",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/icons/mg-48.png",
       "sizes": "48x48",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/icons/mg-72.png",
       "sizes": "72x72",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/icons/mg-96.png",
       "sizes": "96x96",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/icons/mg-128.png",
       "sizes": "128x128",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/icons/mg-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/icons/mg-256.png",
       "sizes": "256x256",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/icons/mg-384.png",
       "sizes": "384x384",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/icons/mg-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

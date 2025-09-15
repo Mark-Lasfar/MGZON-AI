@@ -1,146 +1,94 @@
-# api/database.py
+# init_db.py
 # SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
 # SPDX-License-License: Apache-2.0
 
 import os
 import logging
-from datetime import datetime
-from typing import AsyncGenerator, Optional, Dict, Any
-
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, Text, select
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-from fastapi import Depends
-from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
-import aiosqlite
+import asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
+from api.database import async_engine, Base, User, OAuthAccount, Conversation, Message, AsyncSessionLocal
+from passlib.context import CryptContext
 
 # إعداد اللوج
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# استخدم القيمة مباشرة إذا لم يكن هناك متغير بيئة
-SQLALCHEMY_DATABASE_URL = os.environ.get(
-    "SQLALCHEMY_DATABASE_URL"
-) or "sqlite+aiosqlite:///./data/mgzon_users.db"
+# إعداد تشفير كلمة المرور
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# تأكد أن الدرايفر async
-if "aiosqlite" not in SQLALCHEMY_DATABASE_URL:
-    raise ValueError("Database URL must use 'sqlite+aiosqlite' for async support")
-
-# إنشاء محرك async
-async_engine = create_async_engine(
-    SQLALCHEMY_DATABASE_URL,
-    echo=True,
-    connect_args={"check_same_thread": False}
-)
-
-# إعداد الجلسة async
-AsyncSessionLocal = async_sessionmaker(
-    async_engine,
-    expire_on_commit=False,
-    class_=AsyncSession
-)
-
-# القاعدة الأساسية للنماذج
-Base = declarative_base()
-
-# النماذج (Models)
-class OAuthAccount(Base):
-    __tablename__ = "oauth_account"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    oauth_name = Column(String, nullable=False)
-    access_token = Column(String, nullable=False)
-    expires_at = Column(Integer, nullable=True)
-    refresh_token = Column(String, nullable=True)
-    account_id = Column(String, index=True, nullable=False)
-    account_email = Column(String, nullable=False)
-
-    user = relationship("User", back_populates="oauth_accounts", lazy="selectin")
-
-class User(SQLAlchemyBaseUserTable[int], Base):
-    __tablename__ = "user"
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
-    is_superuser = Column(Boolean, default=False)
-    is_verified = Column(Boolean, default=False)
-    display_name = Column(String, nullable=True)
-    preferred_model = Column(String, nullable=True)
-    job_title = Column(String, nullable=True)
-    education = Column(String, nullable=True)
-    interests = Column(String, nullable=True)
-    additional_info = Column(Text, nullable=True)
-    conversation_style = Column(String, nullable=True)
-
-    oauth_accounts = relationship("OAuthAccount", back_populates="user", cascade="all, delete-orphan")
-    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
-
-class Conversation(Base):
-    __tablename__ = "conversation"
-    id = Column(Integer, primary_key=True, index=True)
-    conversation_id = Column(String, unique=True, index=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    title = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    user = relationship("User", back_populates="conversations")
-    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
-
-class Message(Base):
-    __tablename__ = "message"
-    id = Column(Integer, primary_key=True, index=True)
-    conversation_id = Column(Integer, ForeignKey("conversation.id"), nullable=False)
-    role = Column(String, nullable=False)
-    content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    conversation = relationship("Conversation", back_populates="messages")
-
-# قاعدة بيانات المستخدم المخصصة (نقلناها من user_db.py)
-class CustomSQLAlchemyUserDatabase(SQLAlchemyUserDatabase[User, int]):
-    """
-    قاعدة بيانات مخصَّصة لمكتبة fastapi-users.
-    تضيف طريقة parse_id التي تُحوِّل الـ ID من str → int.
-    """
-    def parse_id(self, value: Any) -> int:
-        logger.debug(f"Parsing user id: {value} (type={type(value)})")
-        return int(value) if isinstance(value, str) else value
-
-    async def get_by_email(self, email: str) -> Optional[User]:
-        logger.info(f"Looking for user with email: {email}")
-        stmt = select(self.user_table).where(self.user_table.email == email)
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
-
-    async def create(self, create_dict: Dict[str, Any]) -> User:
-        logger.info(f"Creating new user: {create_dict.get('email')}")
-        user = self.user_table(**create_dict)
-        self.session.add(user)
-        await self.session.commit()
-        await self.session.refresh(user)
-        return user
-
-# دالة لجلب الجلسة async
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
-
-# دالة لجلب قاعدة بيانات المستخدمين لـ fastapi-users
-async def get_user_db(session: AsyncSession = Depends(get_db)) -> AsyncGenerator[CustomSQLAlchemyUserDatabase, None]:
-    yield CustomSQLAlchemyUserDatabase(session, User, OAuthAccount)
-
-# دالة لإنشاء الجداول
 async def init_db():
+    logger.info("Starting database initialization...")
+
+    # إنشاء الجداول
     try:
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables created successfully")
+        logger.info("Database tables created successfully.")
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
+        raise
+
+    # تنظيف البيانات غير المتسقة
+    async with AsyncSessionLocal() as session:
+        try:
+            # حذف سجلات oauth_accounts اللي مش مرتبطة بمستخدم موجود
+            stmt = delete(OAuthAccount).where(
+                OAuthAccount.user_id.notin_(select(User.id))
+            )
+            result = await session.execute(stmt)
+            deleted_count = result.rowcount
+            await session.commit()
+            logger.info(f"Deleted {deleted_count} orphaned OAuth accounts.")
+
+            # التأكد من إن كل المستخدمين ليهم is_active=True
+            users = (await session.execute(select(User))).scalars().all()
+            for user in users:
+                if not user.is_active:
+                    user.is_active = True
+                    logger.info(f"Updated user {user.email} to is_active=True")
+            await session.commit()
+
+            # اختبار إنشاء مستخدم ومحادثة (اختياري)
+            test_user = (await session.execute(
+                select(User).filter_by(email="test@example.com")
+            )).scalar_one_or_none()
+            if not test_user:
+                test_user = User(
+                    email="test@example.com",
+                    hashed_password=pwd_context.hash("testpassword123"),
+                    is_active=True,
+                    display_name="Test User"
+                )
+                session.add(test_user)
+                await session.commit()
+                logger.info("Test user created successfully.")
+
+            test_conversation = (await session.execute(
+                select(Conversation).filter_by(user_id=test_user.id)
+            )).scalar_one_or_none()
+            if not test_conversation:
+                test_conversation = Conversation(
+                    conversation_id="test-conversation-1",
+                    user_id=test_user.id,
+                    title="Test Conversation"
+                )
+                session.add(test_conversation)
+                await session.commit()
+                logger.info("Test conversation created successfully.")
+
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"Error during initialization: {e}")
+            raise
+        finally:
+            await session.close()
+
+    logger.info("Database initialization completed.")
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(init_db())
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
         raise

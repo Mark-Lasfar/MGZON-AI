@@ -16,8 +16,9 @@ from typing import Optional, Dict
 import os
 import logging
 import secrets
+from fastapi.responses import RedirectResponse
 
-from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db  # استيراد من database.py
+from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db
 from api.models import UserRead, UserCreate, UserUpdate
 
 # إعداد اللوقينج
@@ -151,7 +152,7 @@ google_oauth_router = get_oauth_router(
     get_user_manager,
     state_secret=SECRET,
     associate_by_email=True,
-    redirect_url=GOOGLE_REDIRECT_URL,
+    redirect_url="https://mgzon-mgzon-app.hf.space/chat",  # تعديل الـ redirect_url ليحوّل مباشرة إلى /chat
 )
 
 github_oauth_client._access_token_url = "https://github.com/login/oauth/access_token"
@@ -162,7 +163,7 @@ github_oauth_router = get_oauth_router(
     get_user_manager,
     state_secret=SECRET,
     associate_by_email=True,
-    redirect_url=GITHUB_REDIRECT_URL,
+    redirect_url="https://mgzon-mgzon-app.hf.space/chat",  # تعديل الـ redirect_url ليحوّل مباشرة إلى /chat
 )
 
 fastapi_users = FastAPIUsers[User, int](

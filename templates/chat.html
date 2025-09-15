@@ -95,6 +95,11 @@
   <link rel="stylesheet" href="/static/css/style.css" />
   <link rel="stylesheet" href="/static/css/webkit.css" />
   <link rel="stylesheet" href="/static/css/sidebar.css" />
+  <!-- Preload Resources -->
+  <link rel="preload" href="/static/js/chat.js" as="script">
+  <link rel="preload" href="/static/css/chat/style.css" as="style">
+  <link rel="preload" href="/static/images/mg.svg" as="image">
+  <link rel="preload" href="/static/images/splash-screen.png" as="image">
 </head>
 
 <body class="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-teal-900 to-emerald-900">
@@ -400,10 +405,16 @@
     <div class="text-center text-xs text-gray-400 py-2">
       © 2025 Mark Al-Asfar & MGZon AI. All rights reserved.
     </div>
+    <!-- Install Button -->
     <button id="installAppBtn" style="display: none;"
       class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
       📲 Install MG Chat
     </button>
+    <!-- PWA Install Instructions -->
+    <div id="pwa-instructions" class="fixed bottom-4 left-4 right-4 bg-blue-600 text-white p-4 rounded-lg z-50 hidden">
+      <p><strong>Add to Home Screen:</strong> Tap the share button in your browser, then "Add to Home Screen" for a native-like experience!</p>
+      <button onclick="document.getElementById('pwa-instructions').classList.add('hidden')" class="ml-2 text-sm">Close</button>
+    </div>
   </div>
 
   <!-- Scripts -->
@@ -441,7 +452,6 @@
       const installBtn = document.getElementById('installAppBtn');
       if (installBtn) {
         installBtn.style.display = 'block';
-
         installBtn.addEventListener('click', () => {
           deferredPrompt.prompt();
           deferredPrompt.userChoice.then(choice => {
@@ -455,8 +465,100 @@
         });
       }
     });
+
+    // Show PWA instructions on first visit
+    if (localStorage.getItem('pwa-instructions-shown') !== 'true') {
+      document.getElementById('pwa-instructions').classList.remove('hidden');
+      localStorage.setItem('pwa-instructions-shown', 'true');
+    }
+
+    // Enhance touch gestures for sidebar
+    const sidebar = document.getElementById('sidebar');
+    const hammer = new Hammer(sidebar);
+    hammer.on('swipeleft', () => {
+      sidebar.classList.remove('open');
+    });
+    hammer.on('swiperight', () => {
+      sidebar.classList.add('open');
+    });
   </script>
 
+  <style>
+    /* Mobile Native Feel */
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        margin: 0;
+        overflow: hidden; /* Prevent scrolling outside app */
+      }
+      .min-h-screen {
+        height: 100vh;
+        max-height: 100vh;
+      }
+      .flex-1 {
+        flex: 1;
+        overflow-y: auto;
+      }
+      #chatBox {
+        padding: 10px;
+        font-size: 16px; /* Prevent zoom on iOS */
+      }
+      textarea, input, select, button {
+        font-size: 16px; /* Prevent zoom on iOS */
+        touch-action: manipulation; /* Improve touch responsiveness */
+      }
+      .chat-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(31, 41, 55, 0.9); /* Match bg-gray-800 */
+        backdrop-filter: blur(10px);
+      }
+      /* Hide scrollbar for native look */
+      #chatBox::-webkit-scrollbar, #conversationList::-webkit-scrollbar {
+        display: none;
+      }
+      #chatBox, #conversationList {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      #sidebar {
+        width: 80%; /* Slightly narrower for better UX */
+      }
+      #swipeHint {
+        animation: pulse 2s infinite;
+      }
+    }
+
+    /* Prevent zoom on iOS */
+    input, textarea, select, button {
+      font-size: 16px;
+      touch-action: manipulation;
+    }
+
+    /* Full-screen for PWA */
+    @media (display-mode: standalone) {
+      body {
+        margin: 0;
+        padding: 0;
+        overscroll-behavior: none; /* Prevent pull-to-refresh */
+      }
+      .chat-header {
+        padding-top: env(safe-area-inset-top); /* Respect iOS notch */
+      }
+      #footerForm {
+        padding-bottom: env(safe-area-inset-bottom); /* Respect iOS bottom bar */
+      }
+    }
+
+    /* Smooth transitions for sidebar */
+    #sidebar {
+      transition: transform 0.3s ease-in-out;
+    }
+    #sidebar.open {
+      transform: translateX(0);
+    }
+  </style>
 </body>
 
 </html>
