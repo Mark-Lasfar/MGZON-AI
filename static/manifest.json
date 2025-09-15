@@ -37,15 +37,16 @@
     }
   ],
   "splash_screens": [
+
     {
-      "src": "/static/images/splash-screen.png",
+      "src": "https://raw.githubusercontent.com/4gels/icons/refs/heads/main/splash-screen.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "background_color": "#1a202c",
       "position": "center"
     },
     {
-      "src": "/static/images/splash-screen-750x1334.png",
+      "src": "https://raw.githubusercontent.com/4gels/icons/refs/heads/main/splash-screen-750x1334.png",
       "sizes": "750x1334",
       "type": "image/png",
       "background_color": "#1a202c",

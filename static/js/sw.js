@@ -19,8 +19,8 @@ const urlsToCache = [
   '/static/images/icons/mg-256.png',
   '/static/images/icons/mg-384.png',
   '/static/images/icons/mg-512.png',
-  '/static/images/splash-screen.png',
-  '/static/images/splash-screen-750x1334.png',
+  'https://raw.githubusercontent.com/4gels/icons/refs/heads/main/splash-screen.png',
+  'https://raw.githubusercontent.com/4gels/icons/refs/heads/main/splash-screen-750x1334.png',
   '/static/images/settings-icon.svg',
   '/static/images/swipe-hint.svg'
 ];
