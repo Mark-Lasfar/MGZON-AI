@@ -127,7 +127,7 @@ function updateSendButtonState() {
                      uiElements.fileInput.files.length > 0 ||
                      uiElements.audioInput.files.length > 0;
     uiElements.sendBtn.disabled = !hasInput || isRequestActive || isRecording;
-    console.log('Send button state:', { hasInput, isRequestActive, isRecording, disabled: uiElements.sendBtn.disabled });
+    console.log('Send button state updated:', { hasInput, isRequestActive, isRecording, disabled: uiElements.sendBtn.disabled });
   }
 }
 
@@ -967,7 +967,7 @@ if (uiElements.audioInput) uiElements.audioInput.addEventListener('change', prev
 
 if (uiElements.sendBtn) {
   let pressTimer;
-  const handlePressStart = (e) => {
+  const handleSendAction = (e) => {
     e.preventDefault();
     if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
     if (uiElements.input.value.trim() || uiElements.fileInput.files.length > 0 || uiElements.audioInput.files.length > 0) {
@@ -986,8 +986,8 @@ if (uiElements.sendBtn) {
   uiElements.sendBtn.replaceWith(uiElements.sendBtn.cloneNode(true));
   uiElements.sendBtn = document.getElementById('sendBtn');
 
-  uiElements.sendBtn.addEventListener('click', handlePressStart);
-  uiElements.sendBtn.addEventListener('touchstart', handlePressStart);
+  uiElements.sendBtn.addEventListener('click', handleSendAction);
+  uiElements.sendBtn.addEventListener('touchstart', handleSendAction);
   uiElements.sendBtn.addEventListener('touchend', handlePressEnd);
   uiElements.sendBtn.addEventListener('touchcancel', handlePressEnd);
 }
@@ -997,18 +997,16 @@ if (uiElements.form) {
     e.preventDefault();
     if (!isRecording && uiElements.input.value.trim()) {
       submitMessage();
+    } else if (!isRecording && (uiElements.fileInput.files.length > 0 || uiElements.audioInput.files.length > 0)) {
+      submitMessage();
     }
   });
 }
 
 if (uiElements.input) {
-  let debounceTimer;
   uiElements.input.addEventListener('input', () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      autoResizeTextarea();
-      updateSendButtonState();
-    }, 100);
+    updateSendButtonState();
+    autoResizeTextarea();
   });
   uiElements.input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
