@@ -50,6 +50,16 @@ let isSidebarOpen = window.innerWidth >= 768;
 
 // Initialize AOS and load initial conversation
 document.addEventListener('DOMContentLoaded', async () => {
+
+    if (!uiElements.sendBtn || !uiElements.input) {
+    console.error('Critical UI elements missing:', {
+      sendBtn: !!uiElements.sendBtn,
+      input: !!uiElements.input
+    });
+    alert('Error: Required UI elements are missing. Please reload the page.');
+    return;
+  }
+
   AOS.init({
     duration: 800,
     easing: 'ease-out-cubic',
@@ -84,7 +94,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Check authentication token
 function checkAuth() {
   const token = localStorage.getItem('token');
-  console.log('Auth token:', token ? 'Found' : 'Not found');
+  console.log('Checking auth token:', { token: token ? 'Found' : 'Not found', value: token });
+  if (!token) {
+    console.warn('No auth token found, redirecting to login');
+    window.location.href = '/login';
+  }
   return token;
 }
 
@@ -104,9 +118,23 @@ async function handleSession() {
 // Update send button state
 function updateSendButtonState() {
   if (uiElements.sendBtn && uiElements.input && uiElements.fileInput && uiElements.audioInput) {
-    uiElements.sendBtn.disabled = uiElements.input.value.trim() === '' &&
-      uiElements.fileInput.files.length === 0 &&
-      uiElements.audioInput.files.length === 0;
+    const hasInput = uiElements.input.value.trim() !== '' ||
+                     uiElements.fileInput.files.length > 0 ||
+                     uiElements.audioInput.files.length > 0;
+    uiElements.sendBtn.disabled = !hasInput;
+    console.log('Send button state:', {
+      input: uiElements.input.value.trim(),
+      files: uiElements.fileInput.files.length,
+      audio: uiElements.audioInput.files.length,
+      disabled: uiElements.sendBtn.disabled
+    });
+  } else {
+    console.error('UI elements missing:', {
+      sendBtn: !!uiElements.sendBtn,
+      input: !!uiElements.input,
+      fileInput: !!uiElements.fileInput,
+      audioInput: !!uiElements.audioInput
+    });
   }
 }
 
@@ -605,10 +633,21 @@ function toggleSidebar(show) {
 
 // Setup touch gestures with Hammer.js
 function setupTouchGestures() {
-  if (!uiElements.sidebar) return;
-  const hammer = new Hammer(uiElements.sidebar);
+  if (!uiElements.sidebar) {
+    console.error('Sidebar element not found');
+    return;
+  }
+  const hammer = new Hammer(uiElements.sidebar, {
+    touchAction: 'pan-y', // منع الـ scroll أثناء السحب
+    threshold: 5, // تقليل الحساسية
+    velocity: 0.3 // تسريع الاستجابة
+  });
   const mainContent = document.querySelector('.flex-1');
-  const hammerMain = new Hammer(mainContent);
+  const hammerMain = new Hammer(mainContent, {
+    touchAction: 'pan-y',
+    threshold: 5,
+    velocity: 0.3
+  });
 
   hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
   hammer.on('pan', e => {
@@ -618,8 +657,8 @@ function setupTouchGestures() {
     uiElements.sidebar.style.transition = 'none';
   });
   hammer.on('panend', e => {
-    uiElements.sidebar.style.transition = 'transform 0.3s ease-in-out';
-    if (e.deltaX < -50) {
+    uiElements.sidebar.style.transition = 'transform 0.2s ease-in-out';
+    if (e.deltaX < -30) { // قللنا الـ threshold من -50 إلى -30
       toggleSidebar(false);
     } else {
       toggleSidebar(true);
@@ -643,10 +682,10 @@ function setupTouchGestures() {
     }
   });
   hammerMain.on('panend', e => {
-    uiElements.sidebar.style.transition = 'transform 0.3s ease-in-out';
-    if (e.center.x < 50 && e.deltaX > 50) {
+    uiElements.sidebar.style.transition = 'transform 0.2s ease-in-out';
+    if (e.center.x < 50 && e.deltaX > 30) {
       toggleSidebar(true);
-    } else if (e.center.x > window.innerWidth - 50 && e.deltaX < -50) {
+    } else if (e.center.x > window.innerWidth - 50 && e.deltaX < -30) {
       toggleSidebar(true);
     } else {
       toggleSidebar(false);
@@ -656,8 +695,17 @@ function setupTouchGestures() {
 
 // Send user message
 async function submitMessage() {
-  if (isRequestActive || isRecording) return;
+  console.log('submitMessage called', { isRequestActive, isRecording, input: uiElements.input?.value.trim() });
+  if (isRequestActive || isRecording) {
+    console.warn('Submit blocked: Request active or recording');
+    return;
+  }
   let message = uiElements.input?.value.trim() || '';
+  if (!message && !uiElements.fileInput?.files.length && !uiElements.audioInput?.files.length) {
+    console.log('No valid input to send');
+    return;
+  }
+
   let payload = null;
   let formData = null;
   let endpoint = '/api/chat';
@@ -665,11 +713,6 @@ async function submitMessage() {
   let inputType = 'text';
   let outputFormat = 'text';
   let title = null;
-
-  if (!message && !uiElements.fileInput?.files.length && !uiElements.audioInput?.files.length) {
-    console.log('No message, file, or audio to send');
-    return;
-  }
 
   if (uiElements.fileInput?.files.length > 0) {
     const file = uiElements.fileInput.files[0];
@@ -720,11 +763,11 @@ async function submitMessage() {
   abortController = new AbortController();
 
   try {
+    console.log('Sending request to:', endpoint);
     const response = await sendRequest(endpoint, payload ? JSON.stringify(payload) : formData, headers);
     let responseText = '';
     if (endpoint === '/api/audio-transcription') {
       const data = await response.json();
-      if (!data.transcription) throw new Error('No transcription received from server');
       responseText = data.transcription || 'Error: No transcription generated.';
     } else if (endpoint === '/api/image-analysis') {
       const data = await response.json();
@@ -831,9 +874,10 @@ if (logoutBtn) {
 // Settings Modal
 if (uiElements.settingsBtn) {
   uiElements.settingsBtn.addEventListener('click', async () => {
+    console.log('Settings button clicked');
     if (!checkAuth()) {
+      console.warn('Settings access blocked: No valid token');
       alert('Please log in to access settings.');
-      window.location.href = '/login';
       return;
     }
     try {
@@ -842,12 +886,14 @@ if (uiElements.settingsBtn) {
       });
       if (!response.ok) {
         if (response.status === 401) {
+          console.error('Unauthorized: Invalid or expired token');
           localStorage.removeItem('token');
           window.location.href = '/login';
         }
-        throw new Error('Failed to fetch settings');
+        throw new Error(`Failed to fetch settings: ${response.status}`);
       }
       const data = await response.json();
+      console.log('Settings fetched:', data);
       document.getElementById('display_name').value = data.user_settings.display_name || '';
       document.getElementById('preferred_model').value = data.user_settings.preferred_model || 'standard';
       document.getElementById('job_title').value = data.user_settings.job_title || '';
@@ -878,7 +924,7 @@ if (uiElements.settingsBtn) {
       toggleSidebar(false);
     } catch (err) {
       console.error('Error fetching settings:', err);
-      alert('Failed to load settings. Please try again.');
+      alert('Failed to load settings: ' + err.message);
     }
   });
 }
@@ -966,11 +1012,63 @@ if (uiElements.audioInput) uiElements.audioInput.addEventListener('change', prev
 if (uiElements.sendBtn) {
   uiElements.sendBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
-    if (uiElements.input.value.trim()) {
-      submitMessage();
+    console.log('Send button clicked', {
+      disabled: uiElements.sendBtn.disabled,
+      input: uiElements.input?.value.trim(),
+      isRequestActive,
+      isRecording
+    });
+    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) {
+      console.warn('Send button click ignored: disabled or request/recording active');
+      return;
     }
+    submitMessage();
   });
+
+  let pressTimer;
+  uiElements.sendBtn.addEventListener('mousedown', (e) => {
+    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
+    pressTimer = setTimeout(() => {
+      startVoiceRecording();
+    }, 500);
+  });
+  uiElements.sendBtn.addEventListener('mouseup', () => {
+    clearTimeout(pressTimer);
+    if (isRecording) stopVoiceRecording();
+  });
+  uiElements.sendBtn.addEventListener('mouseleave', () => {
+    clearTimeout(pressTimer);
+    if (isRecording) stopVoiceRecording();
+  });
+
+  uiElements.sendBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
+    pressTimer = setTimeout(() => {
+      startVoiceRecording();
+    }, 500);
+  });
+  uiElements.sendBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    clearTimeout(pressTimer);
+    if (isRecording) stopVoiceRecording();
+  });
+  uiElements.sendBtn.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    clearTimeout(pressTimer);
+    if (isRecording) stopVoiceRecording();
+  });
+}
+
+if (!uiElements.sendBtn || !uiElements.input) {
+  console.error('Critical UI elements missing:', {
+    sendBtn: !!uiElements.sendBtn,
+    input: !!uiElements.input
+  });
+  alert('Error: Required UI elements are missing. Please reload the page.');
+  return;
+}
+
 
   let pressTimer;
   uiElements.sendBtn.addEventListener('mousedown', (e) => {
@@ -1017,19 +1115,14 @@ if (uiElements.form) {
 }
 
 if (uiElements.input) {
-  // Add debounce to input event
-  let debounceTimer;
   uiElements.input.addEventListener('input', () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      autoResizeTextarea();
-      updateSendButtonState();
-    }, 100);
+    autoResizeTextarea();
+    updateSendButtonState();
   });
   uiElements.input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !uiElements.sendBtn.disabled && !isRequestActive && !isRecording) {
       e.preventDefault();
-      if (!isRecording && !uiElements.sendBtn.disabled) submitMessage();
+      submitMessage();
     }
   });
 }
@@ -1058,8 +1151,54 @@ if (uiElements.sidebarToggle) {
 }
 
 if (uiElements.newConversationBtn) {
-  uiElements.newConversationBtn.addEventListener('click', createNewConversation);
+  uiElements.newConversationBtn.addEventListener('click', async () => {
+    console.log('New conversation button clicked');
+    if (!checkAuth()) {
+      console.warn('New conversation blocked: No valid token');
+      alert('Please log in to create a new conversation.');
+      return;
+    }
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${checkAuth()}`
+        },
+        body: JSON.stringify({ title: 'New Conversation' })
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('Unauthorized: Invalid or expired token');
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+        throw new Error(`Failed to create conversation: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('New conversation created:', data);
+      currentConversationId = data.conversation_id;
+      currentConversationTitle = data.title;
+      conversationHistory = [];
+      sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+      if (uiElements.chatBox) uiElements.chatBox.innerHTML = '';
+      if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
+      history.pushState(null, '', `/chat/${currentConversationId}`);
+      enterChatView();
+      await loadConversations();
+      toggleSidebar(false);
+      if (uiElements.chatBox) uiElements.chatBox.scrollTo({
+        top: uiElements.chatBox.scrollHeight,
+        behavior: 'smooth',
+      });
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      alert('Failed to create new conversation: ' + error.message);
+    }
+  });
 }
+
+
 
 // Debug localStorage
 const originalRemoveItem = localStorage.removeItem;
