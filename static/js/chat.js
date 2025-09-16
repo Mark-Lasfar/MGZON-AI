@@ -50,16 +50,6 @@ let isSidebarOpen = window.innerWidth >= 768;
 
 // Initialize AOS and load initial conversation
 document.addEventListener('DOMContentLoaded', async () => {
-
-    if (!uiElements.sendBtn || !uiElements.input) {
-    console.error('Critical UI elements missing:', {
-      sendBtn: !!uiElements.sendBtn,
-      input: !!uiElements.input
-    });
-    alert('Error: Required UI elements are missing. Please reload the page.');
-    return;
-  }
-
   AOS.init({
     duration: 800,
     easing: 'ease-out-cubic',
@@ -68,17 +58,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   if (currentConversationId && checkAuth()) {
-    console.log('Loading conversation with ID:', currentConversationId);
     await loadConversation(currentConversationId);
   } else if (conversationHistory.length > 0) {
-    console.log('Restoring conversation history from sessionStorage:', conversationHistory);
     enterChatView();
     conversationHistory.forEach(msg => {
-      console.log('Adding message from history:', msg);
       addMsg(msg.role, msg.content);
     });
-  } else {
-    console.log('No conversation history or ID, starting fresh');
   }
 
   autoResizeTextarea();
@@ -89,17 +74,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 3000);
   }
   setupTouchGestures();
+  await loadConversations(); // Load conversations always if authenticated
 });
 
-// Check authentication token
+// Check authentication token with additional validation
 function checkAuth() {
   const token = localStorage.getItem('token');
-  console.log('Checking auth token:', { token: token ? 'Found' : 'Not found', value: token });
-  if (!token) {
-    console.warn('No auth token found, redirecting to login');
-    window.location.href = '/login';
+  if (token) {
+    // Verify token validity by making a quick API call
+    fetch('/api/verify-token', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).then(res => {
+      if (!res.ok) {
+        localStorage.removeItem('token');
+        return false;
+      }
+      return true;
+    }).catch(() => {
+      localStorage.removeItem('token');
+      return false;
+    });
   }
-  return token;
+  return !!token;
 }
 
 // Handle session for non-logged-in users
@@ -108,33 +104,18 @@ async function handleSession() {
   if (!sessionId) {
     const newSessionId = crypto.randomUUID();
     sessionStorage.setItem('session_id', newSessionId);
-    console.log('New session_id created:', newSessionId);
     return newSessionId;
   }
-  console.log('Existing session_id:', sessionId);
   return sessionId;
 }
 
-// Update send button state
+// Update send button state with forced enable if input has content
 function updateSendButtonState() {
   if (uiElements.sendBtn && uiElements.input && uiElements.fileInput && uiElements.audioInput) {
-    const hasInput = uiElements.input.value.trim() !== '' ||
-                     uiElements.fileInput.files.length > 0 ||
-                     uiElements.audioInput.files.length > 0;
+    const hasInput = uiElements.input.value.trim() !== '' || 
+                      uiElements.fileInput.files.length > 0 || 
+                      uiElements.audioInput.files.length > 0;
     uiElements.sendBtn.disabled = !hasInput;
-    console.log('Send button state:', {
-      input: uiElements.input.value.trim(),
-      files: uiElements.fileInput.files.length,
-      audio: uiElements.audioInput.files.length,
-      disabled: uiElements.sendBtn.disabled
-    });
-  } else {
-    console.error('UI elements missing:', {
-      sendBtn: !!uiElements.sendBtn,
-      input: !!uiElements.input,
-      fileInput: !!uiElements.fileInput,
-      audioInput: !!uiElements.audioInput
-    });
   }
 }
 
@@ -161,7 +142,6 @@ function renderMarkdown(el) {
   });
   wrapper.querySelectorAll('hr').forEach(h => h.classList.add('styled-hr'));
   Prism.highlightAllUnder(wrapper);
-  // Smooth scroll to bottom
   if (uiElements.chatBox) {
     uiElements.chatBox.scrollTo({
       top: uiElements.chatBox.scrollHeight,
@@ -198,13 +178,10 @@ function addMsg(who, text) {
   const div = document.createElement('div');
   div.className = `bubble ${who === 'user' ? 'bubble-user' : 'bubble-assist'} ${isArabicText(text) ? 'rtl' : ''}`;
   div.dataset.text = text;
-  console.log('Adding message:', { who, text });
   renderMarkdown(div);
   if (uiElements.chatBox) {
     uiElements.chatBox.appendChild(div);
     uiElements.chatBox.classList.remove('hidden');
-  } else {
-    console.error('chatBox is null');
   }
   return div;
 }
@@ -270,24 +247,17 @@ function previewFile() {
 
 // Voice recording
 function startVoiceRecording() {
-  if (isRequestActive || isRecording) {
-    console.log('Voice recording blocked: Request active or already recording');
-    return;
-  }
-  console.log('Starting voice recording...');
+  if (isRequestActive || isRecording) return;
   isRecording = true;
   if (uiElements.sendBtn) uiElements.sendBtn.classList.add('recording');
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
     mediaRecorder.start();
-    console.log('MediaRecorder started');
     mediaRecorder.addEventListener('dataavailable', event => {
       audioChunks.push(event.data);
-      console.log('Audio chunk received:', event.data);
     });
   }).catch(err => {
-    console.error('Error accessing microphone:', err);
     alert('Failed to access microphone. Please check permissions.');
     isRecording = false;
     if (uiElements.sendBtn) uiElements.sendBtn.classList.remove('recording');
@@ -300,7 +270,6 @@ function stopVoiceRecording() {
     if (uiElements.sendBtn) uiElements.sendBtn.classList.remove('recording');
     isRecording = false;
     mediaRecorder.addEventListener('stop', async () => {
-      console.log('Stopping voice recording, sending audio...');
       const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
       const formData = new FormData();
       formData.append('file', audioBlob, 'voice-message.webm');
@@ -357,10 +326,9 @@ async function submitAudioMessage(formData) {
 
 // Helper to send API requests
 async function sendRequest(endpoint, body, headers = {}) {
-  const token = checkAuth();
+  const token = localStorage.getItem('token');
   if (token) headers['Authorization'] = `Bearer ${token}`;
   headers['X-Session-ID'] = await handleSession();
-  console.log('Sending request to:', endpoint, 'with headers:', headers);
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -385,7 +353,6 @@ async function sendRequest(endpoint, body, headers = {}) {
     }
     return response;
   } catch (error) {
-    console.error('Send request error:', error);
     if (error.name === 'AbortError') {
       throw new Error('Request was aborted');
     }
@@ -427,7 +394,6 @@ function handleRequestError(error) {
     streamMsg.dataset.done = '1';
     streamMsg = null;
   }
-  console.error('Request error:', error);
   alert(`Error: ${error.message || 'An error occurred during the request.'}`);
   isRequestActive = false;
   abortController = null;
@@ -441,7 +407,7 @@ async function loadConversations() {
   if (!checkAuth()) return;
   try {
     const response = await fetch('/api/conversations', {
-      headers: { 'Authorization': `Bearer ${checkAuth()}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (!response.ok) throw new Error('Failed to load conversations');
     const conversations = await response.json();
@@ -470,7 +436,6 @@ async function loadConversations() {
       });
     }
   } catch (error) {
-    console.error('Error loading conversations:', error);
     alert('Failed to load conversations. Please try again.');
   }
 }
@@ -479,7 +444,7 @@ async function loadConversations() {
 async function loadConversation(conversationId) {
   try {
     const response = await fetch(`/api/conversations/${conversationId}`, {
-      headers: { 'Authorization': `Bearer ${checkAuth()}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (!response.ok) {
       if (response.status === 401) window.location.href = '/login';
@@ -496,7 +461,6 @@ async function loadConversation(conversationId) {
     history.pushState(null, '', `/chat/${currentConversationId}`);
     toggleSidebar(false);
   } catch (error) {
-    console.error('Error loading conversation:', error);
     alert('Failed to load conversation. Please try again or log in.');
   }
 }
@@ -507,7 +471,7 @@ async function deleteConversation(conversationId) {
   try {
     const response = await fetch(`/api/conversations/${conversationId}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${checkAuth()}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (!response.ok) {
       if (response.status === 401) window.location.href = '/login';
@@ -521,7 +485,6 @@ async function deleteConversation(conversationId) {
     }
     await loadConversations();
   } catch (error) {
-    console.error('Error deleting conversation:', error);
     alert('Failed to delete conversation. Please try again.');
   }
 }
@@ -533,7 +496,7 @@ async function saveMessageToConversation(conversationId, role, content) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${checkAuth()}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
       body: JSON.stringify({ role, content })
     });
@@ -543,10 +506,9 @@ async function saveMessageToConversation(conversationId, role, content) {
   }
 }
 
-// Create new conversation
+// Create new conversation with forced auth check
 async function createNewConversation() {
   if (!checkAuth()) {
-    alert('Please log in to create a new conversation.');
     window.location.href = '/login';
     return;
   }
@@ -555,7 +517,7 @@ async function createNewConversation() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${checkAuth()}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
       body: JSON.stringify({ title: 'New Conversation' })
     });
@@ -578,7 +540,6 @@ async function createNewConversation() {
     await loadConversations();
     toggleSidebar(false);
   } catch (error) {
-    console.error('Error creating conversation:', error);
     alert('Failed to create new conversation. Please try again.');
   }
   if (uiElements.chatBox) uiElements.chatBox.scrollTo({
@@ -594,7 +555,7 @@ async function updateConversationTitle(conversationId, newTitle) {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${checkAuth()}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
       body: JSON.stringify({ title: newTitle })
     });
@@ -604,88 +565,55 @@ async function updateConversationTitle(conversationId, newTitle) {
     if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
     await loadConversations();
   } catch (error) {
-    console.error('Error updating title:', error);
     alert('Failed to update conversation title.');
   }
 }
 
-// Toggle sidebar
+// Toggle sidebar with optimized performance
 function toggleSidebar(show) {
   if (uiElements.sidebar) {
-    if (window.innerWidth >= 768) {
-      isSidebarOpen = true;
-      uiElements.sidebar.style.transform = 'translateX(0)';
-      if (uiElements.swipeHint) uiElements.swipeHint.style.display = 'none';
-    } else {
-      isSidebarOpen = show !== undefined ? show : !isSidebarOpen;
-      uiElements.sidebar.style.transform = isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)';
-      if (uiElements.swipeHint && !isSidebarOpen) {
-        uiElements.swipeHint.style.display = 'block';
-        setTimeout(() => {
-          uiElements.swipeHint.style.display = 'none';
-        }, 3000);
-      } else if (uiElements.swipeHint) {
+    isSidebarOpen = show !== undefined ? show : !isSidebarOpen;
+    uiElements.sidebar.style.transform = isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)';
+    if (uiElements.swipeHint && !isSidebarOpen) {
+      uiElements.swipeHint.style.display = 'block';
+      setTimeout(() => {
         uiElements.swipeHint.style.display = 'none';
-      }
+      }, 3000);
+    } else if (uiElements.swipeHint) {
+      uiElements.swipeHint.style.display = 'none';
     }
   }
 }
 
-// Setup touch gestures with Hammer.js
+// Setup touch gestures with Hammer.js - optimized for smoothness
 function setupTouchGestures() {
-  if (!uiElements.sidebar) {
-    console.error('Sidebar element not found');
-    return;
-  }
-  const hammer = new Hammer(uiElements.sidebar, {
-    touchAction: 'pan-y', // منع الـ scroll أثناء السحب
-    threshold: 5, // تقليل الحساسية
-    velocity: 0.3 // تسريع الاستجابة
-  });
+  if (!uiElements.sidebar) return;
+  const hammer = new Hammer(uiElements.sidebar.parentElement); // Attach to parent for better touch detection
   const mainContent = document.querySelector('.flex-1');
-  const hammerMain = new Hammer(mainContent, {
-    touchAction: 'pan-y',
-    threshold: 5,
-    velocity: 0.3
-  });
+  const hammerMain = new Hammer(mainContent);
 
-  hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
+  hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 0 }); // Reduce threshold for faster response
   hammer.on('pan', e => {
     if (!isSidebarOpen) return;
     let translateX = Math.max(-uiElements.sidebar.offsetWidth, Math.min(0, e.deltaX));
     uiElements.sidebar.style.transform = `translateX(${translateX}px)`;
-    uiElements.sidebar.style.transition = 'none';
   });
   hammer.on('panend', e => {
-    uiElements.sidebar.style.transition = 'transform 0.2s ease-in-out';
-    if (e.deltaX < -30) { // قللنا الـ threshold من -50 إلى -30
+    if (e.deltaX < -50) {
       toggleSidebar(false);
     } else {
       toggleSidebar(true);
     }
   });
 
-  hammerMain.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
-  hammerMain.on('panstart', e => {
-    if (isSidebarOpen) return;
-    if (e.center.x < 50 || e.center.x > window.innerWidth - 50) {
-      uiElements.sidebar.style.transition = 'none';
-    }
-  });
+  hammerMain.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 0 });
   hammerMain.on('pan', e => {
     if (isSidebarOpen) return;
-    if (e.center.x < 50 || e.center.x > window.innerWidth - 50) {
-      let translateX = e.center.x < 50
-        ? Math.min(uiElements.sidebar.offsetWidth, Math.max(0, e.deltaX))
-        : Math.max(-uiElements.sidebar.offsetWidth, Math.min(0, e.deltaX));
-      uiElements.sidebar.style.transform = `translateX(${translateX - uiElements.sidebar.offsetWidth}px)`;
-    }
+    let translateX = Math.min(uiElements.sidebar.offsetWidth, Math.max(0, e.deltaX));
+    uiElements.sidebar.style.transform = `translateX(${translateX - uiElements.sidebar.offsetWidth}px)`;
   });
   hammerMain.on('panend', e => {
-    uiElements.sidebar.style.transition = 'transform 0.2s ease-in-out';
-    if (e.center.x < 50 && e.deltaX > 30) {
-      toggleSidebar(true);
-    } else if (e.center.x > window.innerWidth - 50 && e.deltaX < -30) {
+    if (e.deltaX > 50) {
       toggleSidebar(true);
     } else {
       toggleSidebar(false);
@@ -693,32 +621,21 @@ function setupTouchGestures() {
   });
 }
 
-// Send user message
+// Send user message with reduced checks
 async function submitMessage() {
-  console.log('submitMessage called', { isRequestActive, isRecording, input: uiElements.input?.value.trim() });
-  if (isRequestActive || isRecording) {
-    console.warn('Submit blocked: Request active or recording');
-    return;
-  }
+  if (isRequestActive || isRecording) return;
   let message = uiElements.input?.value.trim() || '';
-  if (!message && !uiElements.fileInput?.files.length && !uiElements.audioInput?.files.length) {
-    console.log('No valid input to send');
-    return;
-  }
-
   let payload = null;
   let formData = null;
   let endpoint = '/api/chat';
   let headers = {};
-  let inputType = 'text';
-  let outputFormat = 'text';
-  let title = null;
+
+  if (!message && !uiElements.fileInput?.files.length && !uiElements.audioInput?.files.length) return;
 
   if (uiElements.fileInput?.files.length > 0) {
     const file = uiElements.fileInput.files[0];
     if (file.type.startsWith('image/')) {
       endpoint = '/api/image-analysis';
-      inputType = 'image';
       message = 'Analyze this image';
       formData = new FormData();
       formData.append('file', file);
@@ -728,7 +645,6 @@ async function submitMessage() {
     const file = uiElements.audioInput.files[0];
     if (file.type.startsWith('audio/')) {
       endpoint = '/api/audio-transcription';
-      inputType = 'audio';
       message = 'Transcribe this audio';
       formData = new FormData();
       formData.append('file', file);
@@ -743,8 +659,7 @@ async function submitMessage() {
       temperature: 0.7,
       max_new_tokens: 128000,
       enable_browsing: true,
-      output_format: 'text',
-      title: title
+      output_format: 'text'
     };
     headers['Content-Type'] = 'application/json';
   }
@@ -763,7 +678,6 @@ async function submitMessage() {
   abortController = new AbortController();
 
   try {
-    console.log('Sending request to:', endpoint);
     const response = await sendRequest(endpoint, payload ? JSON.stringify(payload) : formData, headers);
     let responseText = '';
     if (endpoint === '/api/audio-transcription') {
@@ -790,10 +704,7 @@ async function submitMessage() {
         let buffer = '';
         while (true) {
           const { done, value } = await reader.read();
-          if (done) {
-            if (!buffer.trim()) throw new Error('Empty response from server');
-            break;
-          }
+          if (done) break;
           buffer += decoder.decode(value, { stream: true });
           if (streamMsg) {
             streamMsg.dataset.text = buffer;
@@ -850,7 +761,6 @@ function stopStream(forceCancel = false) {
 const logoutBtn = document.querySelector('#logoutBtn');
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async () => {
-    console.log('Logout button clicked');
     try {
       const response = await fetch('/logout', {
         method: 'POST',
@@ -858,42 +768,35 @@ if (logoutBtn) {
       });
       if (response.ok) {
         localStorage.removeItem('token');
-        console.log('Token removed from localStorage');
         window.location.href = '/login';
       } else {
-        console.error('Logout failed:', response.status);
         alert('Failed to log out. Please try again.');
       }
     } catch (error) {
-      console.error('Logout error:', error);
       alert('Error during logout: ' + error.message);
     }
   });
 }
 
-// Settings Modal
+// Settings Modal with forced auth
 if (uiElements.settingsBtn) {
   uiElements.settingsBtn.addEventListener('click', async () => {
-    console.log('Settings button clicked');
     if (!checkAuth()) {
-      console.warn('Settings access blocked: No valid token');
-      alert('Please log in to access settings.');
+      window.location.href = '/login';
       return;
     }
     try {
       const response = await fetch('/api/settings', {
-        headers: { 'Authorization': `Bearer ${checkAuth()}` }
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) {
         if (response.status === 401) {
-          console.error('Unauthorized: Invalid or expired token');
           localStorage.removeItem('token');
           window.location.href = '/login';
         }
-        throw new Error(`Failed to fetch settings: ${response.status}`);
+        throw new Error('Failed to fetch settings');
       }
       const data = await response.json();
-      console.log('Settings fetched:', data);
       document.getElementById('display_name').value = data.user_settings.display_name || '';
       document.getElementById('preferred_model').value = data.user_settings.preferred_model || 'standard';
       document.getElementById('job_title').value = data.user_settings.job_title || '';
@@ -923,8 +826,7 @@ if (uiElements.settingsBtn) {
       uiElements.settingsModal.classList.remove('hidden');
       toggleSidebar(false);
     } catch (err) {
-      console.error('Error fetching settings:', err);
-      alert('Failed to load settings: ' + err.message);
+      alert('Failed to load settings. Please try again.');
     }
   });
 }
@@ -939,7 +841,6 @@ if (uiElements.settingsForm) {
   uiElements.settingsForm.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!checkAuth()) {
-      alert('Please log in to save settings.');
       window.location.href = '/login';
       return;
     }
@@ -949,7 +850,7 @@ if (uiElements.settingsForm) {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${checkAuth()}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
       body: JSON.stringify(data)
     })
@@ -969,7 +870,6 @@ if (uiElements.settingsForm) {
         toggleSidebar(false);
       })
       .catch(err => {
-        console.error('Error updating settings:', err);
         alert('Error updating settings: ' + err.message);
       });
   });
@@ -1012,63 +912,11 @@ if (uiElements.audioInput) uiElements.audioInput.addEventListener('change', prev
 if (uiElements.sendBtn) {
   uiElements.sendBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    console.log('Send button clicked', {
-      disabled: uiElements.sendBtn.disabled,
-      input: uiElements.input?.value.trim(),
-      isRequestActive,
-      isRecording
-    });
-    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) {
-      console.warn('Send button click ignored: disabled or request/recording active');
-      return;
+    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
+    if (uiElements.input.value.trim() || uiElements.fileInput.files.length || uiElements.audioInput.files.length) {
+      submitMessage();
     }
-    submitMessage();
   });
-
-  let pressTimer;
-  uiElements.sendBtn.addEventListener('mousedown', (e) => {
-    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
-    pressTimer = setTimeout(() => {
-      startVoiceRecording();
-    }, 500);
-  });
-  uiElements.sendBtn.addEventListener('mouseup', () => {
-    clearTimeout(pressTimer);
-    if (isRecording) stopVoiceRecording();
-  });
-  uiElements.sendBtn.addEventListener('mouseleave', () => {
-    clearTimeout(pressTimer);
-    if (isRecording) stopVoiceRecording();
-  });
-
-  uiElements.sendBtn.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
-    pressTimer = setTimeout(() => {
-      startVoiceRecording();
-    }, 500);
-  });
-  uiElements.sendBtn.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    clearTimeout(pressTimer);
-    if (isRecording) stopVoiceRecording();
-  });
-  uiElements.sendBtn.addEventListener('touchcancel', (e) => {
-    e.preventDefault();
-    clearTimeout(pressTimer);
-    if (isRecording) stopVoiceRecording();
-  });
-}
-
-if (!uiElements.sendBtn || !uiElements.input) {
-  console.error('Critical UI elements missing:', {
-    sendBtn: !!uiElements.sendBtn,
-    input: !!uiElements.input
-  });
-  alert('Error: Required UI elements are missing. Please reload the page.');
-  return;
-}
-
 
   let pressTimer;
   uiElements.sendBtn.addEventListener('mousedown', (e) => {
@@ -1108,21 +956,25 @@ if (!uiElements.sendBtn || !uiElements.input) {
 if (uiElements.form) {
   uiElements.form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!isRecording && uiElements.input.value.trim()) {
+    if (!isRecording && (uiElements.input.value.trim() || uiElements.fileInput.files.length || uiElements.audioInput.files.length)) {
       submitMessage();
     }
   });
 }
 
 if (uiElements.input) {
+  let debounceTimer;
   uiElements.input.addEventListener('input', () => {
-    autoResizeTextarea();
-    updateSendButtonState();
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      autoResizeTextarea();
+      updateSendButtonState();
+    }, 100);
   });
   uiElements.input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey && !uiElements.sendBtn.disabled && !isRequestActive && !isRecording) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      submitMessage();
+      if (!isRecording && !uiElements.sendBtn.disabled) submitMessage();
     }
   });
 }
@@ -1151,61 +1003,8 @@ if (uiElements.sidebarToggle) {
 }
 
 if (uiElements.newConversationBtn) {
-  uiElements.newConversationBtn.addEventListener('click', async () => {
-    console.log('New conversation button clicked');
-    if (!checkAuth()) {
-      console.warn('New conversation blocked: No valid token');
-      alert('Please log in to create a new conversation.');
-      return;
-    }
-    try {
-      const response = await fetch('/api/conversations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${checkAuth()}`
-        },
-        body: JSON.stringify({ title: 'New Conversation' })
-      });
-      if (!response.ok) {
-        if (response.status === 401) {
-          console.error('Unauthorized: Invalid or expired token');
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-        }
-        throw new Error(`Failed to create conversation: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log('New conversation created:', data);
-      currentConversationId = data.conversation_id;
-      currentConversationTitle = data.title;
-      conversationHistory = [];
-      sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
-      if (uiElements.chatBox) uiElements.chatBox.innerHTML = '';
-      if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
-      history.pushState(null, '', `/chat/${currentConversationId}`);
-      enterChatView();
-      await loadConversations();
-      toggleSidebar(false);
-      if (uiElements.chatBox) uiElements.chatBox.scrollTo({
-        top: uiElements.chatBox.scrollHeight,
-        behavior: 'smooth',
-      });
-    } catch (error) {
-      console.error('Error creating conversation:', error);
-      alert('Failed to create new conversation: ' + error.message);
-    }
-  });
+  uiElements.newConversationBtn.addEventListener('click', createNewConversation);
 }
-
-
-
-// Debug localStorage
-const originalRemoveItem = localStorage.removeItem;
-localStorage.removeItem = function (key) {
-  console.log('Removing from localStorage:', key);
-  originalRemoveItem.apply(this, arguments);
-};
 
 // Offline mode detection
 window.addEventListener('offline', () => {
