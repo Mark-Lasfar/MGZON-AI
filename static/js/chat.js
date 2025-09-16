@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
 // SPDX-License-Identifier: Apache-2.0
 
-// Prism for code highlighting
+// إعداد مكتبة Prism لتسليط الضوء على الكود
 Prism.plugins.autoloader.languages_path = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
 
-// UI elements
+// تعريف عناصر واجهة المستخدم
 const uiElements = {
   chatArea: document.getElementById('chatArea'),
   chatBox: document.getElementById('chatBox'),
@@ -36,7 +36,7 @@ const uiElements = {
   historyToggle: document.getElementById('historyToggle'),
 };
 
-// State variables
+// متغيرات الحالة
 let conversationHistory = JSON.parse(sessionStorage.getItem('conversationHistory') || '[]');
 let currentConversationId = window.conversationId || null;
 let currentConversationTitle = window.conversationTitle || null;
@@ -48,7 +48,7 @@ let streamMsg = null;
 let currentAssistantText = '';
 let isSidebarOpen = window.innerWidth >= 768;
 
-// Initialize AOS and load initial conversation
+// تهيئة الصفحة
 document.addEventListener('DOMContentLoaded', async () => {
   AOS.init({
     duration: 800,
@@ -57,13 +57,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     offset: 50,
   });
 
+  // التحقق من حالة تسجيل الدخول وتحميل المحادثة إن وجدت
   if (currentConversationId && checkAuth()) {
+    console.log('Loading conversation with ID:', currentConversationId);
     await loadConversation(currentConversationId);
   } else if (conversationHistory.length > 0) {
+    console.log('Restoring conversation history from sessionStorage:', conversationHistory);
     enterChatView();
     conversationHistory.forEach(msg => {
+      console.log('Adding message from history:', msg);
       addMsg(msg.role, msg.content);
     });
+  } else {
+    console.log('No conversation history or ID, starting fresh');
   }
 
   autoResizeTextarea();
@@ -74,52 +80,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 3000);
   }
   setupTouchGestures();
-  await loadConversations(); // Load conversations always if authenticated
 });
 
-// Check authentication token with additional validation
+// التحقق من رمز التوثيق
 function checkAuth() {
   const token = localStorage.getItem('token');
-  if (token) {
-    // Verify token validity by making a quick API call
-    fetch('/api/verify-token', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    }).then(res => {
-      if (!res.ok) {
-        localStorage.removeItem('token');
-        return false;
-      }
-      return true;
-    }).catch(() => {
-      localStorage.removeItem('token');
-      return false;
-    });
-  }
-  return !!token;
+  console.log('Auth token:', token ? 'Found' : 'Not found');
+  return token;
 }
 
-// Handle session for non-logged-in users
+// إدارة الجلسة لغير المسجلين
 async function handleSession() {
   const sessionId = sessionStorage.getItem('session_id');
   if (!sessionId) {
     const newSessionId = crypto.randomUUID();
     sessionStorage.setItem('session_id', newSessionId);
+    console.log('New session_id created:', newSessionId);
     return newSessionId;
   }
+  console.log('Existing session_id:', sessionId);
   return sessionId;
 }
 
-// Update send button state with forced enable if input has content
+// تحديث حالة زر الإرسال
 function updateSendButtonState() {
   if (uiElements.sendBtn && uiElements.input && uiElements.fileInput && uiElements.audioInput) {
-    const hasInput = uiElements.input.value.trim() !== '' || 
-                      uiElements.fileInput.files.length > 0 || 
-                      uiElements.audioInput.files.length > 0;
-    uiElements.sendBtn.disabled = !hasInput;
+    const hasInput = uiElements.input.value.trim() !== '' ||
+                     uiElements.fileInput.files.length > 0 ||
+                     uiElements.audioInput.files.length > 0;
+    uiElements.sendBtn.disabled = !hasInput || isRequestActive || isRecording;
+    console.log('Send button state:', uiElements.sendBtn.disabled ? 'Disabled' : 'Enabled', 'Input:', uiElements.input.value, 'Files:', uiElements.fileInput.files.length, 'Audio:', uiElements.audioInput.files.length);
   }
 }
 
-// Render markdown content with RTL support
+// عرض محتوى Markdown مع دعم RTL
 function renderMarkdown(el) {
   const raw = el.dataset.text || '';
   const isArabic = isArabicText(raw);
@@ -150,7 +144,7 @@ function renderMarkdown(el) {
   }
 }
 
-// Toggle chat view
+// الانتقال إلى عرض المحادثة
 function enterChatView() {
   if (uiElements.chatHeader) {
     uiElements.chatHeader.classList.remove('hidden');
@@ -163,7 +157,7 @@ function enterChatView() {
   if (uiElements.initialContent) uiElements.initialContent.classList.add('hidden');
 }
 
-// Toggle home view
+// العودة إلى العرض الافتراضي
 function leaveChatView() {
   if (uiElements.chatHeader) {
     uiElements.chatHeader.classList.add('hidden');
@@ -173,20 +167,23 @@ function leaveChatView() {
   if (uiElements.initialContent) uiElements.initialContent.classList.remove('hidden');
 }
 
-// Add chat bubble
+// إضافة رسالة إلى واجهة المستخدم
 function addMsg(who, text) {
   const div = document.createElement('div');
   div.className = `bubble ${who === 'user' ? 'bubble-user' : 'bubble-assist'} ${isArabicText(text) ? 'rtl' : ''}`;
   div.dataset.text = text;
+  console.log('Adding message:', { who, text });
   renderMarkdown(div);
   if (uiElements.chatBox) {
     uiElements.chatBox.appendChild(div);
     uiElements.chatBox.classList.remove('hidden');
+  } else {
+    console.error('chatBox is null');
   }
   return div;
 }
 
-// Clear all messages
+// مسح جميع الرسائل
 function clearAllMessages() {
   stopStream(true);
   conversationHistory = [];
@@ -211,7 +208,7 @@ function clearAllMessages() {
   autoResizeTextarea();
 }
 
-// File preview
+// معاينة الملفات
 function previewFile() {
   if (uiElements.fileInput?.files.length > 0) {
     const file = uiElements.fileInput.files[0];
@@ -245,19 +242,26 @@ function previewFile() {
   }
 }
 
-// Voice recording
+// تسجيل الصوت
 function startVoiceRecording() {
-  if (isRequestActive || isRecording) return;
+  if (isRequestActive || isRecording) {
+    console.log('Voice recording blocked: Request active or already recording');
+    return;
+  }
+  console.log('Starting voice recording...');
   isRecording = true;
   if (uiElements.sendBtn) uiElements.sendBtn.classList.add('recording');
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
     mediaRecorder.start();
+    console.log('MediaRecorder started');
     mediaRecorder.addEventListener('dataavailable', event => {
       audioChunks.push(event.data);
+      console.log('Audio chunk received:', event.data);
     });
   }).catch(err => {
+    console.error('Error accessing microphone:', err);
     alert('Failed to access microphone. Please check permissions.');
     isRecording = false;
     if (uiElements.sendBtn) uiElements.sendBtn.classList.remove('recording');
@@ -270,6 +274,7 @@ function stopVoiceRecording() {
     if (uiElements.sendBtn) uiElements.sendBtn.classList.remove('recording');
     isRecording = false;
     mediaRecorder.addEventListener('stop', async () => {
+      console.log('Stopping voice recording, sending audio...');
       const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
       const formData = new FormData();
       formData.append('file', audioBlob, 'voice-message.webm');
@@ -278,7 +283,7 @@ function stopVoiceRecording() {
   }
 }
 
-// Send audio message
+// إرسال رسالة صوتية
 async function submitAudioMessage(formData) {
   enterChatView();
   addMsg('user', 'Voice message');
@@ -324,11 +329,12 @@ async function submitAudioMessage(formData) {
   }
 }
 
-// Helper to send API requests
+// إرسال طلب إلى الخادم
 async function sendRequest(endpoint, body, headers = {}) {
-  const token = localStorage.getItem('token');
+  const token = checkAuth();
   if (token) headers['Authorization'] = `Bearer ${token}`;
   headers['X-Session-ID'] = await handleSession();
+  console.log('Sending request to:', endpoint, 'with headers:', headers);
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -353,6 +359,7 @@ async function sendRequest(endpoint, body, headers = {}) {
     }
     return response;
   } catch (error) {
+    console.error('Send request error:', error);
     if (error.name === 'AbortError') {
       throw new Error('Request was aborted');
     }
@@ -360,7 +367,7 @@ async function sendRequest(endpoint, body, headers = {}) {
   }
 }
 
-// Helper to update UI during request
+// تحديث واجهة المستخدم أثناء الطلب
 function updateUIForRequest() {
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'inline-flex';
   if (uiElements.sendBtn) uiElements.sendBtn.style.display = 'none';
@@ -371,7 +378,7 @@ function updateUIForRequest() {
   autoResizeTextarea();
 }
 
-// Helper to finalize request
+// إنهاء الطلب
 function finalizeRequest() {
   streamMsg = null;
   isRequestActive = false;
@@ -380,7 +387,7 @@ function finalizeRequest() {
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'none';
 }
 
-// Helper to handle request errors
+// معالجة أخطاء الطلب
 function handleRequestError(error) {
   if (streamMsg) {
     streamMsg.querySelector('.loading')?.remove();
@@ -394,6 +401,7 @@ function handleRequestError(error) {
     streamMsg.dataset.done = '1';
     streamMsg = null;
   }
+  console.error('Request error:', error);
   alert(`Error: ${error.message || 'An error occurred during the request.'}`);
   isRequestActive = false;
   abortController = null;
@@ -402,12 +410,12 @@ function handleRequestError(error) {
   sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
 }
 
-// Load conversations for sidebar
+// تحميل المحادثات للشريط الجانبي
 async function loadConversations() {
   if (!checkAuth()) return;
   try {
     const response = await fetch('/api/conversations', {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      headers: { 'Authorization': `Bearer ${checkAuth()}` }
     });
     if (!response.ok) throw new Error('Failed to load conversations');
     const conversations = await response.json();
@@ -436,18 +444,22 @@ async function loadConversations() {
       });
     }
   } catch (error) {
+    console.error('Error loading conversations:', error);
     alert('Failed to load conversations. Please try again.');
   }
 }
 
-// Load conversation from API
+// تحميل محادثة من الخادم
 async function loadConversation(conversationId) {
   try {
     const response = await fetch(`/api/conversations/${conversationId}`, {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      headers: { 'Authorization': `Bearer ${checkAuth()}` }
     });
     if (!response.ok) {
-      if (response.status === 401) window.location.href = '/login';
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
       throw new Error('Failed to load conversation');
     }
     const data = await response.json();
@@ -461,20 +473,24 @@ async function loadConversation(conversationId) {
     history.pushState(null, '', `/chat/${currentConversationId}`);
     toggleSidebar(false);
   } catch (error) {
+    console.error('Error loading conversation:', error);
     alert('Failed to load conversation. Please try again or log in.');
   }
 }
 
-// Delete conversation
+// حذف محادثة
 async function deleteConversation(conversationId) {
   if (!confirm('Are you sure you want to delete this conversation?')) return;
   try {
     const response = await fetch(`/api/conversations/${conversationId}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      headers: { 'Authorization': `Bearer ${checkAuth()}` }
     });
     if (!response.ok) {
-      if (response.status === 401) window.location.href = '/login';
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
       throw new Error('Failed to delete conversation');
     }
     if (conversationId === currentConversationId) {
@@ -485,30 +501,38 @@ async function deleteConversation(conversationId) {
     }
     await loadConversations();
   } catch (error) {
+    console.error('Error deleting conversation:', error);
     alert('Failed to delete conversation. Please try again.');
   }
 }
 
-// Save message to conversation
+// حفظ رسالة في المحادثة
 async function saveMessageToConversation(conversationId, role, content) {
   try {
     const response = await fetch(`/api/conversations/${conversationId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${checkAuth()}`
       },
       body: JSON.stringify({ role, content })
     });
-    if (!response.ok) throw new Error('Failed to save message');
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+      throw new Error('Failed to save message');
+    }
   } catch (error) {
     console.error('Error saving message:', error);
   }
 }
 
-// Create new conversation with forced auth check
+// إنشاء محادثة جديدة
 async function createNewConversation() {
   if (!checkAuth()) {
+    alert('Please log in to create a new conversation.');
     window.location.href = '/login';
     return;
   }
@@ -517,7 +541,7 @@ async function createNewConversation() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${checkAuth()}`
       },
       body: JSON.stringify({ title: 'New Conversation' })
     });
@@ -540,6 +564,7 @@ async function createNewConversation() {
     await loadConversations();
     toggleSidebar(false);
   } catch (error) {
+    console.error('Error creating conversation:', error);
     alert('Failed to create new conversation. Please try again.');
   }
   if (uiElements.chatBox) uiElements.chatBox.scrollTo({
@@ -548,57 +573,50 @@ async function createNewConversation() {
   });
 }
 
-// Update conversation title
+// تحديث عنوان المحادثة
 async function updateConversationTitle(conversationId, newTitle) {
   try {
     const response = await fetch(`/api/conversations/${conversationId}/title`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${checkAuth()}`
       },
       body: JSON.stringify({ title: newTitle })
     });
-    if (!response.ok) throw new Error('Failed to update title');
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+      throw new Error('Failed to update title');
+    }
     const data = await response.json();
     currentConversationTitle = data.title;
     if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
     await loadConversations();
   } catch (error) {
+    console.error('Error updating title:', error);
     alert('Failed to update conversation title.');
   }
 }
 
-// Toggle sidebar with optimized performance
-function toggleSidebar(show) {
-  if (uiElements.sidebar) {
-    isSidebarOpen = show !== undefined ? show : !isSidebarOpen;
-    uiElements.sidebar.style.transform = isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)';
-    if (uiElements.swipeHint && !isSidebarOpen) {
-      uiElements.swipeHint.style.display = 'block';
-      setTimeout(() => {
-        uiElements.swipeHint.style.display = 'none';
-      }, 3000);
-    } else if (uiElements.swipeHint) {
-      uiElements.swipeHint.style.display = 'none';
-    }
-  }
-}
-
-// Setup touch gestures with Hammer.js - optimized for smoothness
+// إعداد إيماءات اللمس
 function setupTouchGestures() {
   if (!uiElements.sidebar) return;
-  const hammer = new Hammer(uiElements.sidebar.parentElement); // Attach to parent for better touch detection
+  const hammer = new Hammer(uiElements.sidebar);
   const mainContent = document.querySelector('.flex-1');
   const hammerMain = new Hammer(mainContent);
 
-  hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 0 }); // Reduce threshold for faster response
+  hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
   hammer.on('pan', e => {
     if (!isSidebarOpen) return;
     let translateX = Math.max(-uiElements.sidebar.offsetWidth, Math.min(0, e.deltaX));
     uiElements.sidebar.style.transform = `translateX(${translateX}px)`;
+    uiElements.sidebar.style.transition = 'none';
   });
   hammer.on('panend', e => {
+    uiElements.sidebar.style.transition = 'transform 0.3s ease-in-out';
     if (e.deltaX < -50) {
       toggleSidebar(false);
     } else {
@@ -606,14 +624,27 @@ function setupTouchGestures() {
     }
   });
 
-  hammerMain.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 0 });
+  hammerMain.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
+  hammerMain.on('panstart', e => {
+    if (isSidebarOpen) return;
+    if (e.center.x < 50 || e.center.x > window.innerWidth - 50) {
+      uiElements.sidebar.style.transition = 'none';
+    }
+  });
   hammerMain.on('pan', e => {
     if (isSidebarOpen) return;
-    let translateX = Math.min(uiElements.sidebar.offsetWidth, Math.max(0, e.deltaX));
-    uiElements.sidebar.style.transform = `translateX(${translateX - uiElements.sidebar.offsetWidth}px)`;
+    if (e.center.x < 50 || e.center.x > window.innerWidth - 50) {
+      let translateX = e.center.x < 50
+        ? Math.min(uiElements.sidebar.offsetWidth, Math.max(0, e.deltaX))
+        : Math.max(-uiElements.sidebar.offsetWidth, Math.min(0, e.deltaX));
+      uiElements.sidebar.style.transform = `translateX(${translateX - uiElements.sidebar.offsetWidth}px)`;
+    }
   });
   hammerMain.on('panend', e => {
-    if (e.deltaX > 50) {
+    uiElements.sidebar.style.transition = 'transform 0.3s ease-in-out';
+    if (e.center.x < 50 && e.deltaX > 50) {
+      toggleSidebar(true);
+    } else if (e.center.x > window.innerWidth - 50 && e.deltaX < -50) {
       toggleSidebar(true);
     } else {
       toggleSidebar(false);
@@ -621,21 +652,31 @@ function setupTouchGestures() {
   });
 }
 
-// Send user message with reduced checks
+// إرسال رسالة المستخدم
 async function submitMessage() {
-  if (isRequestActive || isRecording) return;
+  if (isRequestActive || isRecording) {
+    console.log('Submit blocked: Request active or recording');
+    return;
+  }
   let message = uiElements.input?.value.trim() || '';
   let payload = null;
   let formData = null;
   let endpoint = '/api/chat';
   let headers = {};
+  let inputType = 'text';
+  let outputFormat = 'text';
+  let title = null;
 
-  if (!message && !uiElements.fileInput?.files.length && !uiElements.audioInput?.files.length) return;
+  if (!message && !uiElements.fileInput?.files.length && !uiElements.audioInput?.files.length) {
+    console.log('No message, file, or audio to send');
+    return;
+  }
 
   if (uiElements.fileInput?.files.length > 0) {
     const file = uiElements.fileInput.files[0];
     if (file.type.startsWith('image/')) {
       endpoint = '/api/image-analysis';
+      inputType = 'image';
       message = 'Analyze this image';
       formData = new FormData();
       formData.append('file', file);
@@ -645,6 +686,7 @@ async function submitMessage() {
     const file = uiElements.audioInput.files[0];
     if (file.type.startsWith('audio/')) {
       endpoint = '/api/audio-transcription';
+      inputType = 'audio';
       message = 'Transcribe this audio';
       formData = new FormData();
       formData.append('file', file);
@@ -659,7 +701,8 @@ async function submitMessage() {
       temperature: 0.7,
       max_new_tokens: 128000,
       enable_browsing: true,
-      output_format: 'text'
+      output_format: 'text',
+      title: title
     };
     headers['Content-Type'] = 'application/json';
   }
@@ -682,6 +725,7 @@ async function submitMessage() {
     let responseText = '';
     if (endpoint === '/api/audio-transcription') {
       const data = await response.json();
+      if (!data.transcription) throw new Error('No transcription received from server');
       responseText = data.transcription || 'Error: No transcription generated.';
     } else if (endpoint === '/api/image-analysis') {
       const data = await response.json();
@@ -704,7 +748,10 @@ async function submitMessage() {
         let buffer = '';
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            if (!buffer.trim()) throw new Error('Empty response from server');
+            break;
+          }
           buffer += decoder.decode(value, { stream: true });
           if (streamMsg) {
             streamMsg.dataset.text = buffer;
@@ -736,7 +783,7 @@ async function submitMessage() {
   }
 }
 
-// Stop streaming
+// إيقاف البث
 function stopStream(forceCancel = false) {
   if (!isRequestActive && !isRecording) return;
   if (isRecording) stopVoiceRecording();
@@ -757,10 +804,11 @@ function stopStream(forceCancel = false) {
   if (uiElements.stopBtn) uiElements.stopBtn.style.pointerEvents = 'auto';
 }
 
-// Logout handler
+// معالجة تسجيل الخروج
 const logoutBtn = document.querySelector('#logoutBtn');
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async () => {
+    console.log('Logout button clicked');
     try {
       const response = await fetch('/logout', {
         method: 'POST',
@@ -768,26 +816,30 @@ if (logoutBtn) {
       });
       if (response.ok) {
         localStorage.removeItem('token');
+        console.log('Token removed from localStorage');
         window.location.href = '/login';
       } else {
+        console.error('Logout failed:', response.status);
         alert('Failed to log out. Please try again.');
       }
     } catch (error) {
+      console.error('Logout error:', error);
       alert('Error during logout: ' + error.message);
     }
   });
 }
 
-// Settings Modal with forced auth
+// إعدادات المستخدم
 if (uiElements.settingsBtn) {
   uiElements.settingsBtn.addEventListener('click', async () => {
     if (!checkAuth()) {
+      alert('Please log in to access settings.');
       window.location.href = '/login';
       return;
     }
     try {
       const response = await fetch('/api/settings', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${checkAuth()}` }
       });
       if (!response.ok) {
         if (response.status === 401) {
@@ -826,6 +878,7 @@ if (uiElements.settingsBtn) {
       uiElements.settingsModal.classList.remove('hidden');
       toggleSidebar(false);
     } catch (err) {
+      console.error('Error fetching settings:', err);
       alert('Failed to load settings. Please try again.');
     }
   });
@@ -838,44 +891,42 @@ if (uiElements.closeSettingsBtn) {
 }
 
 if (uiElements.settingsForm) {
-  uiElements.settingsForm.addEventListener('submit', (e) => {
+  uiElements.settingsForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!checkAuth()) {
+      alert('Please log in to save settings.');
       window.location.href = '/login';
       return;
     }
     const formData = new FormData(uiElements.settingsForm);
     const data = Object.fromEntries(formData);
-    fetch('/users/me', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify(data)
-    })
-      .then(res => {
-        if (!res.ok) {
-          if (res.status === 401) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-          }
-          throw new Error('Failed to update settings');
-        }
-        return res.json();
-      })
-      .then(() => {
-        alert('Settings updated successfully!');
-        uiElements.settingsModal.classList.add('hidden');
-        toggleSidebar(false);
-      })
-      .catch(err => {
-        alert('Error updating settings: ' + err.message);
+    try {
+      const response = await fetch('/users/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${checkAuth()}`
+        },
+        body: JSON.stringify(data)
       });
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+        throw new Error('Failed to update settings');
+      }
+      alert('Settings updated successfully!');
+      uiElements.settingsModal.classList.add('hidden');
+      toggleSidebar(false);
+    } catch (err) {
+      console.error('Error updating settings:', err);
+      alert('Error updating settings: ' + err.message);
+    }
   });
 }
 
-// History Toggle
+// تبديل عرض السجل
 if (uiElements.historyToggle) {
   uiElements.historyToggle.addEventListener('click', () => {
     if (uiElements.conversationList) {
@@ -891,15 +942,15 @@ if (uiElements.historyToggle) {
   });
 }
 
-// Event listeners
+// إضافة مستمعي الأحداث
 uiElements.promptItems.forEach(p => {
   p.addEventListener('click', e => {
     e.preventDefault();
     if (uiElements.input) {
       uiElements.input.value = p.dataset.prompt;
       autoResizeTextarea();
+      updateSendButtonState();
     }
-    if (uiElements.sendBtn) uiElements.sendBtn.disabled = false;
     submitMessage();
   });
 });
@@ -912,10 +963,11 @@ if (uiElements.audioInput) uiElements.audioInput.addEventListener('change', prev
 if (uiElements.sendBtn) {
   uiElements.sendBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
-    if (uiElements.input.value.trim() || uiElements.fileInput.files.length || uiElements.audioInput.files.length) {
-      submitMessage();
+    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) {
+      console.log('Send button click ignored: disabled or request/recording active');
+      return;
     }
+    submitMessage();
   });
 
   let pressTimer;
@@ -956,20 +1008,16 @@ if (uiElements.sendBtn) {
 if (uiElements.form) {
   uiElements.form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!isRecording && (uiElements.input.value.trim() || uiElements.fileInput.files.length || uiElements.audioInput.files.length)) {
+    if (!isRecording && !uiElements.sendBtn.disabled) {
       submitMessage();
     }
   });
 }
 
 if (uiElements.input) {
-  let debounceTimer;
   uiElements.input.addEventListener('input', () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      autoResizeTextarea();
-      updateSendButtonState();
-    }, 100);
+    autoResizeTextarea();
+    updateSendButtonState();
   });
   uiElements.input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1006,7 +1054,14 @@ if (uiElements.newConversationBtn) {
   uiElements.newConversationBtn.addEventListener('click', createNewConversation);
 }
 
-// Offline mode detection
+// إزالة التكرارات في localStorage
+const originalRemoveItem = localStorage.removeItem;
+localStorage.removeItem = function (key) {
+  console.log('Removing from localStorage:', key);
+  originalRemoveItem.apply(this, arguments);
+};
+
+// التعامل مع وضع عدم الاتصال
 window.addEventListener('offline', () => {
   if (uiElements.messageLimitWarning) {
     uiElements.messageLimitWarning.classList.remove('hidden');
