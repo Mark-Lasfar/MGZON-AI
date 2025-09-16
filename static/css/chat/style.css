@@ -47,7 +47,7 @@ html {
 }
 
 #chatBox {
-  display: none;
+  display: flex; /* غير display: none إلى flex ليظهر */
   flex-direction: column;
   width: 100%;
   height: 100%;

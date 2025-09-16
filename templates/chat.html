@@ -296,125 +296,125 @@
           continue.
         </div>
       </div>
-      <div id="chatArea" class="flex-1 hidden" aria-live="polite">
-        <div id="chatBox" class="flex-col" aria-live="polite"></div>
+      <div id="chatArea" class="flex-1 hidden" aria-live="polite" style="display: none;">
+        <div id="chatBox" class="flex-col" aria-live="polite" style="display: flex;"></div>
       </div>
-      <!-- Footer Form -->
-      <form id="footerForm" class="flex p-4">
-        <div id="inputContainer" class="w-full">
-          <textarea id="userInput" placeholder="Ask anything..." required></textarea>
-          <div id="rightIconGroup" class="flex gap-2">
-            <button type="button" id="fileBtn" class="icon-btn" aria-label="Upload File" title="Upload File">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <path d="M14 2v6h6" />
-              </svg>
-            </button>
-            <input type="file" id="fileInput" accept="image/*,.mp3,.wav" style="display: none;" />
-            <button type="button" id="audioBtn" class="icon-btn" aria-label="Upload Audio File"
-              title="Upload Audio File">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                <path d="M12 19v4" />
-              </svg>
-            </button>
-            <input type="file" id="audioInput" accept="audio/*" style="display: none;" />
-            <button type="submit" id="sendBtn" class="icon-btn" disabled aria-label="Send or Hold to Record"
-              title="Click to Send or Hold to Record Voice">
-              <svg id="sendIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7M3 12h11" />
-              </svg>
-            </button>
-            <button id="stopBtn" class="icon-btn" aria-label="Stop" title="Stop" style="display: none;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                <rect x="6" y="6" width="12" height="12" rx="2" fill="white" />
-              </svg>
-            </button>
-          </div>
+  </div>
+  <!-- Footer Form -->
+  <form id="footerForm" class="flex p-4">
+    <div id="inputContainer" class="w-full">
+      <textarea id="userInput" placeholder="Ask anything..." required></textarea>
+      <div id="rightIconGroup" class="flex gap-2">
+        <button type="button" id="fileBtn" class="icon-btn" aria-label="Upload File" title="Upload File">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6" />
+          </svg>
+        </button>
+        <input type="file" id="fileInput" accept="image/*,.mp3,.wav" style="display: none;" />
+        <button type="button" id="audioBtn" class="icon-btn" aria-label="Upload Audio File" title="Upload Audio File">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <path d="M12 19v4" />
+          </svg>
+        </button>
+        <input type="file" id="audioInput" accept="audio/*" style="display: none;" />
+        <button type="submit" id="sendBtn" class="icon-btn" disabled aria-label="Send or Hold to Record"
+          title="Click to Send or Hold to Record Voice">
+          <svg id="sendIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7M3 12h11" />
+          </svg>
+        </button>
+        <button id="stopBtn" class="icon-btn" aria-label="Stop" title="Stop" style="display: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="6" width="12" height="12" rx="2" fill="white" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div id="filePreview" class="upload-preview" style="display: none;"></div>
+    <div id="audioPreview" class="audio-preview" style="display: none;"></div>
+  </form>
+  </main>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-white">User Settings</h2>
+        <button id="closeSettingsBtn" class="text-gray-400 hover:text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <form id="settingsForm" class="space-y-4">
+        <div>
+          <label for="display_name" class="block text-sm text-gray-300">Display Name</label>
+          <input type="text" id="display_name" name="display_name" class="w-full p-2 bg-gray-700 text-white rounded">
         </div>
-        <div id="filePreview" class="upload-preview" style="display: none;"></div>
-        <div id="audioPreview" class="audio-preview" style="display: none;"></div>
+        <div>
+          <label for="preferred_model" class="block text-sm text-gray-300">Preferred Model</label>
+          <select id="preferred_model" name="preferred_model" class="w-full p-2 bg-gray-700 text-white rounded">
+            <option value="">Default</option>
+            <option value="advanced">Advanced (High-performance)</option>
+            <option value="standard">Standard (Balanced)</option>
+            <option value="light">Light (Quick)</option>
+          </select>
+        </div>
+        <div>
+          <label for="job_title" class="block text-sm text-gray-300">Job Title</label>
+          <input type="text" id="job_title" name="job_title" class="w-full p-2 bg-gray-700 text-white rounded">
+        </div>
+        <div>
+          <label for="education" class="block text-sm text-gray-300">Education</label>
+          <input type="text" id="education" name="education" class="w-full p-2 bg-gray-700 text-white rounded">
+        </div>
+        <div>
+          <label for="interests" class="block text-sm text-gray-300">Interests</label>
+          <textarea id="interests" name="interests" class="w-full p-2 bg-gray-700 text-white rounded"></textarea>
+        </div>
+        <div>
+          <label for="additional_info" class="block text-sm text-gray-300">Additional Info</label>
+          <textarea id="additional_info" name="additional_info"
+            class="w-full p-2 bg-gray-700 text-white rounded"></textarea>
+        </div>
+        <div>
+          <label for="conversation_style" class="block text-sm text-gray-300">Conversation Style</label>
+          <select id="conversation_style" name="conversation_style" class="w-full p-2 bg-gray-700 text-white rounded">
+            <option value="default">Default</option>
+            <option value="concise">Concise</option>
+            <option value="analytical">Analytical</option>
+            <option value="creative">Creative</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" id="closeSettingsBtn" class="px-4 py-2 bg-gray-600 text-white rounded">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+        </div>
       </form>
-    </main>
+    </div>
+  </div>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-      <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-white">User Settings</h2>
-          <button id="closeSettingsBtn" class="text-gray-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-        <form id="settingsForm" class="space-y-4">
-          <div>
-            <label for="display_name" class="block text-sm text-gray-300">Display Name</label>
-            <input type="text" id="display_name" name="display_name" class="w-full p-2 bg-gray-700 text-white rounded">
-          </div>
-          <div>
-            <label for="preferred_model" class="block text-sm text-gray-300">Preferred Model</label>
-            <select id="preferred_model" name="preferred_model" class="w-full p-2 bg-gray-700 text-white rounded">
-              <option value="">Default</option>
-              <option value="advanced">Advanced (High-performance)</option>
-              <option value="standard">Standard (Balanced)</option>
-              <option value="light">Light (Quick)</option>
-            </select>
-          </div>
-          <div>
-            <label for="job_title" class="block text-sm text-gray-300">Job Title</label>
-            <input type="text" id="job_title" name="job_title" class="w-full p-2 bg-gray-700 text-white rounded">
-          </div>
-          <div>
-            <label for="education" class="block text-sm text-gray-300">Education</label>
-            <input type="text" id="education" name="education" class="w-full p-2 bg-gray-700 text-white rounded">
-          </div>
-          <div>
-            <label for="interests" class="block text-sm text-gray-300">Interests</label>
-            <textarea id="interests" name="interests" class="w-full p-2 bg-gray-700 text-white rounded"></textarea>
-          </div>
-          <div>
-            <label for="additional_info" class="block text-sm text-gray-300">Additional Info</label>
-            <textarea id="additional_info" name="additional_info"
-              class="w-full p-2 bg-gray-700 text-white rounded"></textarea>
-          </div>
-          <div>
-            <label for="conversation_style" class="block text-sm text-gray-300">Conversation Style</label>
-            <select id="conversation_style" name="conversation_style" class="w-full p-2 bg-gray-700 text-white rounded">
-              <option value="default">Default</option>
-              <option value="concise">Concise</option>
-              <option value="analytical">Analytical</option>
-              <option value="creative">Creative</option>
-            </select>
-          </div>
-          <div class="flex justify-end gap-2">
-            <button type="button" id="closeSettingsBtn" class="px-4 py-2 bg-gray-600 text-white rounded">Cancel</button>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Copyright -->
-    <div class="text-center text-xs text-gray-400 py-2">
-      © 2025 Mark Al-Asfar & MGZon AI. All rights reserved.
-    </div>
-    <!-- Install Button -->
-    <button id="installAppBtn" style="display: none;"
-      class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
-      📲 Install MG Chat
-    </button>
-    <!-- PWA Install Instructions -->
-    <div id="pwa-instructions" class="fixed bottom-4 left-4 right-4 bg-blue-600 text-white p-4 rounded-lg z-50 hidden">
-      <p><strong>Add to Home Screen:</strong> Tap the share button in your browser, then "Add to Home Screen" for a native-like experience!</p>
-      <button onclick="document.getElementById('pwa-instructions').classList.add('hidden')" class="ml-2 text-sm">Close</button>
-    </div>
+  <!-- Copyright -->
+  <div class="text-center text-xs text-gray-400 py-2">
+    © 2025 Mark Al-Asfar & MGZon AI. All rights reserved.
+  </div>
+  <!-- Install Button -->
+  <button id="installAppBtn" style="display: none;"
+    class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
+    📲 Install MG Chat
+  </button>
+  <!-- PWA Install Instructions -->
+  <div id="pwa-instructions" class="fixed bottom-4 left-4 right-4 bg-blue-600 text-white p-4 rounded-lg z-50 hidden">
+    <p><strong>Add to Home Screen:</strong> Tap the share button in your browser, then "Add to Home Screen" for a
+      native-like experience!</p>
+    <button onclick="document.getElementById('pwa-instructions').classList.add('hidden')"
+      class="ml-2 text-sm">Close</button>
+  </div>
   </div>
 
   <!-- Scripts -->

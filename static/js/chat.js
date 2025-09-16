@@ -171,10 +171,15 @@ function enterChatView() {
       uiElements.conversationTitle.textContent = currentConversationTitle;
     }
   }
-  if (uiElements.chatBox) uiElements.chatBox.classList.remove('hidden');
+  if (uiElements.chatArea) {
+    uiElements.chatArea.classList.remove('hidden'); // أضف هذا لإظهار #chatArea
+  }
+  if (uiElements.chatBox) {
+    uiElements.chatBox.classList.remove('hidden');
+    uiElements.chatBox.style.display = 'flex'; // إجبار عرض flex
+  }
   if (uiElements.initialContent) uiElements.initialContent.classList.add('hidden');
 }
-
 // Toggle home view
 function leaveChatView() {
   if (uiElements.chatHeader) {
@@ -192,9 +197,11 @@ function addMsg(who, text) {
   div.dataset.text = text;
   console.log('Adding message:', { who, text });
   renderMarkdown(div);
+  div.style.display = 'block'; // إجبار عرض الفقاعة
   if (uiElements.chatBox) {
     uiElements.chatBox.appendChild(div);
     uiElements.chatBox.classList.remove('hidden');
+    uiElements.chatBox.style.display = 'flex'; // إجبار عرض chatBox
   } else {
     console.error('chatBox is null');
   }
@@ -710,13 +717,13 @@ async function submitMessage() {
     headers['Content-Type'] = 'application/json';
   }
 
-  enterChatView();
-  addMsg('user', message);
+  enterChatView(); // تأكد من إظهار الشات
+  addMsg('user', message); // أضف رسالة المستخدم
   if (!(await checkAuth())) {
     conversationHistory.push({ role: 'user', content: message });
     sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
   }
-  streamMsg = addMsg('assistant', '');
+  streamMsg = addMsg('assistant', ''); // أضف رسالة المساعد الفارغة
   const loadingEl = document.createElement('span');
   loadingEl.className = 'loading';
   streamMsg.appendChild(loadingEl);
@@ -762,12 +769,17 @@ async function submitMessage() {
           }
           const chunk = decoder.decode(value, { stream: true });
           buffer += chunk;
+          console.log('Received chunk:', chunk); // تتبع الدفق للتأكد من وصول البيانات
 
           // تحديث النص في streamMsg فورًا
           if (streamMsg) {
             streamMsg.dataset.text = buffer;
             currentAssistantText = buffer;
             renderMarkdown(streamMsg); // إعادة رسم الـ Markdown لكل قطعة
+            streamMsg.style.display = 'block'; // إجبار عرض الرسالة
+            if (uiElements.chatBox) {
+              uiElements.chatBox.style.display = 'flex'; // إجبار عرض الشات
+            }
           }
         }
         responseText = buffer;
