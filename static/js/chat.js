@@ -175,10 +175,12 @@ function enterChatView() {
   if (uiElements.chatArea) {
     uiElements.chatArea.classList.remove('hidden');
     uiElements.chatArea.style.display = 'flex'; // إجبار العرض
+    uiElements.chatArea.style.opacity = '1'; // إضافة الشفافية للتأكد
   }
   if (uiElements.chatBox) {
     uiElements.chatBox.classList.remove('hidden');
     uiElements.chatBox.style.display = 'flex';
+    uiElements.chatBox.style.opacity = '1';
   }
   if (uiElements.initialContent) uiElements.initialContent.classList.add('hidden');
 }
@@ -684,6 +686,11 @@ async function submitMessage() {
     return;
   }
 
+  // إظهار واجهة المحادثة عند أول رسالة
+  if (uiElements.initialContent && !uiElements.initialContent.classList.contains('hidden')) {
+    enterChatView();
+  }
+
   if (uiElements.fileInput?.files.length > 0) {
     const file = uiElements.fileInput.files[0];
     if (file.type.startsWith('image/')) {
@@ -718,7 +725,6 @@ async function submitMessage() {
     headers['Content-Type'] = 'application/json';
   }
 
-  enterChatView(); // تأكد من إظهار الشات
   addMsg('user', message); // أضف رسالة المستخدم
   if (!(await checkAuth())) {
     conversationHistory.push({ role: 'user', content: message });
