@@ -160,7 +160,8 @@ function renderMarkdown(el) {
       behavior: 'smooth',
     });
   }
-}
+  el.style.display = 'block'; // إجبار عرض الفقاعة
+} 
 
 // Toggle chat view
 function enterChatView() {
@@ -743,48 +744,48 @@ async function submitMessage() {
       const data = await response.json();
       responseText = data.image_analysis || 'Error: No analysis generated.';
     } else {
-      const contentType = response.headers.get('Content-Type');
-      if (contentType?.includes('application/json')) {
-        const data = await response.json();
-        responseText = data.response || 'Error: No response generated.';
-        if (data.conversation_id) {
-          currentConversationId = data.conversation_id;
-          currentConversationTitle = data.conversation_title || 'Untitled Conversation';
-          if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
-          history.pushState(null, '', `/chat/${currentConversationId}`);
-          await loadConversations();
-        }
-      } else {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        streamMsg.dataset.text = ''; // مسح النص القديم
-        streamMsg.querySelector('.loading')?.remove(); // إزالة مؤشر التحميل
+  const contentType = response.headers.get('Content-Type');
+  if (contentType?.includes('application/json')) {
+    const data = await response.json();
+    responseText = data.response || 'Error: No response generated.';
+    if (data.conversation_id) {
+      currentConversationId = data.conversation_id;
+      currentConversationTitle = data.conversation_title || 'Untitled Conversation';
+      if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
+      history.pushState(null, '', `/chat/${currentConversationId}`);
+      await loadConversations();
+    }
+  } else {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    streamMsg.dataset.text = '';
+    streamMsg.querySelector('.loading')?.remove();
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            if (!buffer.trim()) throw new Error('Empty response from server');
-            break;
-          }
-          const chunk = decoder.decode(value, { stream: true });
-          buffer += chunk;
-          console.log('Received chunk:', chunk); // تتبع الدفق للتأكد من وصول البيانات
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        if (!buffer.trim()) throw new Error('Empty response from server');
+        break;
+      }
+      const chunk = decoder.decode(value, { stream: true });
+      buffer += chunk;
+      console.log('Received chunk:', chunk);
 
-          // تحديث النص في streamMsg فورًا
-          if (streamMsg) {
-            streamMsg.dataset.text = buffer;
-            currentAssistantText = buffer;
-            renderMarkdown(streamMsg); // إعادة رسم الـ Markdown لكل قطعة
-            streamMsg.style.display = 'block'; // إجبار عرض الرسالة
-            if (uiElements.chatBox) {
-              uiElements.chatBox.style.display = 'flex'; // إجبار عرض الشات
-            }
-          }
+      if (streamMsg) {
+        streamMsg.dataset.text = buffer;
+        currentAssistantText = buffer;
+        renderMarkdown(streamMsg);
+        streamMsg.style.opacity = '1'; // إجبار الظهور
+        if (uiElements.chatBox) {
+          uiElements.chatBox.style.display = 'flex';
+          uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight; // تمرير إجباري
         }
-        responseText = buffer;
       }
     }
+    responseText = buffer;
+  }
+}
 
     if (streamMsg) {
       streamMsg.dataset.text = responseText;

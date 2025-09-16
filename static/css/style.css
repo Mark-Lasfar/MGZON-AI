@@ -18,6 +18,11 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+#chatArea {
+  flex: 1;
+  min-height: 0; /* لمنع الانهيار */
+  overflow-y: auto;
+}
 
 body {
   display: flex;

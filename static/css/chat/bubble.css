@@ -14,7 +14,7 @@
   font-family: 'Inter', sans-serif;
   font-size: 0.95rem;
   position: relative;
-  opacity: 0;
+  opacity: 1; /* إزالة أي خفاء افتراضي */
   animation: bubbleAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   margin: 0.75rem 0;
   overflow-wrap: break-word;
