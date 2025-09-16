@@ -152,7 +152,7 @@ google_oauth_router = get_oauth_router(
     get_user_manager,
     state_secret=SECRET,
     associate_by_email=True,
-    redirect_url="https://mgzon-mgzon-app.hf.space/chat",  # تعديل الـ redirect_url ليحوّل مباشرة إلى /chat
+    redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback",  # تعديل الـ redirect_url ليحوّل مباشرة إلى /chat
 )
 
 github_oauth_client._access_token_url = "https://github.com/login/oauth/access_token"
@@ -163,7 +163,7 @@ github_oauth_router = get_oauth_router(
     get_user_manager,
     state_secret=SECRET,
     associate_by_email=True,
-    redirect_url="https://mgzon-mgzon-app.hf.space/chat",  # تعديل الـ redirect_url ليحوّل مباشرة إلى /chat
+    redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback",  # تعديل الـ redirect_url ليحوّل مباشرة إلى /chat
 )
 
 fastapi_users = FastAPIUsers[User, int](
