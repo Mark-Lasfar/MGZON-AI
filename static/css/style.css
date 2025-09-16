@@ -18,6 +18,7 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
 #chatArea {
   flex: 1;
   min-height: 0; /* لمنع الانهيار */
@@ -27,8 +28,8 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
-  background-color: var(--background-dark);
-  color: var(--text-dark);
+  background-color: var(--background-dark, #0f0f0f);
+  color: var(--text-dark, #e5e7eb);
   overflow: hidden;
   word-wrap: break-word;
 }

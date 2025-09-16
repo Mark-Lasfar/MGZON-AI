@@ -4,28 +4,29 @@
  */
 
 .bubble {
-  display: block;
+  display: block !important; /* إجبار العرض لتجنب التعارض مع hidden */
   align-self: flex-start;
   background: #1f1f1f;
   color: #e8e8e8;
-  border-radius: var(--bubble-radius);
+  border-radius: var(--bubble-radius, 1rem);
   line-height: 1.5;
   white-space: normal;
   font-family: 'Inter', sans-serif;
   font-size: 0.95rem;
   position: relative;
-  opacity: 1; /* إزالة أي خفاء افتراضي */
-  animation: bubbleAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 1 !important; /* إزالة أي خفاء افتراضي */
+  animation: bubbleAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; /* الاحتفاظ بالأنيميشن لكن بدون تأخير */
   margin: 0.75rem 0;
   overflow-wrap: break-word;
   word-break: break-word;
   vertical-align: middle;
-  padding: 1rem 1rem;
+  padding: 1rem;
   box-sizing: border-box;
   max-width: 100%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
+  min-height: 20px; /* ضمان ارتفاع أدنى للظهور */
 }
 
 .bubble:hover {
@@ -34,6 +35,10 @@
 }
 
 @keyframes bubbleAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
   to {
     opacity: 1;
     transform: translateY(0);
