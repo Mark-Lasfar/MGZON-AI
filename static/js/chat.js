@@ -173,11 +173,12 @@ function enterChatView() {
     }
   }
   if (uiElements.chatArea) {
-    uiElements.chatArea.classList.remove('hidden'); // أضف هذا لإظهار #chatArea
+    uiElements.chatArea.classList.remove('hidden');
+    uiElements.chatArea.style.display = 'flex'; // إجبار العرض
   }
   if (uiElements.chatBox) {
     uiElements.chatBox.classList.remove('hidden');
-    uiElements.chatBox.style.display = 'flex'; // إجبار عرض flex
+    uiElements.chatBox.style.display = 'flex';
   }
   if (uiElements.initialContent) uiElements.initialContent.classList.add('hidden');
 }
@@ -198,13 +199,12 @@ function addMsg(who, text) {
   div.dataset.text = text;
   console.log('Adding message:', { who, text });
   renderMarkdown(div);
-  div.style.display = 'block'; // إجبار عرض الفقاعة
+  div.style.display = 'block';
   if (uiElements.chatBox) {
     uiElements.chatBox.appendChild(div);
     uiElements.chatBox.classList.remove('hidden');
-    uiElements.chatBox.style.display = 'flex'; // إجبار عرض chatBox
   } else {
-    console.error('chatBox is null');
+    console.error('chatBox is not found in DOM');
   }
   return div;
 }
