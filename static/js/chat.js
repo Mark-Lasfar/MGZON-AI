@@ -1050,6 +1050,8 @@ if (uiElements.newConversationBtn) {
   });
 }
 
+
+
 // Debug localStorage
 const originalRemoveItem = localStorage.removeItem;
 localStorage.removeItem = function (key) {
@@ -1070,3 +1072,17 @@ window.addEventListener('online', () => {
     uiElements.messageLimitWarning.classList.add('hidden');
   }
 });
+
+// Function to auto-resize textarea
+function autoResizeTextarea() {
+  if (uiElements.input) {
+    uiElements.input.style.height = 'auto';
+    uiElements.input.style.height = `${uiElements.input.scrollHeight}px`;
+    updateSendButtonState(); // تحديث حالة الزر بعد تغيير الحجم
+  }
+}
+
+// Function to check if text contains Arabic characters
+function isArabicText(text) {
+  return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+}
