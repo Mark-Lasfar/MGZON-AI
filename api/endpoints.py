@@ -817,6 +817,14 @@ async def get_user_settings(user: User = Depends(current_active_user)):
         "is_superuser": user.is_superuser
     }
 
+
+@router.get("/api/verify-token")
+async def verify_token(user: User = Depends(current_active_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return {"status": "valid"}
+
+    
 @router.put("/users/me")
 async def update_user_settings(
     settings: UserUpdate,

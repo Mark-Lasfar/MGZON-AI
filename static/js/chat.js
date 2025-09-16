@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
 // SPDX-License-Identifier: Apache-2.0
 
-// إعداد مكتبة Prism لتسليط الضوء على الكود
+// Prism for code highlighting
 Prism.plugins.autoloader.languages_path = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
 
-// تعريف عناصر واجهة المستخدم
+// UI elements
 const uiElements = {
   chatArea: document.getElementById('chatArea'),
   chatBox: document.getElementById('chatBox'),
@@ -36,7 +36,7 @@ const uiElements = {
   historyToggle: document.getElementById('historyToggle'),
 };
 
-// متغيرات الحالة
+// State variables
 let conversationHistory = JSON.parse(sessionStorage.getItem('conversationHistory') || '[]');
 let currentConversationId = window.conversationId || null;
 let currentConversationTitle = window.conversationTitle || null;
@@ -48,7 +48,7 @@ let streamMsg = null;
 let currentAssistantText = '';
 let isSidebarOpen = window.innerWidth >= 768;
 
-// تهيئة الصفحة
+// Initialize AOS and load initial conversation
 document.addEventListener('DOMContentLoaded', async () => {
   AOS.init({
     duration: 800,
@@ -57,11 +57,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     offset: 50,
   });
 
-  // التحقق من حالة تسجيل الدخول وتحميل المحادثة إن وجدت
-  if (currentConversationId && checkAuth()) {
+  if (await checkAuth() && currentConversationId) {
     console.log('Loading conversation with ID:', currentConversationId);
     await loadConversation(currentConversationId);
-  } else if (conversationHistory.length > 0) {
+  } else if (!(await checkAuth()) && conversationHistory.length > 0) {
     console.log('Restoring conversation history from sessionStorage:', conversationHistory);
     enterChatView();
     conversationHistory.forEach(msg => {
@@ -82,14 +81,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupTouchGestures();
 });
 
-// التحقق من رمز التوثيق
-function checkAuth() {
+// Check authentication token
+async function checkAuth() {
   const token = localStorage.getItem('token');
-  console.log('Auth token:', token ? 'Found' : 'Not found');
-  return token;
+  if (!token) {
+    console.log('No auth token found');
+    return false;
+  }
+  try {
+    const response = await fetch('/api/verify-token', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.ok) {
+      console.log('Auth token verified');
+      return true;
+    } else {
+      console.log('Token verification failed:', response.status);
+      localStorage.removeItem('token');
+      return false;
+    }
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    localStorage.removeItem('token');
+    return false;
+  }
 }
 
-// إدارة الجلسة لغير المسجلين
+// Handle session for non-logged-in users
 async function handleSession() {
   const sessionId = sessionStorage.getItem('session_id');
   if (!sessionId) {
@@ -102,18 +120,18 @@ async function handleSession() {
   return sessionId;
 }
 
-// تحديث حالة زر الإرسال
+// Update send button state
 function updateSendButtonState() {
   if (uiElements.sendBtn && uiElements.input && uiElements.fileInput && uiElements.audioInput) {
     const hasInput = uiElements.input.value.trim() !== '' ||
                      uiElements.fileInput.files.length > 0 ||
                      uiElements.audioInput.files.length > 0;
     uiElements.sendBtn.disabled = !hasInput || isRequestActive || isRecording;
-    console.log('Send button state:', uiElements.sendBtn.disabled ? 'Disabled' : 'Enabled', 'Input:', uiElements.input.value, 'Files:', uiElements.fileInput.files.length, 'Audio:', uiElements.audioInput.files.length);
+    console.log('Send button state:', { hasInput, isRequestActive, isRecording, disabled: uiElements.sendBtn.disabled });
   }
 }
 
-// عرض محتوى Markdown مع دعم RTL
+// Render markdown content with RTL support
 function renderMarkdown(el) {
   const raw = el.dataset.text || '';
   const isArabic = isArabicText(raw);
@@ -144,7 +162,7 @@ function renderMarkdown(el) {
   }
 }
 
-// الانتقال إلى عرض المحادثة
+// Toggle chat view
 function enterChatView() {
   if (uiElements.chatHeader) {
     uiElements.chatHeader.classList.remove('hidden');
@@ -157,7 +175,7 @@ function enterChatView() {
   if (uiElements.initialContent) uiElements.initialContent.classList.add('hidden');
 }
 
-// العودة إلى العرض الافتراضي
+// Toggle home view
 function leaveChatView() {
   if (uiElements.chatHeader) {
     uiElements.chatHeader.classList.add('hidden');
@@ -167,7 +185,7 @@ function leaveChatView() {
   if (uiElements.initialContent) uiElements.initialContent.classList.remove('hidden');
 }
 
-// إضافة رسالة إلى واجهة المستخدم
+// Add chat bubble
 function addMsg(who, text) {
   const div = document.createElement('div');
   div.className = `bubble ${who === 'user' ? 'bubble-user' : 'bubble-assist'} ${isArabicText(text) ? 'rtl' : ''}`;
@@ -183,11 +201,11 @@ function addMsg(who, text) {
   return div;
 }
 
-// مسح جميع الرسائل
+// Clear all messages
 function clearAllMessages() {
   stopStream(true);
   conversationHistory = [];
-  sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+  sessionStorage.removeItem('conversationHistory');
   currentAssistantText = '';
   if (streamMsg) {
     streamMsg.querySelector('.loading')?.remove();
@@ -208,7 +226,7 @@ function clearAllMessages() {
   autoResizeTextarea();
 }
 
-// معاينة الملفات
+// File preview
 function previewFile() {
   if (uiElements.fileInput?.files.length > 0) {
     const file = uiElements.fileInput.files[0];
@@ -242,7 +260,7 @@ function previewFile() {
   }
 }
 
-// تسجيل الصوت
+// Voice recording
 function startVoiceRecording() {
   if (isRequestActive || isRecording) {
     console.log('Voice recording blocked: Request active or already recording');
@@ -283,12 +301,14 @@ function stopVoiceRecording() {
   }
 }
 
-// إرسال رسالة صوتية
+// Send audio message
 async function submitAudioMessage(formData) {
   enterChatView();
   addMsg('user', 'Voice message');
-  conversationHistory.push({ role: 'user', content: 'Voice message' });
-  sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+  if (!(await checkAuth())) {
+    conversationHistory.push({ role: 'user', content: 'Voice message' });
+    sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+  }
   streamMsg = addMsg('assistant', '');
   const loadingEl = document.createElement('span');
   loadingEl.className = 'loading';
@@ -311,10 +331,9 @@ async function submitAudioMessage(formData) {
       renderMarkdown(streamMsg);
       streamMsg.dataset.done = '1';
     }
-    conversationHistory.push({ role: 'assistant', content: transcription });
-    sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
-    if (checkAuth() && currentConversationId) {
-      await saveMessageToConversation(currentConversationId, 'assistant', transcription);
+    if (!(await checkAuth())) {
+      conversationHistory.push({ role: 'assistant', content: transcription });
+      sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
     }
     if (checkAuth() && data.conversation_id) {
       currentConversationId = data.conversation_id;
@@ -329,9 +348,9 @@ async function submitAudioMessage(formData) {
   }
 }
 
-// إرسال طلب إلى الخادم
+// Helper to send API requests
 async function sendRequest(endpoint, body, headers = {}) {
-  const token = checkAuth();
+  const token = localStorage.getItem('token');
   if (token) headers['Authorization'] = `Bearer ${token}`;
   headers['X-Session-ID'] = await handleSession();
   console.log('Sending request to:', endpoint, 'with headers:', headers);
@@ -367,7 +386,7 @@ async function sendRequest(endpoint, body, headers = {}) {
   }
 }
 
-// تحديث واجهة المستخدم أثناء الطلب
+// Helper to update UI during request
 function updateUIForRequest() {
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'inline-flex';
   if (uiElements.sendBtn) uiElements.sendBtn.style.display = 'none';
@@ -378,7 +397,7 @@ function updateUIForRequest() {
   autoResizeTextarea();
 }
 
-// إنهاء الطلب
+// Helper to finalize request
 function finalizeRequest() {
   streamMsg = null;
   isRequestActive = false;
@@ -387,7 +406,7 @@ function finalizeRequest() {
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'none';
 }
 
-// معالجة أخطاء الطلب
+// Helper to handle request errors
 function handleRequestError(error) {
   if (streamMsg) {
     streamMsg.querySelector('.loading')?.remove();
@@ -405,17 +424,19 @@ function handleRequestError(error) {
   alert(`Error: ${error.message || 'An error occurred during the request.'}`);
   isRequestActive = false;
   abortController = null;
+  if (!(checkAuth())) {
+    sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+  }
   if (uiElements.sendBtn) uiElements.sendBtn.style.display = 'inline-flex';
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'none';
-  sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
 }
 
-// تحميل المحادثات للشريط الجانبي
+// Load conversations for sidebar
 async function loadConversations() {
-  if (!checkAuth()) return;
+  if (!(await checkAuth())) return;
   try {
     const response = await fetch('/api/conversations', {
-      headers: { 'Authorization': `Bearer ${checkAuth()}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (!response.ok) throw new Error('Failed to load conversations');
     const conversations = await response.json();
@@ -449,17 +470,14 @@ async function loadConversations() {
   }
 }
 
-// تحميل محادثة من الخادم
+// Load conversation from API
 async function loadConversation(conversationId) {
   try {
     const response = await fetch(`/api/conversations/${conversationId}`, {
-      headers: { 'Authorization': `Bearer ${checkAuth()}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
+      if (response.status === 401) window.location.href = '/login';
       throw new Error('Failed to load conversation');
     }
     const data = await response.json();
@@ -478,19 +496,16 @@ async function loadConversation(conversationId) {
   }
 }
 
-// حذف محادثة
+// Delete conversation
 async function deleteConversation(conversationId) {
   if (!confirm('Are you sure you want to delete this conversation?')) return;
   try {
     const response = await fetch(`/api/conversations/${conversationId}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${checkAuth()}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
+      if (response.status === 401) window.location.href = '/login';
       throw new Error('Failed to delete conversation');
     }
     if (conversationId === currentConversationId) {
@@ -506,32 +521,9 @@ async function deleteConversation(conversationId) {
   }
 }
 
-// حفظ رسالة في المحادثة
-async function saveMessageToConversation(conversationId, role, content) {
-  try {
-    const response = await fetch(`/api/conversations/${conversationId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${checkAuth()}`
-      },
-      body: JSON.stringify({ role, content })
-    });
-    if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
-      throw new Error('Failed to save message');
-    }
-  } catch (error) {
-    console.error('Error saving message:', error);
-  }
-}
-
-// إنشاء محادثة جديدة
+// Create new conversation
 async function createNewConversation() {
-  if (!checkAuth()) {
+  if (!(await checkAuth())) {
     alert('Please log in to create a new conversation.');
     window.location.href = '/login';
     return;
@@ -541,7 +533,7 @@ async function createNewConversation() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${checkAuth()}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
       body: JSON.stringify({ title: 'New Conversation' })
     });
@@ -556,7 +548,7 @@ async function createNewConversation() {
     currentConversationId = data.conversation_id;
     currentConversationTitle = data.title;
     conversationHistory = [];
-    sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+    sessionStorage.removeItem('conversationHistory');
     if (uiElements.chatBox) uiElements.chatBox.innerHTML = '';
     if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
     history.pushState(null, '', `/chat/${currentConversationId}`);
@@ -573,24 +565,18 @@ async function createNewConversation() {
   });
 }
 
-// تحديث عنوان المحادثة
+// Update conversation title
 async function updateConversationTitle(conversationId, newTitle) {
   try {
     const response = await fetch(`/api/conversations/${conversationId}/title`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${checkAuth()}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
       body: JSON.stringify({ title: newTitle })
     });
-    if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
-      throw new Error('Failed to update title');
-    }
+    if (!response.ok) throw new Error('Failed to update title');
     const data = await response.json();
     currentConversationTitle = data.title;
     if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
@@ -601,7 +587,29 @@ async function updateConversationTitle(conversationId, newTitle) {
   }
 }
 
-// إعداد إيماءات اللمس
+// Toggle sidebar
+function toggleSidebar(show) {
+  if (uiElements.sidebar) {
+    if (window.innerWidth >= 768) {
+      isSidebarOpen = true;
+      uiElements.sidebar.style.transform = 'translateX(0)';
+      if (uiElements.swipeHint) uiElements.swipeHint.style.display = 'none';
+    } else {
+      isSidebarOpen = show !== undefined ? show : !isSidebarOpen;
+      uiElements.sidebar.style.transform = isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)';
+      if (uiElements.swipeHint && !isSidebarOpen) {
+        uiElements.swipeHint.style.display = 'block';
+        setTimeout(() => {
+          uiElements.swipeHint.style.display = 'none';
+        }, 3000);
+      } else if (uiElements.swipeHint) {
+        uiElements.swipeHint.style.display = 'none';
+      }
+    }
+  }
+}
+
+// Setup touch gestures with Hammer.js
 function setupTouchGestures() {
   if (!uiElements.sidebar) return;
   const hammer = new Hammer(uiElements.sidebar);
@@ -652,12 +660,9 @@ function setupTouchGestures() {
   });
 }
 
-// إرسال رسالة المستخدم
+// Send user message
 async function submitMessage() {
-  if (isRequestActive || isRecording) {
-    console.log('Submit blocked: Request active or recording');
-    return;
-  }
+  if (isRequestActive || isRecording) return;
   let message = uiElements.input?.value.trim() || '';
   let payload = null;
   let formData = null;
@@ -665,7 +670,6 @@ async function submitMessage() {
   let headers = {};
   let inputType = 'text';
   let outputFormat = 'text';
-  let title = null;
 
   if (!message && !uiElements.fileInput?.files.length && !uiElements.audioInput?.files.length) {
     console.log('No message, file, or audio to send');
@@ -697,20 +701,21 @@ async function submitMessage() {
       system_prompt: isArabicText(message)
         ? 'أنت مساعد ذكي تقدم إجابات مفصلة ومنظمة باللغة العربية، مع ضمان الدقة والوضوح.'
         : 'You are an expert assistant providing detailed, comprehensive, and well-structured responses.',
-      history: conversationHistory,
+      history: (await checkAuth()) ? [] : conversationHistory,
       temperature: 0.7,
       max_new_tokens: 128000,
       enable_browsing: true,
-      output_format: 'text',
-      title: title
+      output_format: 'text'
     };
     headers['Content-Type'] = 'application/json';
   }
 
   enterChatView();
   addMsg('user', message);
-  conversationHistory.push({ role: 'user', content: message });
-  sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+  if (!(await checkAuth())) {
+    conversationHistory.push({ role: 'user', content: message });
+    sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+  }
   streamMsg = addMsg('assistant', '');
   const loadingEl = document.createElement('span');
   loadingEl.className = 'loading';
@@ -769,13 +774,9 @@ async function submitMessage() {
       renderMarkdown(streamMsg);
       streamMsg.dataset.done = '1';
     }
-    conversationHistory.push({ role: 'assistant', content: responseText });
-    sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
-    if (checkAuth() && currentConversationId) {
-      await saveMessageToConversation(currentConversationId, 'assistant', responseText);
-    }
-    if (checkAuth()) {
-      await loadConversations();
+    if (!(await checkAuth())) {
+      conversationHistory.push({ role: 'assistant', content: responseText });
+      sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
     }
     finalizeRequest();
   } catch (error) {
@@ -783,7 +784,7 @@ async function submitMessage() {
   }
 }
 
-// إيقاف البث
+// Stop streaming
 function stopStream(forceCancel = false) {
   if (!isRequestActive && !isRecording) return;
   if (isRecording) stopVoiceRecording();
@@ -804,7 +805,7 @@ function stopStream(forceCancel = false) {
   if (uiElements.stopBtn) uiElements.stopBtn.style.pointerEvents = 'auto';
 }
 
-// معالجة تسجيل الخروج
+// Logout handler
 const logoutBtn = document.querySelector('#logoutBtn');
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async () => {
@@ -829,17 +830,17 @@ if (logoutBtn) {
   });
 }
 
-// إعدادات المستخدم
+// Settings Modal
 if (uiElements.settingsBtn) {
   uiElements.settingsBtn.addEventListener('click', async () => {
-    if (!checkAuth()) {
+    if (!(await checkAuth())) {
       alert('Please log in to access settings.');
       window.location.href = '/login';
       return;
     }
     try {
       const response = await fetch('/api/settings', {
-        headers: { 'Authorization': `Bearer ${checkAuth()}` }
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) {
         if (response.status === 401) {
@@ -891,42 +892,46 @@ if (uiElements.closeSettingsBtn) {
 }
 
 if (uiElements.settingsForm) {
-  uiElements.settingsForm.addEventListener('submit', async (e) => {
+  uiElements.settingsForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!checkAuth()) {
+    if (!(checkAuth())) {
       alert('Please log in to save settings.');
       window.location.href = '/login';
       return;
     }
     const formData = new FormData(uiElements.settingsForm);
     const data = Object.fromEntries(formData);
-    try {
-      const response = await fetch('/users/me', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${checkAuth()}`
-        },
-        body: JSON.stringify(data)
-      });
-      if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/login';
+    fetch('/users/me', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(data)
+    })
+      .then(res => {
+        if (!res.ok) {
+          if (res.status === 401) {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+          }
+          throw new Error('Failed to update settings');
         }
-        throw new Error('Failed to update settings');
-      }
-      alert('Settings updated successfully!');
-      uiElements.settingsModal.classList.add('hidden');
-      toggleSidebar(false);
-    } catch (err) {
-      console.error('Error updating settings:', err);
-      alert('Error updating settings: ' + err.message);
-    }
+        return res.json();
+      })
+      .then(() => {
+        alert('Settings updated successfully!');
+        uiElements.settingsModal.classList.add('hidden');
+        toggleSidebar(false);
+      })
+      .catch(err => {
+        console.error('Error updating settings:', err);
+        alert('Error updating settings: ' + err.message);
+      });
   });
 }
 
-// تبديل عرض السجل
+// History Toggle
 if (uiElements.historyToggle) {
   uiElements.historyToggle.addEventListener('click', () => {
     if (uiElements.conversationList) {
@@ -942,15 +947,15 @@ if (uiElements.historyToggle) {
   });
 }
 
-// إضافة مستمعي الأحداث
+// Event listeners
 uiElements.promptItems.forEach(p => {
   p.addEventListener('click', e => {
     e.preventDefault();
     if (uiElements.input) {
       uiElements.input.value = p.dataset.prompt;
       autoResizeTextarea();
-      updateSendButtonState();
     }
+    if (uiElements.sendBtn) uiElements.sendBtn.disabled = false;
     submitMessage();
   });
 });
@@ -961,63 +966,49 @@ if (uiElements.fileInput) uiElements.fileInput.addEventListener('change', previe
 if (uiElements.audioInput) uiElements.audioInput.addEventListener('change', previewFile);
 
 if (uiElements.sendBtn) {
-  uiElements.sendBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) {
-      console.log('Send button click ignored: disabled or request/recording active');
-      return;
-    }
-    submitMessage();
-  });
-
   let pressTimer;
-  uiElements.sendBtn.addEventListener('mousedown', (e) => {
+  const handlePressStart = (e) => {
+    e.preventDefault();
     if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
-    pressTimer = setTimeout(() => {
-      startVoiceRecording();
-    }, 500);
-  });
-  uiElements.sendBtn.addEventListener('mouseup', () => {
-    clearTimeout(pressTimer);
-    if (isRecording) stopVoiceRecording();
-  });
-  uiElements.sendBtn.addEventListener('mouseleave', () => {
-    clearTimeout(pressTimer);
-    if (isRecording) stopVoiceRecording();
-  });
+    if (uiElements.input.value.trim() || uiElements.fileInput.files.length > 0 || uiElements.audioInput.files.length > 0) {
+      submitMessage();
+    } else {
+      pressTimer = setTimeout(() => startVoiceRecording(), 500);
+    }
+  };
 
-  uiElements.sendBtn.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (uiElements.sendBtn.disabled || isRequestActive || isRecording) return;
-    pressTimer = setTimeout(() => {
-      startVoiceRecording();
-    }, 500);
-  });
-  uiElements.sendBtn.addEventListener('touchend', (e) => {
+  const handlePressEnd = (e) => {
     e.preventDefault();
     clearTimeout(pressTimer);
     if (isRecording) stopVoiceRecording();
-  });
-  uiElements.sendBtn.addEventListener('touchcancel', (e) => {
-    e.preventDefault();
-    clearTimeout(pressTimer);
-    if (isRecording) stopVoiceRecording();
-  });
+  };
+
+  uiElements.sendBtn.replaceWith(uiElements.sendBtn.cloneNode(true));
+  uiElements.sendBtn = document.getElementById('sendBtn');
+
+  uiElements.sendBtn.addEventListener('click', handlePressStart);
+  uiElements.sendBtn.addEventListener('touchstart', handlePressStart);
+  uiElements.sendBtn.addEventListener('touchend', handlePressEnd);
+  uiElements.sendBtn.addEventListener('touchcancel', handlePressEnd);
 }
 
 if (uiElements.form) {
   uiElements.form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!isRecording && !uiElements.sendBtn.disabled) {
+    if (!isRecording && uiElements.input.value.trim()) {
       submitMessage();
     }
   });
 }
 
 if (uiElements.input) {
+  let debounceTimer;
   uiElements.input.addEventListener('input', () => {
-    autoResizeTextarea();
-    updateSendButtonState();
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      autoResizeTextarea();
+      updateSendButtonState();
+    }, 100);
   });
   uiElements.input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1038,7 +1029,7 @@ if (uiElements.clearBtn) uiElements.clearBtn.addEventListener('click', clearAllM
 
 if (uiElements.conversationTitle) {
   uiElements.conversationTitle.addEventListener('click', () => {
-    if (!checkAuth()) return alert('Please log in to edit the conversation title.');
+    if (!(checkAuth())) return alert('Please log in to edit the conversation title.');
     const newTitle = prompt('Enter new conversation title:', currentConversationTitle || '');
     if (newTitle && currentConversationId) {
       updateConversationTitle(currentConversationId, newTitle);
@@ -1051,17 +1042,24 @@ if (uiElements.sidebarToggle) {
 }
 
 if (uiElements.newConversationBtn) {
-  uiElements.newConversationBtn.addEventListener('click', createNewConversation);
+  uiElements.newConversationBtn.addEventListener('click', async () => {
+    if (!(await checkAuth())) {
+      alert('Please log in to create a new conversation.');
+      window.location.href = '/login';
+      return;
+    }
+    await createNewConversation();
+  });
 }
 
-// إزالة التكرارات في localStorage
+// Debug localStorage
 const originalRemoveItem = localStorage.removeItem;
 localStorage.removeItem = function (key) {
   console.log('Removing from localStorage:', key);
   originalRemoveItem.apply(this, arguments);
 };
 
-// التعامل مع وضع عدم الاتصال
+// Offline mode detection
 window.addEventListener('offline', () => {
   if (uiElements.messageLimitWarning) {
     uiElements.messageLimitWarning.classList.remove('hidden');
