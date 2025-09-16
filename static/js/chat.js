@@ -751,18 +751,23 @@ async function submitMessage() {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        streamMsg.dataset.text = ''; // مسح النص القديم
+        streamMsg.querySelector('.loading')?.remove(); // إزالة مؤشر التحميل
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
             if (!buffer.trim()) throw new Error('Empty response from server');
             break;
           }
-          buffer += decoder.decode(value, { stream: true });
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+
+          // تحديث النص في streamMsg فورًا
           if (streamMsg) {
             streamMsg.dataset.text = buffer;
             currentAssistantText = buffer;
-            streamMsg.querySelector('.loading')?.remove();
-            renderMarkdown(streamMsg);
+            renderMarkdown(streamMsg); // إعادة رسم الـ Markdown لكل قطعة
           }
         }
         responseText = buffer;
