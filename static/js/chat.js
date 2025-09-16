@@ -33,33 +33,52 @@ const uiElements = {
   settingsModal: document.getElementById('settingsModal'),
   closeSettingsBtn: document.getElementById('closeSettingsBtn'),
   settingsForm: document.getElementById('settingsForm'),
-  historyToggle: document.getElementBy AOS.init({
+  historyToggle: document.getElementById('historyToggle'),
+};
+
+// State variables
+let conversationHistory = JSON.parse(sessionStorage.getItem('conversationHistory') || '[]');
+let currentConversationId = window.conversationId || null;
+let currentConversationTitle = window.conversationTitle || null;
+let isRequestActive = false;
+let isRecording = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let streamMsg = null;
+let currentAssistantText = '';
+let isSidebarOpen = window.innerWidth >= 768;
+
+// Initialize AOS and load initial conversation
+document.addEventListener('DOMContentLoaded', async () => {
+  AOS.init({
     duration: 800,
     easing: 'ease-out-cubic',
     once: true,
     offset: 50,
   });
-  if(currentConversationId && checkAuth()) {
+
+  if (currentConversationId && checkAuth()) {
     console.log('Loading conversation with ID:', currentConversationId);
-await loadConversation(currentConversationId);
+    await loadConversation(currentConversationId);
   } else if (conversationHistory.length > 0) {
-  console.log('Restoring conversation history from sessionStorage:', conversationHistory);
-  enterChatView();
-  conversationHistory.forEach(msg => {
-    console.log('Adding message from history:', msg);
-    addMsg(msg.role, msg.content);
-  });
-} else {
-  console.log('No conversation history or ID, starting fresh');
-}
-autoResizeTextarea();
-updateSendButtonState();
-if (uiElements.swipeHint) {
-  setTimeout(() => {
-    uiElements.swipeHint.style.display = 'none';
-  }, 3000);
-}
-setupTouchGestures();
+    console.log('Restoring conversation history from sessionStorage:', conversationHistory);
+    enterChatView();
+    conversationHistory.forEach(msg => {
+      console.log('Adding message from history:', msg);
+      addMsg(msg.role, msg.content);
+    });
+  } else {
+    console.log('No conversation history or ID, starting fresh');
+  }
+
+  autoResizeTextarea();
+  updateSendButtonState();
+  if (uiElements.swipeHint) {
+    setTimeout(() => {
+      uiElements.swipeHint.style.display = 'none';
+    }, 3000);
+  }
+  setupTouchGestures();
 });
 
 // Check authentication token
@@ -114,6 +133,13 @@ function renderMarkdown(el) {
   });
   wrapper.querySelectorAll('hr').forEach(h => h.classList.add('styled-hr'));
   Prism.highlightAllUnder(wrapper);
+  // Smooth scroll to bottom
+  if (uiElements.chatBox) {
+    uiElements.chatBox.scrollTo({
+      top: uiElements.chatBox.scrollHeight,
+      behavior: 'smooth',
+    });
+  }
 }
 
 // Toggle chat view
@@ -149,8 +175,6 @@ function addMsg(who, text) {
   if (uiElements.chatBox) {
     uiElements.chatBox.appendChild(div);
     uiElements.chatBox.classList.remove('hidden');
-    uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
-    console.log('Message added to chatBox:', div);
   } else {
     console.error('chatBox is null');
   }
@@ -334,6 +358,9 @@ async function sendRequest(endpoint, body, headers = {}) {
     return response;
   } catch (error) {
     console.error('Send request error:', error);
+    if (error.name === 'AbortError') {
+      throw new Error('Request was aborted');
+    }
     throw error;
   }
 }
@@ -526,7 +553,10 @@ async function createNewConversation() {
     console.error('Error creating conversation:', error);
     alert('Failed to create new conversation. Please try again.');
   }
-  if (uiElements.chatBox) uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
+  if (uiElements.chatBox) uiElements.chatBox.scrollTo({
+    top: uiElements.chatBox.scrollHeight,
+    behavior: 'smooth',
+  });
 }
 
 // Update conversation title
@@ -585,9 +615,10 @@ function setupTouchGestures() {
     if (!isSidebarOpen) return;
     let translateX = Math.max(-uiElements.sidebar.offsetWidth, Math.min(0, e.deltaX));
     uiElements.sidebar.style.transform = `translateX(${translateX}px)`;
+    uiElements.sidebar.style.transition = 'none';
   });
   hammer.on('panend', e => {
-    if (!isSidebarOpen) return;
+    uiElements.sidebar.style.transition = 'transform 0.3s ease-in-out';
     if (e.deltaX < -50) {
       toggleSidebar(false);
     } else {
@@ -726,7 +757,6 @@ async function submitMessage() {
             currentAssistantText = buffer;
             streamMsg.querySelector('.loading')?.remove();
             renderMarkdown(streamMsg);
-            if (uiElements.chatBox) uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
           }
         }
         responseText = buffer;
@@ -744,7 +774,7 @@ async function submitMessage() {
       await saveMessageToConversation(currentConversationId, 'assistant', responseText);
     }
     if (checkAuth()) {
-      await loadConversations(); // تحديث السايدبار
+      await loadConversations();
     }
     finalizeRequest();
   } catch (error) {
@@ -797,8 +827,6 @@ if (logoutBtn) {
     }
   });
 }
-
-
 
 // Settings Modal
 if (uiElements.settingsBtn) {
@@ -989,15 +1017,20 @@ if (uiElements.form) {
 }
 
 if (uiElements.input) {
+  // Add debounce to input event
+  let debounceTimer;
+  uiElements.input.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      autoResizeTextarea();
+      updateSendButtonState();
+    }, 100);
+  });
   uiElements.input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!isRecording && !uiElements.sendBtn.disabled) submitMessage();
     }
-  });
-  uiElements.input.addEventListener('input', () => {
-    autoResizeTextarea();
-    updateSendButtonState();
   });
 }
 
@@ -1034,3 +1067,17 @@ localStorage.removeItem = function (key) {
   console.log('Removing from localStorage:', key);
   originalRemoveItem.apply(this, arguments);
 };
+
+// Offline mode detection
+window.addEventListener('offline', () => {
+  if (uiElements.messageLimitWarning) {
+    uiElements.messageLimitWarning.classList.remove('hidden');
+    uiElements.messageLimitWarning.textContent = 'You are offline. Some features may be limited.';
+  }
+});
+
+window.addEventListener('online', () => {
+  if (uiElements.messageLimitWarning) {
+    uiElements.messageLimitWarning.classList.add('hidden');
+  }
+});
