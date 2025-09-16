@@ -19,7 +19,6 @@
 html {
   -webkit-text-size-adjust: 100%;
 }
-
 .chat-controls {
   display: flex;
   align-items: center;
@@ -35,7 +34,7 @@ html {
 
 #chatArea {
   flex: 1;
-  display: flex !important; /* إجبار العرض */
+  display: flex;
   flex-direction: column;
   overflow-y: auto;
   width: 100%;
@@ -45,20 +44,18 @@ html {
   word-wrap: break-word;
   word-break: break-word;
   max-width: 100%;
-  min-height: 0; /* لمنع الانهيار في flex */
 }
 
 #chatBox {
-  display: flex !important; /* إجبار العرض */
+  display: flex; /* غير display: none إلى flex ليظهر */
   flex-direction: column;
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  padding: 0.75rem 0.75rem calc(var(--footer-height, 5rem) + 1rem) 1rem;
+  padding: 0.75rem 0.75rem calc(var(--footer-height) + 1rem) 1rem;
   box-sizing: border-box;
   max-width: 100%;
   overflow-wrap: break-word;
   word-wrap: break-word;
   word-break: break-word;
-  min-height: 0; /* للتمدد الصحيح */
 }
