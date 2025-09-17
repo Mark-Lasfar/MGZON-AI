@@ -155,6 +155,21 @@ function renderMarkdown(el) {
       div.appendChild(t);
     }
   });
+  // إضافة زر نسخ لكل بلوك كود
+  wrapper.querySelectorAll('pre').forEach(pre => {
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>';
+    copyBtn.title = 'Copy Code';
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(pre.querySelector('code').innerText).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>'; }, 2000);
+      });
+    };
+    pre.appendChild(copyBtn);
+  });
+
   wrapper.querySelectorAll('hr').forEach(h => h.classList.add('styled-hr'));
   Prism.highlightAllUnder(wrapper);
   if (uiElements.chatBox) {
@@ -226,21 +241,31 @@ function addMsg(who, text) {
   // إضافة أيقونات التحكم
   const actions = document.createElement('div');
   actions.className = 'message-actions';
+
+  // زر نسخ الرد
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'action-btn';
+  copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>';
+  copyBtn.title = 'Copy Response';
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => { copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>'; }, 2000);
+    });
+  };
+  actions.appendChild(copyBtn);
+
+  // زر إعادة المحاولة (للمساعد فقط)
   if (who === 'assistant') {
     const retryBtn = document.createElement('button');
     retryBtn.className = 'action-btn';
     retryBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>';
     retryBtn.title = 'Retry';
-    retryBtn.onclick = () => submitMessage();
+    retryBtn.onclick = () => submitMessage(); // إعادة إرسال السؤال
     actions.appendChild(retryBtn);
-
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'action-btn';
-    copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>';
-    copyBtn.title = 'Copy Response';
-    copyBtn.onclick = () => navigator.clipboard.writeText(text);
-    actions.appendChild(copyBtn);
   }
+
+  // زر تعديل السؤال (للمستخدم فقط)
   if (who === 'user') {
     const editBtn = document.createElement('button');
     editBtn.className = 'action-btn';
@@ -751,7 +776,7 @@ async function submitMessage() {
     return;
   }
 
-  enterChatView();
+  enterChatView(); // دايمًا إظهار المحادثة قبل الإرسال
 
   if (uiElements.fileInput?.files.length > 0) {
     const file = uiElements.fileInput.files[0];
@@ -793,57 +818,85 @@ async function submitMessage() {
     sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
   }
   streamMsg = addMsg('assistant', '');
-  const loadingEl = document.createElement('span');
-  loadingEl.className = 'loading';
-  streamMsg.appendChild(loadingEl);
+  const thinkingEl = document.createElement('span');
+  thinkingEl.className = 'thinking';
+  thinkingEl.textContent = 'The model is thinking...';
+  streamMsg.appendChild(thinkingEl);
   updateUIForRequest();
 
   isRequestActive = true;
   abortController = new AbortController();
-  let attemptHistory = [];
+  const startTime = Date.now();
 
   try {
     const response = await sendRequest(endpoint, payload ? JSON.stringify(payload) : formData, headers);
     let responseText = '';
-    if (endpoint === '/api/audio-transcription' || endpoint === '/api/image-analysis') {
+    if (endpoint === '/api/audio-transcription') {
       const data = await response.json();
-      responseText = data.transcription || data.image_analysis || 'Error: No response generated.';
+      if (!data.transcription) throw new Error('No transcription received from server');
+      responseText = data.transcription || 'Error: No transcription generated.';
+      streamMsg.dataset.text = responseText;
+      renderMarkdown(streamMsg);
+      streamMsg.dataset.done = '1';
+    } else if (endpoint === '/api/image-analysis') {
+      const data = await response.json();
+      responseText = data.image_analysis || 'Error: No analysis generated.';
+      streamMsg.dataset.text = responseText;
+      renderMarkdown(streamMsg);
+      streamMsg.dataset.done = '1';
     } else {
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      streamMsg.dataset.text = '';
-      streamMsg.querySelector('.loading')?.remove();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          if (!buffer.trim()) throw new Error('Empty response from server');
-          break;
+      const contentType = response.headers.get('Content-Type');
+      if (contentType?.includes('application/json')) {
+        const data = await response.json();
+        responseText = data.response || 'Error: No response generated.';
+        if (data.conversation_id) {
+          currentConversationId = data.conversation_id;
+          currentConversationTitle = data.conversation_title || 'Untitled Conversation';
+          if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
+          history.pushState(null, '', `/chat/${currentConversationId}`);
+          await loadConversations();
         }
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
-        console.log('Received chunk:', chunk);
+      } else {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        streamMsg.dataset.text = '';
+        streamMsg.querySelector('.thinking')?.remove();
 
-        if (streamMsg) {
-          streamMsg.dataset.text = buffer;
-          currentAssistantText = buffer;
-          renderMarkdown(streamMsg);
-          if (uiElements.chatBox) {
-            uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            if (!buffer.trim()) throw new Error('Empty response from server');
+            break;
           }
-          await new Promise(resolve => setTimeout(resolve, 20)); // تأخير لتأثير الكتابة
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          console.log('Received chunk:', chunk);
+
+          if (streamMsg) {
+            streamMsg.dataset.text = buffer;
+            currentAssistantText = buffer;
+            renderMarkdown(streamMsg);
+            streamMsg.style.opacity = '1';
+            if (uiElements.chatBox) {
+              uiElements.chatBox.style.display = 'flex';
+              uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
+            }
+            await new Promise(resolve => setTimeout(resolve, 30)); // تأخير 30ms لتأثير الكتابة الطبيعي
+          }
         }
+        responseText = buffer;
       }
-      responseText = buffer;
     }
 
+    const endTime = DateTime.now();
+    const thinkingTime = Math.round((endTime - startTime) / 1000); // حساب الوقت بالثواني
+    streamMsg.dataset.text += `\n\n*Processed in ${thinkingTime} seconds.*`;
     if (streamMsg) {
       streamMsg.dataset.text = responseText;
       renderMarkdown(streamMsg);
       streamMsg.dataset.done = '1';
     }
-    attemptHistory.push({ role: 'assistant', content: responseText });
     if (!(await checkAuth())) {
       conversationHistory.push({ role: 'assistant', content: responseText });
       sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
@@ -851,25 +904,20 @@ async function submitMessage() {
     finalizeRequest();
   } catch (error) {
     handleRequestError(error);
-    attemptHistory.push({ role: 'assistant', content: `Error: ${error.message || 'An error occurred'}` });
-  }
-
-  // تخزين تاريخ المحاولات
-  if (attemptHistory.length > 0) {
-    attemptHistory.forEach((attempt, index) => {
-      addAttemptHistory(attempt.role, attempt.content, index + 1);
-    });
   }
 }
 
 let attemptCount = 0;
-function addAttemptHistory(who, text, attemptNum) {
+let attempts = []; // لتخزين الردود السابقة
+
+function addAttemptHistory(who, text) {
   attemptCount++;
+  attempts.push(text); // تخزين الرد
   const container = document.createElement('div');
   container.className = 'message-container';
   const div = document.createElement('div');
   div.className = `bubble ${who === 'user' ? 'bubble-user' : 'bubble-assist'} ${isArabicText(text) ? 'rtl' : ''}`;
-  div.dataset.text = text;
+  div.dataset.text = '';
   renderMarkdown(div);
 
   const historyActions = document.createElement('div');
@@ -879,12 +927,10 @@ function addAttemptHistory(who, text, attemptNum) {
   prevBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 19l-7-7 7-7"></path></svg>';
   prevBtn.title = 'Previous Attempt';
   prevBtn.onclick = () => {
-    if (attemptNum > 1) {
-      const prevAttempt = attemptHistory[attemptNum - 2];
-      if (prevAttempt) {
-        streamMsg.dataset.text = prevAttempt.content;
-        renderMarkdown(streamMsg);
-      }
+    if (attemptCount > 1) {
+      attemptCount--;
+      div.dataset.text = attempts[attemptCount - 1];
+      renderMarkdown(div);
     }
   };
   const nextBtn = document.createElement('button');
@@ -892,16 +938,14 @@ function addAttemptHistory(who, text, attemptNum) {
   nextBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5l7 7-7 7"></path></svg>';
   nextBtn.title = 'Next Attempt';
   nextBtn.onclick = () => {
-    if (attemptNum < attemptHistory.length) {
-      const nextAttempt = attemptHistory[attemptNum];
-      if (nextAttempt) {
-        streamMsg.dataset.text = nextAttempt.content;
-        renderMarkdown(streamMsg);
-      }
+    if (attemptCount < attempts.length) {
+      attemptCount++;
+      div.dataset.text = attempts[attemptCount - 1];
+      renderMarkdown(div);
     }
   };
   historyActions.appendChild(prevBtn);
-  historyActions.appendChild(document.createTextNode(`Attempt ${attemptNum}`));
+  historyActions.appendChild(document.createTextNode(`Attempt ${attemptCount}`));
   historyActions.appendChild(nextBtn);
 
   container.appendChild(div);
@@ -909,7 +953,11 @@ function addAttemptHistory(who, text, attemptNum) {
   if (uiElements.chatBox) {
     uiElements.chatBox.appendChild(container);
     uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
+  } else {
+    console.error('chatBox not found, appending to a fallback container');
+    document.body.appendChild(container);
   }
+  return div;
 }
 
 // Stop streaming
