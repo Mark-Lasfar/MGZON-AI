@@ -4,12 +4,12 @@
 // Prism for code highlighting
 Prism.plugins.autoloader.languages_path = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
 
-// UI elements
+// UI elements with fallback check
 const uiElements = {
-  chatArea: document.getElementById('chatArea'),
-  chatBox: document.getElementById('chatBox'),
-  initialContent: document.getElementById('initialContent'),
-  form: document.getElementById('footerForm'),
+  chatArea: document.getElementById('chatArea') || document.createElement('div'),
+  chatBox: document.getElementById('chatBox') || document.createElement('div'),
+  initialContent: document.getElementById('initialContent') || document.createElement('div'),
+  form: document.getElementById('footerForm') || document.createElement('form'),
   input: document.getElementById('userInput'),
   sendBtn: document.getElementById('sendBtn'),
   stopBtn: document.getElementById('stopBtn'),
@@ -49,7 +49,7 @@ let currentAssistantText = '';
 let isSidebarOpen = window.innerWidth >= 768;
 let abortController = null;
 
-// Initialize AOS and load initial conversation
+// Forcefully initialize chat view on load
 document.addEventListener('DOMContentLoaded', async () => {
   AOS.init({
     duration: 800,
@@ -58,19 +58,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     offset: 50,
   });
 
+  // Force chat view to be visible immediately
+  enterChatView(true);
+
   if (await checkAuth() && currentConversationId) {
     console.log('Loading conversation with ID:', currentConversationId);
     await loadConversation(currentConversationId);
   } else if (!(await checkAuth()) && conversationHistory.length > 0) {
     console.log('Restoring conversation history from sessionStorage:', conversationHistory);
-    enterChatView();
     conversationHistory.forEach(msg => {
       console.log('Adding message from history:', msg);
       addMsg(msg.role, msg.content);
     });
   } else {
     console.log('No conversation history or ID, starting fresh');
-    enterChatView(); // تأكيد إظهار المحادثة حتى لو فارغة
   }
 
   autoResizeTextarea();
@@ -162,11 +163,11 @@ function renderMarkdown(el) {
       behavior: 'smooth',
     });
   }
-  el.style.display = 'block'; // إجبار عرض الفقاعة
+  el.style.display = 'block';
 }
 
-// Toggle chat view
-function enterChatView() {
+// Toggle chat view with force option
+function enterChatView(force = false) {
   if (uiElements.chatHeader) {
     uiElements.chatHeader.classList.remove('hidden');
     uiElements.chatHeader.setAttribute('aria-hidden', 'false');
@@ -176,19 +177,28 @@ function enterChatView() {
   }
   if (uiElements.chatArea) {
     uiElements.chatArea.classList.remove('hidden');
-    uiElements.chatArea.style.display = 'flex';
+    uiElements.chatArea.style.display = force ? 'flex !important' : 'flex';
     uiElements.chatArea.style.opacity = '1';
+    uiElements.chatArea.style.visibility = 'visible';
   }
   if (uiElements.chatBox) {
     uiElements.chatBox.classList.remove('hidden');
-    uiElements.chatBox.style.display = 'flex';
+    uiElements.chatBox.style.display = force ? 'flex !important' : 'flex';
     uiElements.chatBox.style.opacity = '1';
+    uiElements.chatBox.style.visibility = 'visible';
   }
   if (uiElements.initialContent) uiElements.initialContent.classList.add('hidden');
   if (uiElements.form) {
     uiElements.form.classList.remove('hidden');
-    uiElements.form.style.display = 'flex';
+    uiElements.form.style.display = force ? 'flex !important' : 'flex';
+    uiElements.form.style.opacity = '1';
+    uiElements.form.style.visibility = 'visible';
   }
+  console.log('Chat view forced to enter:', {
+    chatArea: uiElements.chatArea?.style.display,
+    chatBox: uiElements.chatBox?.style.display,
+    form: uiElements.form?.style.display
+  });
 }
 
 // Toggle home view
@@ -212,9 +222,10 @@ function addMsg(who, text) {
   div.style.display = 'block';
   if (uiElements.chatBox) {
     uiElements.chatBox.appendChild(div);
-    uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight; // تمرير تلقائي
+    uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
   } else {
-    console.error('chatBox is not found in DOM');
+    console.error('chatBox not found, appending to a fallback container');
+    document.body.appendChild(div); // فال باك إذا فشل العثور
   }
   return div;
 }
@@ -240,7 +251,7 @@ function clearAllMessages() {
   currentConversationId = null;
   currentConversationTitle = null;
   if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = 'MGZon AI Assistant';
-  enterChatView(); // تأكيد إظهار المحادثة بعد المسح
+  enterChatView();
   autoResizeTextarea();
 }
 
@@ -452,7 +463,7 @@ function handleRequestError(error) {
     uiElements.sendBtn.disabled = false;
   }
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'none';
-  enterChatView(); // إعادة إظهار المحادثة بعد الخطأ
+  enterChatView();
 }
 
 // Load conversations for sidebar
@@ -700,12 +711,7 @@ async function submitMessage() {
     return;
   }
 
-  // إظهار واجهة المحادثة عند أول رسالة
-  if (uiElements.initialContent && !uiElements.initialContent.classList.contains('hidden')) {
-    enterChatView();
-  } else {
-    enterChatView(); // تأكيد إظهار المحادثة في كل مرة
-  }
+  enterChatView(); // دايمًا إظهار المحادثة قبل الإرسال
 
   if (uiElements.fileInput?.files.length > 0) {
     const file = uiElements.fileInput.files[0];
@@ -843,7 +849,7 @@ function stopStream(forceCancel = false) {
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'none';
   if (uiElements.sendBtn) uiElements.sendBtn.style.display = 'inline-flex';
   if (uiElements.stopBtn) uiElements.stopBtn.style.pointerEvents = 'auto';
-  enterChatView(); // إعادة إظهار المحادثة بعد الإلغاء
+  enterChatView();
 }
 
 // Logout handler
