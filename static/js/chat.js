@@ -214,18 +214,58 @@ function leaveChatView() {
 
 // Add chat bubble
 function addMsg(who, text) {
+  const container = document.createElement('div');
+  container.className = 'message-container';
   const div = document.createElement('div');
   div.className = `bubble ${who === 'user' ? 'bubble-user' : 'bubble-assist'} ${isArabicText(text) ? 'rtl' : ''}`;
   div.dataset.text = text;
   console.log('Adding message:', { who, text });
   renderMarkdown(div);
   div.style.display = 'block';
+
+  // إضافة أيقونات التحكم
+  const actions = document.createElement('div');
+  actions.className = 'message-actions';
+  if (who === 'assistant') {
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'action-btn';
+    retryBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>';
+    retryBtn.title = 'Retry';
+    retryBtn.onclick = () => submitMessage();
+    actions.appendChild(retryBtn);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'action-btn';
+    copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>';
+    copyBtn.title = 'Copy Response';
+    copyBtn.onclick = () => navigator.clipboard.writeText(text);
+    actions.appendChild(copyBtn);
+  }
+  if (who === 'user') {
+    const editBtn = document.createElement('button');
+    editBtn.className = 'action-btn';
+    editBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+    editBtn.title = 'Edit Question';
+    editBtn.onclick = () => {
+      const newText = prompt('Edit your question:', text);
+      if (newText) {
+        div.dataset.text = newText;
+        renderMarkdown(div);
+        conversationHistory = conversationHistory.map(msg => msg.role === 'user' && msg.content === text ? { role: 'user', content: newText } : msg);
+        sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+      }
+    };
+    actions.appendChild(editBtn);
+  }
+
+  container.appendChild(div);
+  container.appendChild(actions);
   if (uiElements.chatBox) {
-    uiElements.chatBox.appendChild(div);
+    uiElements.chatBox.appendChild(container);
     uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
   } else {
     console.error('chatBox not found, appending to a fallback container');
-    document.body.appendChild(div); // فال باك إذا فشل العثور
+    document.body.appendChild(container);
   }
   return div;
 }
@@ -711,7 +751,7 @@ async function submitMessage() {
     return;
   }
 
-  enterChatView(); // دايمًا إظهار المحادثة قبل الإرسال
+  enterChatView();
 
   if (uiElements.fileInput?.files.length > 0) {
     const file = uiElements.fileInput.files[0];
@@ -764,55 +804,37 @@ async function submitMessage() {
   try {
     const response = await sendRequest(endpoint, payload ? JSON.stringify(payload) : formData, headers);
     let responseText = '';
-    if (endpoint === '/api/audio-transcription') {
+    if (endpoint === '/api/audio-transcription' || endpoint === '/api/image-analysis') {
       const data = await response.json();
-      if (!data.transcription) throw new Error('No transcription received from server');
-      responseText = data.transcription || 'Error: No transcription generated.';
-    } else if (endpoint === '/api/image-analysis') {
-      const data = await response.json();
-      responseText = data.image_analysis || 'Error: No analysis generated.';
+      responseText = data.transcription || data.image_analysis || 'Error: No response generated.';
     } else {
-      const contentType = response.headers.get('Content-Type');
-      if (contentType?.includes('application/json')) {
-        const data = await response.json();
-        responseText = data.response || 'Error: No response generated.';
-        if (data.conversation_id) {
-          currentConversationId = data.conversation_id;
-          currentConversationTitle = data.conversation_title || 'Untitled Conversation';
-          if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
-          history.pushState(null, '', `/chat/${currentConversationId}`);
-          await loadConversations();
-        }
-      } else {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        streamMsg.dataset.text = '';
-        streamMsg.querySelector('.loading')?.remove();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      streamMsg.dataset.text = '';
+      streamMsg.querySelector('.loading')?.remove();
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            if (!buffer.trim()) throw new Error('Empty response from server');
-            break;
-          }
-          const chunk = decoder.decode(value, { stream: true });
-          buffer += chunk;
-          console.log('Received chunk:', chunk);
-
-          if (streamMsg) {
-            streamMsg.dataset.text = buffer;
-            currentAssistantText = buffer;
-            renderMarkdown(streamMsg);
-            streamMsg.style.opacity = '1';
-            if (uiElements.chatBox) {
-              uiElements.chatBox.style.display = 'flex';
-              uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
-            }
-          }
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          if (!buffer.trim()) throw new Error('Empty response from server');
+          break;
         }
-        responseText = buffer;
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+        console.log('Received chunk:', chunk);
+
+        if (streamMsg) {
+          streamMsg.dataset.text = buffer;
+          currentAssistantText = buffer;
+          renderMarkdown(streamMsg);
+          if (uiElements.chatBox) {
+            uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
+          }
+          await new Promise(resolve => setTimeout(resolve, 20)); // تأخير لتأثير الكتابة
+        }
       }
+      responseText = buffer;
     }
 
     if (streamMsg) {
@@ -824,9 +846,54 @@ async function submitMessage() {
       conversationHistory.push({ role: 'assistant', content: responseText });
       sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
     }
+    if (checkAuth() && response.headers.get('X-Conversation-ID')) {
+      currentConversationId = response.headers.get('X-Conversation-ID');
+      currentConversationTitle = response.headers.get('X-Conversation-Title') || 'Untitled Conversation';
+      if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
+      history.pushState(null, '', `/chat/${currentConversationId}`);
+      await loadConversations();
+    }
     finalizeRequest();
   } catch (error) {
     handleRequestError(error);
+  }
+}
+
+let attemptCount = 0;
+function addAttemptHistory(who, text) {
+  attemptCount++;
+  const container = document.createElement('div');
+  container.className = 'message-container';
+  const div = document.createElement('div');
+  div.className = `bubble ${who === 'user' ? 'bubble-user' : 'bubble-assist'} ${isArabicText(text) ? 'rtl' : ''}`;
+  div.dataset.text = text;
+  renderMarkdown(div);
+
+  const historyActions = document.createElement('div');
+  historyActions.className = 'message-actions';
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'action-btn';
+  prevBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 19l-7-7 7-7"></path></svg>';
+  prevBtn.title = 'Previous Attempt';
+  prevBtn.onclick = () => {
+    // تنفيذ الرجوع لمحاولة سابقة (يحتاج تطوير إضافي)
+  };
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'action-btn';
+  nextBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5l7 7-7 7"></path></svg>';
+  nextBtn.title = 'Next Attempt';
+  nextBtn.onclick = () => {
+    // تنفيذ الذهاب لمحاولة لاحقة (يحتاج تطوير إضافي)
+  };
+  historyActions.appendChild(prevBtn);
+  historyActions.appendChild(document.createTextNode(`Attempt ${attemptCount}`));
+  historyActions.appendChild(nextBtn);
+
+  container.appendChild(div);
+  container.appendChild(historyActions);
+  if (uiElements.chatBox) {
+    uiElements.chatBox.appendChild(container);
+    uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
   }
 }
 
