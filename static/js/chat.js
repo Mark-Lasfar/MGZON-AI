@@ -47,6 +47,7 @@ let audioChunks = [];
 let streamMsg = null;
 let currentAssistantText = '';
 let isSidebarOpen = window.innerWidth >= 768;
+let abortController = null;
 
 // Initialize AOS and load initial conversation
 document.addEventListener('DOMContentLoaded', async () => {
@@ -69,6 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   } else {
     console.log('No conversation history or ID, starting fresh');
+    enterChatView(); // تأكيد إظهار المحادثة حتى لو فارغة
   }
 
   autoResizeTextarea();
@@ -161,7 +163,7 @@ function renderMarkdown(el) {
     });
   }
   el.style.display = 'block'; // إجبار عرض الفقاعة
-} 
+}
 
 // Toggle chat view
 function enterChatView() {
@@ -174,8 +176,8 @@ function enterChatView() {
   }
   if (uiElements.chatArea) {
     uiElements.chatArea.classList.remove('hidden');
-    uiElements.chatArea.style.display = 'flex'; // إجبار العرض
-    uiElements.chatArea.style.opacity = '1'; // إضافة الشفافية للتأكد
+    uiElements.chatArea.style.display = 'flex';
+    uiElements.chatArea.style.opacity = '1';
   }
   if (uiElements.chatBox) {
     uiElements.chatBox.classList.remove('hidden');
@@ -183,7 +185,12 @@ function enterChatView() {
     uiElements.chatBox.style.opacity = '1';
   }
   if (uiElements.initialContent) uiElements.initialContent.classList.add('hidden');
+  if (uiElements.form) {
+    uiElements.form.classList.remove('hidden');
+    uiElements.form.style.display = 'flex';
+  }
 }
+
 // Toggle home view
 function leaveChatView() {
   if (uiElements.chatHeader) {
@@ -192,6 +199,7 @@ function leaveChatView() {
   }
   if (uiElements.chatBox) uiElements.chatBox.classList.add('hidden');
   if (uiElements.initialContent) uiElements.initialContent.classList.remove('hidden');
+  if (uiElements.form) uiElements.form.classList.add('hidden');
 }
 
 // Add chat bubble
@@ -204,7 +212,7 @@ function addMsg(who, text) {
   div.style.display = 'block';
   if (uiElements.chatBox) {
     uiElements.chatBox.appendChild(div);
-    uiElements.chatBox.classList.remove('hidden');
+    uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight; // تمرير تلقائي
   } else {
     console.error('chatBox is not found in DOM');
   }
@@ -232,7 +240,7 @@ function clearAllMessages() {
   currentConversationId = null;
   currentConversationTitle = null;
   if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = 'MGZon AI Assistant';
-  enterChatView();
+  enterChatView(); // تأكيد إظهار المحادثة بعد المسح
   autoResizeTextarea();
 }
 
@@ -330,9 +338,7 @@ async function submitAudioMessage(formData) {
 
   try {
     const response = await sendRequest('/api/audio-transcription', formData);
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
     const data = await response.json();
     if (!data.transcription) throw new Error('No transcription received from server');
     const transcription = data.transcription || 'Error: No transcription generated.';
@@ -412,8 +418,12 @@ function finalizeRequest() {
   streamMsg = null;
   isRequestActive = false;
   abortController = null;
-  if (uiElements.sendBtn) uiElements.sendBtn.style.display = 'inline-flex';
+  if (uiElements.sendBtn) {
+    uiElements.sendBtn.style.display = 'inline-flex';
+    uiElements.sendBtn.disabled = false;
+  }
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'none';
+  updateSendButtonState();
 }
 
 // Helper to handle request errors
@@ -437,8 +447,12 @@ function handleRequestError(error) {
   if (!(checkAuth())) {
     sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
   }
-  if (uiElements.sendBtn) uiElements.sendBtn.style.display = 'inline-flex';
+  if (uiElements.sendBtn) {
+    uiElements.sendBtn.style.display = 'inline-flex';
+    uiElements.sendBtn.disabled = false;
+  }
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'none';
+  enterChatView(); // إعادة إظهار المحادثة بعد الخطأ
 }
 
 // Load conversations for sidebar
@@ -689,6 +703,8 @@ async function submitMessage() {
   // إظهار واجهة المحادثة عند أول رسالة
   if (uiElements.initialContent && !uiElements.initialContent.classList.contains('hidden')) {
     enterChatView();
+  } else {
+    enterChatView(); // تأكيد إظهار المحادثة في كل مرة
   }
 
   if (uiElements.fileInput?.files.length > 0) {
@@ -725,12 +741,12 @@ async function submitMessage() {
     headers['Content-Type'] = 'application/json';
   }
 
-  addMsg('user', message); // أضف رسالة المستخدم
+  addMsg('user', message);
   if (!(await checkAuth())) {
     conversationHistory.push({ role: 'user', content: message });
     sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
   }
-  streamMsg = addMsg('assistant', ''); // أضف رسالة المساعد الفارغة
+  streamMsg = addMsg('assistant', '');
   const loadingEl = document.createElement('span');
   loadingEl.className = 'loading';
   streamMsg.appendChild(loadingEl);
@@ -750,48 +766,48 @@ async function submitMessage() {
       const data = await response.json();
       responseText = data.image_analysis || 'Error: No analysis generated.';
     } else {
-  const contentType = response.headers.get('Content-Type');
-  if (contentType?.includes('application/json')) {
-    const data = await response.json();
-    responseText = data.response || 'Error: No response generated.';
-    if (data.conversation_id) {
-      currentConversationId = data.conversation_id;
-      currentConversationTitle = data.conversation_title || 'Untitled Conversation';
-      if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
-      history.pushState(null, '', `/chat/${currentConversationId}`);
-      await loadConversations();
-    }
-  } else {
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    streamMsg.dataset.text = '';
-    streamMsg.querySelector('.loading')?.remove();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        if (!buffer.trim()) throw new Error('Empty response from server');
-        break;
-      }
-      const chunk = decoder.decode(value, { stream: true });
-      buffer += chunk;
-      console.log('Received chunk:', chunk);
-
-      if (streamMsg) {
-        streamMsg.dataset.text = buffer;
-        currentAssistantText = buffer;
-        renderMarkdown(streamMsg);
-        streamMsg.style.opacity = '1'; // إجبار الظهور
-        if (uiElements.chatBox) {
-          uiElements.chatBox.style.display = 'flex';
-          uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight; // تمرير إجباري
+      const contentType = response.headers.get('Content-Type');
+      if (contentType?.includes('application/json')) {
+        const data = await response.json();
+        responseText = data.response || 'Error: No response generated.';
+        if (data.conversation_id) {
+          currentConversationId = data.conversation_id;
+          currentConversationTitle = data.conversation_title || 'Untitled Conversation';
+          if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
+          history.pushState(null, '', `/chat/${currentConversationId}`);
+          await loadConversations();
         }
+      } else {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        streamMsg.dataset.text = '';
+        streamMsg.querySelector('.loading')?.remove();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            if (!buffer.trim()) throw new Error('Empty response from server');
+            break;
+          }
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          console.log('Received chunk:', chunk);
+
+          if (streamMsg) {
+            streamMsg.dataset.text = buffer;
+            currentAssistantText = buffer;
+            renderMarkdown(streamMsg);
+            streamMsg.style.opacity = '1';
+            if (uiElements.chatBox) {
+              uiElements.chatBox.style.display = 'flex';
+              uiElements.chatBox.scrollTop = uiElements.chatBox.scrollHeight;
+            }
+          }
+        }
+        responseText = buffer;
       }
     }
-    responseText = buffer;
-  }
-}
 
     if (streamMsg) {
       streamMsg.dataset.text = responseText;
@@ -827,6 +843,7 @@ function stopStream(forceCancel = false) {
   if (uiElements.stopBtn) uiElements.stopBtn.style.display = 'none';
   if (uiElements.sendBtn) uiElements.sendBtn.style.display = 'inline-flex';
   if (uiElements.stopBtn) uiElements.stopBtn.style.pointerEvents = 'auto';
+  enterChatView(); // إعادة إظهار المحادثة بعد الإلغاء
 }
 
 // Logout handler
@@ -1074,8 +1091,6 @@ if (uiElements.newConversationBtn) {
   });
 }
 
-
-
 // Debug localStorage
 const originalRemoveItem = localStorage.removeItem;
 localStorage.removeItem = function (key) {
@@ -1102,7 +1117,7 @@ function autoResizeTextarea() {
   if (uiElements.input) {
     uiElements.input.style.height = 'auto';
     uiElements.input.style.height = `${uiElements.input.scrollHeight}px`;
-    updateSendButtonState(); // تحديث حالة الزر بعد تغيير الحجم
+    updateSendButtonState();
   }
 }
 

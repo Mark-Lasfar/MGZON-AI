@@ -44,10 +44,11 @@ html {
   word-wrap: break-word;
   word-break: break-word;
   max-width: 100%;
+  opacity: 1 !important; /* إضافة لضمان الظهور */
 }
 
 #chatBox {
-  display: flex; /* غير display: none إلى flex ليظهر */
+  display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
@@ -58,4 +59,5 @@ html {
   overflow-wrap: break-word;
   word-wrap: break-word;
   word-break: break-word;
+  opacity: 1 !important; /* إضافة لضمان الظهور */
 }
