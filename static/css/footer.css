@@ -15,7 +15,8 @@
   box-sizing: border-box;
   position: sticky;
   bottom: 0;
-  z-index: 1000;
+  z-index: 1000; /* زيادة الأولوية */
+  min-height: 60px; /* تأمين ارتفاع أدنى */
   animation: fadeIn 0.3s ease-out forwards;
 }
 

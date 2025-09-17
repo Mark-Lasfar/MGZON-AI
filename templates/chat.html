@@ -296,11 +296,13 @@
           continue.
         </div>
       </div>
-<div id="chatArea" class="flex-1 overflow-y-auto hidden" aria-live="polite">
-  <div id="chatBox" class="flex flex-col w-full" aria-live="polite"></div>
+      <div id="chatArea" class="flex-1 overflow-y-auto hidden" aria-live="polite">
+        <div id="chatBox" class="flex flex-col w-full" aria-live="polite"></div>
       </div>
+    </main>
   </div>
-  <!-- Footer Form -->
+
+  <!-- Footer Form (منقول خارج main) -->
   <form id="footerForm" class="flex p-4">
     <div id="inputContainer" class="w-full">
       <textarea id="userInput" placeholder="Ask anything..." required></textarea>
@@ -338,7 +340,6 @@
     <div id="filePreview" class="upload-preview" style="display: none;"></div>
     <div id="audioPreview" class="audio-preview" style="display: none;"></div>
   </form>
-  </main>
 
   <!-- Settings Modal -->
   <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
@@ -414,7 +415,6 @@
       native-like experience!</p>
     <button onclick="document.getElementById('pwa-instructions').classList.add('hidden')"
       class="ml-2 text-sm">Close</button>
-  </div>
   </div>
 
   <!-- Scripts -->

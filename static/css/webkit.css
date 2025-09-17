@@ -32,7 +32,7 @@
 }
 
 #chatBox::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.05); /* تغيير من transparent */
 }
 
 #chatBox::-webkit-scrollbar-thumb {

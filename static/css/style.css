@@ -12,7 +12,7 @@
 html, body {
   width: 100%;
   height: 100%;
-  overflow-x: hidden;
+  overflow-x: hidden; /* تغيير من overflow: hidden */
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
   -webkit-font-smoothing: antialiased;
@@ -24,8 +24,7 @@ body {
   flex-direction: column;
   background-color: var(--background-dark);
   color: var(--text-dark);
-  overflow: hidden;
-  word-wrap: break-word;
+  overflow-x: hidden; /* لمنع التمرير الأفقي فقط */
 }
 
 :root {
@@ -48,7 +47,7 @@ main {
   display: flex;
   flex-direction: column;
   margin-top: var(--header-height);
-  height: calc(100vh - var(--header-height));
+  height: calc(100vh - var(--header-height) - var(--footer-height)); /* إضافة ارتفاع الفوتر */
   overflow: hidden;
 }
 
@@ -66,6 +65,30 @@ main {
   word-wrap: break-word;
   word-break: break-word;
   animation: fadeIn 0.8s ease-out forwards;
+}
+
+#chatArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* تمكين التمرير العمودي */
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1rem;
+  background: transparent;
+  max-height: calc(100vh - var(--header-height) - var(--footer-height) - 6rem); /* تحديد ارتفاع صافي */
+}
+
+#chatBox {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0.75rem;
+  box-sizing: border-box;
+  overflow-y: auto; /* تمكين التمرير العمودي */
+  max-height: calc(100vh - var(--header-height) - var(--footer-height) - 8rem); /* تحديد ارتفاع صافي */
 }
 
 .title {
