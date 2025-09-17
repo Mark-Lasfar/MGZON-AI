@@ -889,7 +889,7 @@ async function submitMessage() {
       }
     }
 
-    const endTime = DateTime.now();
+    const endTime = Date.now();
     const thinkingTime = Math.round((endTime - startTime) / 1000); // حساب الوقت بالثواني
     streamMsg.dataset.text += `\n\n*Processed in ${thinkingTime} seconds.*`;
     if (streamMsg) {

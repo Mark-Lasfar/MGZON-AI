@@ -471,16 +471,6 @@
       document.getElementById('pwa-instructions').classList.remove('hidden');
       localStorage.setItem('pwa-instructions-shown', 'true');
     }
-
-    // Enhance touch gestures for sidebar
-    const sidebar = document.getElementById('sidebar');
-    const hammer = new Hammer(sidebar);
-    hammer.on('swipeleft', () => {
-      sidebar.classList.remove('open');
-    });
-    hammer.on('swiperight', () => {
-      sidebar.classList.add('open');
-    });
   </script>
 
 </body>
