@@ -1,21 +1,63 @@
+/*
+ * SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+.chat-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #e6eefc;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+.chat-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chat-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
 #chatArea {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+  opacity: 1 !important; /* إضافة لضمان الظهور */
 }
 
 #chatBox {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-#footerForm {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-.hidden {
-  display: none !important;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0.75rem 0.75rem calc(var(--footer-height) + 1rem) 1rem;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  opacity: 1 !important; /* إضافة لضمان الظهور */
 }
