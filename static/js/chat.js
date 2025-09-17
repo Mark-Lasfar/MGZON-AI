@@ -800,6 +800,7 @@ async function submitMessage() {
 
   isRequestActive = true;
   abortController = new AbortController();
+  let attemptHistory = [];
 
   try {
     const response = await sendRequest(endpoint, payload ? JSON.stringify(payload) : formData, headers);
@@ -842,25 +843,27 @@ async function submitMessage() {
       renderMarkdown(streamMsg);
       streamMsg.dataset.done = '1';
     }
+    attemptHistory.push({ role: 'assistant', content: responseText });
     if (!(await checkAuth())) {
       conversationHistory.push({ role: 'assistant', content: responseText });
       sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
     }
-    if (checkAuth() && response.headers.get('X-Conversation-ID')) {
-      currentConversationId = response.headers.get('X-Conversation-ID');
-      currentConversationTitle = response.headers.get('X-Conversation-Title') || 'Untitled Conversation';
-      if (uiElements.conversationTitle) uiElements.conversationTitle.textContent = currentConversationTitle;
-      history.pushState(null, '', `/chat/${currentConversationId}`);
-      await loadConversations();
-    }
     finalizeRequest();
   } catch (error) {
     handleRequestError(error);
+    attemptHistory.push({ role: 'assistant', content: `Error: ${error.message || 'An error occurred'}` });
+  }
+
+  // تخزين تاريخ المحاولات
+  if (attemptHistory.length > 0) {
+    attemptHistory.forEach((attempt, index) => {
+      addAttemptHistory(attempt.role, attempt.content, index + 1);
+    });
   }
 }
 
 let attemptCount = 0;
-function addAttemptHistory(who, text) {
+function addAttemptHistory(who, text, attemptNum) {
   attemptCount++;
   const container = document.createElement('div');
   container.className = 'message-container';
@@ -876,17 +879,29 @@ function addAttemptHistory(who, text) {
   prevBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 19l-7-7 7-7"></path></svg>';
   prevBtn.title = 'Previous Attempt';
   prevBtn.onclick = () => {
-    // تنفيذ الرجوع لمحاولة سابقة (يحتاج تطوير إضافي)
+    if (attemptNum > 1) {
+      const prevAttempt = attemptHistory[attemptNum - 2];
+      if (prevAttempt) {
+        streamMsg.dataset.text = prevAttempt.content;
+        renderMarkdown(streamMsg);
+      }
+    }
   };
   const nextBtn = document.createElement('button');
   nextBtn.className = 'action-btn';
   nextBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5l7 7-7 7"></path></svg>';
   nextBtn.title = 'Next Attempt';
   nextBtn.onclick = () => {
-    // تنفيذ الذهاب لمحاولة لاحقة (يحتاج تطوير إضافي)
+    if (attemptNum < attemptHistory.length) {
+      const nextAttempt = attemptHistory[attemptNum];
+      if (nextAttempt) {
+        streamMsg.dataset.text = nextAttempt.content;
+        renderMarkdown(streamMsg);
+      }
+    }
   };
   historyActions.appendChild(prevBtn);
-  historyActions.appendChild(document.createTextNode(`Attempt ${attemptCount}`));
+  historyActions.appendChild(document.createTextNode(`Attempt ${attemptNum}`));
   historyActions.appendChild(nextBtn);
 
   container.appendChild(div);
