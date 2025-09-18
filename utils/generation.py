@@ -21,6 +21,7 @@ from huggingface_hub import snapshot_download
 import torch
 from qwenimage.pipeline_qwen_image_edit import QwenImageEditPipeline
 from qwenimage.pipeline_qwen_image import QwenImagePipeline
+from diffusers import DiffusionPipeline
 from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co/v1")
 
 # تحميل نموذج FLUX.1-dev مسبقًا إذا لزم الأمر
+model_path = None
 try:
     model_path = snapshot_download(
         repo_id="black-forest-labs/FLUX.1-dev",
@@ -53,28 +55,28 @@ try:
     )
 except Exception as e:
     logger.error(f"Failed to download FLUX.1-dev: {e}")
-
+    model_path = None
 
 
 
 
 
     # دعم FlashAttention-3
-_flash_attn_func = None
-_kernels_err = None
-try:
-    _k = get_kernel("kernels-community/vllm-flash-attn3")
-    _flash_attn_func = _k.flash_attn_func
-except Exception as e:
-    _flash_attn_func = None
-    _kernels_err = e
+# _flash_attn_func = None
+# _kernels_err = None
+# try:
+#     _k = get_kernel("kernels-community/vllm-flash-attn3")
+#     _flash_attn_func = _k.flash_attn_func
+# except Exception as e:
+#     _flash_attn_func = None
+#     _kernels_err = e
 
-def _ensure_fa3_available():
-    if _flash_attn_func is None:
-        raise ImportError(
-            "FlashAttention-3 via Hugging Face `kernels` is required. "
-            f"Tried `get_kernel('kernels-community/vllm-flash-attn3')` and failed with:\n{_kernels_err}"
-        )
+# def _ensure_fa3_available():
+#     if _flash_attn_func is None:
+#         raise ImportError(
+#             "FlashAttention-3 via Hugging Face `kernels` is required. "
+#             f"Tried `get_kernel('kernels-community/vllm-flash-attn3')` and failed with:\n{_kernels_err}"
+#         )
 # تعطيل PROVIDER_ENDPOINTS لأننا بنستخدم Hugging Face فقط
 PROVIDER_ENDPOINTS = {
     "huggingface": API_ENDPOINT
@@ -271,48 +273,41 @@ def request_generation(
             return
 
     # معالجة توليد الصور أو تحريرها
-    if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "image_gen":
-        task_type = "image_generation"
-        try:
-            dtype = torch.float16  # يمكن تعديل هذا حسب الأجهزة
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            _ensure_fa3_available()  # التأكد من توفر FlashAttention-3
-            if model_name == IMAGE_GEN_MODEL:
-                pipe = QwenImagePipeline.from_pretrained(model_name, torch_dtype=dtype).to(device)
-                pipe.transformer.set_attn_processor(QwenDoubleStreamAttnProcessorFA3())
-            else:
-                pipe = QwenImageEditPipeline.from_pretrained(model_name, torch_dtype=dtype).to(device)
-                pipe.transformer.set_attn_processor(QwenDoubleStreamAttnProcessorFA3())
 
-            # إعداد المعلمات لتوليد الصور
-            polished_prompt = polish_prompt(message)
-            image_params = {
-                "prompt": polished_prompt,
-                "seed": 0,
-                "randomize_seed": True,
-                "aspect_ratio": "16:9",
-                "guidance_scale": 4,
-                "num_inference_steps": 50,
-                "prompt_enhance": True
-            }
-            if input_type == "image_gen" and image_data:
-                image = Image.open(io.BytesIO(image_data)).convert("RGB")
-                image_params["image"] = image
+if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "image_gen":
+    task_type = "image_generation"
+    try:
+        dtype = torch.float16
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        if model_name == IMAGE_GEN_MODEL:
+            pipe = DiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=dtype).to(device)
+        else:
+            pipe = DiffusionPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=dtype).to(device)
 
-            # توليد الصورة
-            output = pipe(**image_params)
-            image_file = io.BytesIO()
-            output.images[0].save(image_file, format="PNG")
-            image_file.seek(0)
-            image_data = image_file.read()
-            logger.debug(f"Generated image data of length: {len(image_data)} bytes")
-            yield image_data
-            cache[cache_key] = [image_data]
-            return
-        except Exception as e:
-            logger.error(f"Image generation failed: {e}")
-            yield f"Error: Image generation failed: {e}"
-            return
+        polished_prompt = polish_prompt(message)
+        image_params = {
+            "prompt": polished_prompt,
+            "num_inference_steps": 50,
+            "guidance_scale": 7.5,
+        }
+        if input_type == "image_gen" and image_data:
+            image = Image.open(io.BytesIO(image_data)).convert("RGB")
+            image_params["image"] = image
+
+        output = pipe(**image_params)
+        image_file = io.BytesIO()
+        output.images[0].save(image_file, format="PNG")
+        image_file.seek(0)
+        image_data = image_file.read()
+        logger.debug(f"Generated image data of length: {len(image_data)} bytes")
+        yield image_data
+        cache[cache_key] = [image_data]
+        return
+    except Exception as e:
+        logger.error(f"Image generation failed: {e}")
+        yield f"Error: Image generation failed: {e}"
+        return
+
 
     # معالجة النصوص (كما هو موجود في الكود الأصلي)
     if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL]:

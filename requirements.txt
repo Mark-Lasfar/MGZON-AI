@@ -40,15 +40,15 @@ pymongo==4.10.1
 parler-tts @ git+https://github.com/huggingface/parler-tts.git@5d0aca9753ab74ded179732f5bd797f7a8c6f8ee
 soupsieve>=2.5
 tqdm>=4.66.0
-git+https://github.com/Dao-AILab/flash-attention.git
 argon2-cffi>=23.1.0
 wsproto>=1.2.0
 descript-audiotools>=0.7.2
 scipy>=1.15.0
 librosa>=0.10.0
 matplotlib>=3.10.0
-vllm
-accelerate
-flash-attn
-diffusers
-psutil
+vllm==0.5.5
+accelerate>=0.26.0
+diffusers>=0.30.0
+psutil>=5.9.0
+xformers>=0.0.27
+anyio==4.6.0
