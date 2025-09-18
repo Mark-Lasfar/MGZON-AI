@@ -24,6 +24,8 @@ from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TER
 import psutil
 import time
 router = APIRouter()
+from pydantic import BaseModel
+
 logger = logging.getLogger(__name__)
 
 # Check HF_TOKEN and BACKUP_HF_TOKEN
