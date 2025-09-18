@@ -2,6 +2,7 @@ fastapi==0.95.2
 fastapi-users[sqlalchemy,oauth2]==10.4.2
 pydantic==1.10.13
 email-validator==1.3.1
+sqlalchemy[asyncio]
 aiosqlite==0.21.0
 sqlalchemy==2.0.43
 python-jose[cryptography]==3.3.0
@@ -39,9 +40,15 @@ pymongo==4.10.1
 parler-tts @ git+https://github.com/huggingface/parler-tts.git@5d0aca9753ab74ded179732f5bd797f7a8c6f8ee
 soupsieve>=2.5
 tqdm>=4.66.0
+git+https://github.com/Dao-AILab/flash-attention.git
 argon2-cffi>=23.1.0
 wsproto>=1.2.0
 descript-audiotools>=0.7.2
 scipy>=1.15.0
 librosa>=0.10.0
 matplotlib>=3.10.0
+vllm
+accelerate
+flash-attn
+diffusers
+psutil

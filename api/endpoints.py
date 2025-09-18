@@ -20,7 +20,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
 import logging
 from typing import List, Optional
-
+from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL
+import psutil
+import time
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -37,30 +39,17 @@ if not BACKUP_HF_TOKEN:
 ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
-SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
-TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "meta-llama/Llama-3-8b-chat-hf")
-CLIP_BASE_MODEL = os.getenv("CLIP_BASE_MODEL", "Salesforce/blip-image-captioning-large")
-CLIP_LARGE_MODEL = os.getenv("CLIP_LARGE_MODEL", "openai/clip-vit-large-patch14")
-ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
-TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
 
-# Model alias mapping for user-friendly names
-MODEL_ALIASES = {
-    "advanced": MODEL_NAME,
-    "standard": SECONDARY_MODEL_NAME,
-    "light": TERTIARY_MODEL_NAME,
-    "image_base": CLIP_BASE_MODEL,
-    "image_advanced": CLIP_LARGE_MODEL,
-    "audio": ASR_MODEL,
-    "tts": TTS_MODEL
-}
 
 # MongoDB setup
 MONGO_URI = os.getenv("MONGODB_URI")
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["hager"]
 session_message_counts = db["session_message_counts"]
+
+class ImageGenRequest(BaseModel):
+    prompt: str
+    output_format: str = "image"
 
 # Helper function to handle sessions for non-logged-in users
 async def handle_session(request: Request):
@@ -142,7 +131,7 @@ async def performance_stats():
     return {
         "queue_size": int(os.getenv("QUEUE_SIZE", 80)),
         "concurrency_limit": int(os.getenv("CONCURRENCY_LIMIT", 20)),
-        "uptime": os.popen("uptime").read().strip()
+        "uptime": time.time() - psutil.boot_time()  # مدة تشغيل النظام بالثواني
     }
 
 @router.post("/api/chat")
@@ -286,6 +275,88 @@ async def chat_endpoint(
         }
     
     return {"response": response}
+
+
+@router.post("/api/image-generation")
+async def image_generation_endpoint(
+    request: Request,
+    req: dict,
+    file: Optional[UploadFile] = File(None),
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if not user:
+        await handle_session(request)
+    
+    prompt = req.get("prompt", "")
+    output_format = req.get("output_format", "image")
+    if not prompt.strip():
+        raise HTTPException(status_code=400, detail="Prompt is required for image generation.")
+    
+    model_name, api_endpoint = select_model(prompt, input_type="image_gen")
+    
+    is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
+    if not is_available:
+        logger.error(f"Model {model_name} is not available at {api_endpoint}")
+        raise HTTPException(status_code=503, detail=f"Model {model_name} is not available. Please try another model.")
+    
+    image_data = None
+    if file:
+        image_data = await file.read()
+    
+    system_prompt = enhance_system_prompt(
+        "You are an expert in generating high-quality images based on detailed prompts. Ensure the output is visually appealing and matches the user's description.",
+        prompt, user
+    )
+    
+    stream = request_generation(
+        api_key=api_key,
+        api_base=selected_endpoint,
+        message=prompt,
+        system_prompt=system_prompt,
+        model_name=model_name,
+        temperature=0.7,
+        max_new_tokens=2048,
+        input_type="image_gen",
+        image_data=image_data,
+        output_format=output_format
+    )
+    
+    if output_format == "image":
+        image_chunks = []
+        try:
+            for chunk in stream:
+                logger.debug(f"Processing image chunk: {chunk[:100] if isinstance(chunk, str) else 'bytes'}")
+                if isinstance(chunk, bytes):
+                    image_chunks.append(chunk)
+                else:
+                    logger.warning(f"Unexpected non-bytes chunk in image stream: {chunk}")
+            if not image_chunks:
+                logger.error("No image data generated.")
+                raise HTTPException(status_code=500, detail="No image data generated for image generation.")
+            image_data = b"".join(image_chunks)
+            return StreamingResponse(io.BytesIO(image_data), media_type="image/png")
+        except Exception as e:
+            logger.error(f"Image generation failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
+    
+    response_chunks = []
+    try:
+        for chunk in stream:
+            logger.debug(f"Processing text chunk: {chunk[:100]}...")
+            if isinstance(chunk, str) and chunk.strip() and chunk not in ["analysis", "assistantfinal"]:
+                response_chunks.append(chunk)
+            else:
+                logger.warning(f"Skipping chunk: {chunk}")
+        response = "".join(response_chunks)
+        if not response.strip():
+            logger.error("Empty response generated.")
+            raise HTTPException(status_code=500, detail="Empty response generated from model.")
+        return {"response": response}
+    except Exception as e:
+        logger.error(f"Image generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
+
 
 @router.post("/api/audio-transcription")
 async def audio_transcription_endpoint(
@@ -824,7 +895,7 @@ async def verify_token(user: User = Depends(current_active_user)):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     return {"status": "valid"}
 
-    
+
 @router.put("/users/me")
 async def update_user_settings(
     settings: UserUpdate,
