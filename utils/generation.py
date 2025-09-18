@@ -19,8 +19,8 @@ from utils.web_search import web_search
 from huggingface_hub import snapshot_download
 import torch
 from diffusers import DiffusionPipeline
-from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL
-
+# from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL
+from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL, IMAGE_INFERENCE_API
 logger = logging.getLogger(__name__)
 
 # إعداد Cache
@@ -107,8 +107,9 @@ def select_model(query: str, input_type: str = "text", preferred_model: Optional
     ]
     for pattern in image_patterns:
         if re.search(pattern, query_lower, re.IGNORECASE):
-            logger.info(f"Selected {CLIP_BASE_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for image-related query: {query[:50]}...")
-            return CLIP_BASE_MODEL, FALLBACK_API_ENDPOINT
+model = CLIP_LARGE_MODEL if preferred_model == "image_advanced" else CLIP_BASE_MODEL
+        logger.info(f"Selected {model} with endpoint {IMAGE_INFERENCE_API} for image-related query: {query[:50]}...")
+        return model, f"{IMAGE_INFERENCE_API}/{model}"
     for pattern in image_gen_patterns:
         if re.search(pattern, query_lower, re.IGNORECASE) or input_type == "image_gen":
             logger.info(f"Selected {IMAGE_GEN_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for image generation query: {query[:50]}...")
@@ -223,24 +224,23 @@ def request_generation(
             torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
     # معالجة تحليل الصور
-    if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:
-        task_type = "image_analysis"
-        try:
-            dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            model = CLIPModel.from_pretrained(model_name, torch_dtype=dtype).to(device)
-            processor = CLIPProcessor.from_pretrained(model_name)
-            image = Image.open(io.BytesIO(image_data)).convert("RGB")
-            inputs = processor(text=message, images=image, return_tensors="pt", padding=True).to(device)
-            outputs = model(**inputs)
-            logits_per_image = outputs.logits_per_image
-            probs = logits_per_image.softmax(dim=1)
-            result = f"Image analysis result: {probs.tolist()}"
-            logger.debug(f"Image analysis result: {result}")
+# معالجة تحليل الصور
+if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:
+    task_type = "image_analysis"
+    try:
+        url = f"{IMAGE_INFERENCE_API}/{model_name}"
+        headers = {"Authorization": f"Bearer {api_key}"}
+        response = requests.post(url, headers=headers, data=image_data)
+        if response.status_code == 200:
+            result = response.json()
+            caption = result[0]['generated_text'] if isinstance(result, list) else result.get('generated_text', 'No caption generated')
+            logger.debug(f"Image analysis result: {caption}")
             if output_format == "audio":
+                dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+                device = "cuda" if torch.cuda.is_available() else "cpu"
                 model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL, torch_dtype=dtype).to(device)
                 processor = AutoProcessor.from_pretrained(TTS_MODEL)
-                inputs = processor(text=result, return_tensors="pt").to(device)
+                inputs = processor(text=caption, return_tensors="pt").to(device)
                 audio = model.generate(**inputs)
                 audio_file = io.BytesIO()
                 torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
@@ -248,18 +248,21 @@ def request_generation(
                 audio_data = audio_file.read()
                 yield audio_data
             else:
-                yield result
-            cache[cache_key] = [result]
+                yield caption
+            cache[cache_key] = [caption]
             return
-        except Exception as e:
-            logger.error(f"Image analysis failed: {e}")
-            yield f"Error: Image analysis failed: {e}"
+        else:
+            logger.error(f"Image analysis failed with status {response.status_code}: {response.text}")
+            yield f"Error: Image analysis failed with status {response.status_code}: {response.text}"
             return
-        finally:
-            if 'model' in locals():
-                del model
-            torch.cuda.empty_cache() if torch.cuda.is_available() else None
-
+    except Exception as e:
+        logger.error(f"Image analysis failed: {e}")
+        yield f"Error: Image analysis failed: {e}"
+        return
+    finally:
+        if 'model' in locals():
+            del model
+        torch.cuda.empty_cache() if torch.cuda.is_available() else None
     # معالجة توليد الصور أو تحريرها
     if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "image_gen":
         task_type = "image_generation"

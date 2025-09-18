@@ -1,6 +1,5 @@
 import os
 
-
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:cerebras")
 SECONDARY_MODEL_NAME = os.getenv("SECONDARY_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
 TERTIARY_MODEL_NAME = os.getenv("TERTIARY_MODEL_NAME", "llama/Llama-3.1-8B-Instruct:featherless-ai")
@@ -10,6 +9,11 @@ ASR_MODEL = os.getenv("ASR_MODEL", "openai/whisper-large-v3")
 TTS_MODEL = os.getenv("TTS_MODEL", "facebook/mms-tts-ara")
 IMAGE_GEN_MODEL = os.getenv("IMAGE_GEN_MODEL", "Qwen/Qwen2.5-VL-7B-Instruct:novita")
 SECONDARY_IMAGE_GEN_MODEL = os.getenv("SECONDARY_IMAGE_GEN_MODEL", "black-forest-labs/FLUX.1-dev")
+
+ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
+API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
+FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co/v1")
+IMAGE_INFERENCE_API = os.getenv("IMAGE_INFERENCE_API", "https://api-inference.huggingface.co/models")  # 👈 إضافة جديدة
 
 MODEL_ALIASES = {
     "advanced": MODEL_NAME,
