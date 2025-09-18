@@ -41,18 +41,18 @@ ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co/v1")
 
-# تحميل نموذج FLUX.1-dev مسبقًا إذا لزم الأمر
-model_path = None
-try:
-    model_path = snapshot_download(
-        repo_id="black-forest-labs/FLUX.1-dev",
-        repo_type="model",
-        ignore_patterns=["*.md", "*..gitattributes"],
-        local_dir="FLUX.1-dev",
-    )
-except Exception as e:
-    logger.error(f"Failed to download FLUX.1-dev: {e}")
-    model_path = None
+# # تحميل نموذج FLUX.1-dev مسبقًا إذا لزم الأمر
+# model_path = None
+# try:
+#     model_path = snapshot_download(
+#         repo_id="black-forest-labs/FLUX.1-dev",
+#         repo_type="model",
+#         ignore_patterns=["*.md", "*..gitattributes"],
+#         local_dir="FLUX.1-dev",
+#     )
+# except Exception as e:
+#     logger.error(f"Failed to download FLUX.1-dev: {e}")
+#     model_path = None
 
 # تعطيل PROVIDER_ENDPOINTS لأننا بنستخدم Hugging Face فقط
 PROVIDER_ENDPOINTS = {
