@@ -15,6 +15,8 @@ import torchaudio
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor, AutoProcessor
 from parler_tts import ParlerTTSForConditionalGeneration
+from utils.web_search import web_search
+from huggingface_hub import snapshot_download
 import torch
 from diffusers import DiffusionPipeline
 from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL
@@ -38,6 +40,19 @@ BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
 ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co/v1")
+
+# تحميل نموذج FLUX.1-dev مسبقًا إذا لزم الأمر
+model_path = None
+try:
+    model_path = snapshot_download(
+        repo_id="black-forest-labs/FLUX.1-dev",
+        repo_type="model",
+        ignore_patterns=["*.md", "*..gitattributes"],
+        local_dir="FLUX.1-dev",
+    )
+except Exception as e:
+    logger.error(f"Failed to download FLUX.1-dev: {e}")
+    model_path = None
 
 # تعطيل PROVIDER_ENDPOINTS لأننا بنستخدم Hugging Face فقط
 PROVIDER_ENDPOINTS = {
@@ -110,29 +125,6 @@ def select_model(query: str, input_type: str = "text", preferred_model: Optional
             return model_name, endpoint
     logger.error("No models available. Falling back to default.")
     return MODEL_NAME, API_ENDPOINT
-
-def polish_prompt(original_prompt: str, image: Optional[Image.Image] = None) -> str:
-    original_prompt = original_prompt.strip()
-    system_prompt = "You are an expert in generating high-quality prompts for image generation. Rewrite the user input to be clear, descriptive, and optimized for creating visually appealing images."
-    if any(0x0600 <= ord(char) <= 0x06FF for char in original_prompt):
-        system_prompt += "\nRespond in Arabic with a polished prompt suitable for image generation."
-    prompt = f"{system_prompt}\n\nUser Input: {original_prompt}\n\nRewritten Prompt:"
-    magic_prompt = "Ultra HD, 4K, cinematic composition"
-
-    try:
-        client = OpenAI(api_key=HF_TOKEN, base_url=FALLBACK_API_ENDPOINT, timeout=120.0)
-        polished_prompt = client.chat.completions.create(
-            model=SECONDARY_MODEL_NAME,  # استخدام نموذج متوافق
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=200
-        ).choices[0].message.content.strip()
-        polished_prompt = polished_prompt.replace("\n", " ")
-    except Exception as e:
-        logger.error(f"Error during prompt polishing: {e}")
-        polished_prompt = original_prompt
-
-    return polished_prompt + " " + magic_prompt
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=2, min=4, max=60))
 def request_generation(
@@ -268,25 +260,16 @@ def request_generation(
                 del model
             torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
-    # معالجة توليد الصور
+    # معالجة توليد الصور أو تحريرها
     if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "image_gen":
         task_type = "image_generation"
         try:
             dtype = torch.float16 if torch.cuda.is_available() else torch.float32
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            logger.info(f"Using device: {device}, dtype: {dtype}")
             if model_name == IMAGE_GEN_MODEL:
-                pipe = DiffusionPipeline.from_pretrained(
-                    "runwayml/stable-diffusion-v1-5",
-                    torch_dtype=dtype,
-                    use_auth_token=HF_TOKEN if HF_TOKEN else None
-                ).to(device)
+                pipe = DiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=dtype).to(device)
             else:
-                pipe = DiffusionPipeline.from_pretrained(
-                    "black-forest-labs/FLUX.1-dev",
-                    torch_dtype=dtype,
-                    use_auth_token=HF_TOKEN if HF_TOKEN else None
-                ).to(device)
+                pipe = DiffusionPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=dtype).to(device)
 
             polished_prompt = polish_prompt(message)
             image_params = {
@@ -348,17 +331,16 @@ def request_generation(
 
     if deep_search:
         try:
-            from utils.web_search import web_search
             search_result = web_search(message)
             input_messages.append({"role": "user", "content": f"User query: {message}\nWeb search context: {search_result}"})
-        except (ImportError, Exception) as e:
-            logger.error(f"Web search failed or not available: {e}")
+        except Exception as e:
+            logger.error(f"Web search failed: {e}")
             input_messages.append({"role": "user", "content": message})
     else:
         input_messages.append({"role": "user", "content": message})
 
     tools = tools if tools and model_name in [MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME] else []
-    tool_choice = tool_choice if tool_choice in ["auto", "none", "any", "required"] else "none"
+    tool_choice = tool_choice if tool_choice in ["auto", "none", "any", "required"] and model_name in [MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME] else "none"
 
     cached_chunks = []
     try:
@@ -681,6 +663,27 @@ def format_final(analysis_text: str, visible_text: str) -> str:
         "**💬 Response:**\n\n"
         f"{response}" if response else "No final response available."
     )
+
+def polish_prompt(original_prompt: str, image: Optional[Image.Image] = None) -> str:
+    original_prompt = original_prompt.strip()
+    system_prompt = "You are an expert in generating high-quality prompts for image generation. Rewrite the user input to be clear, descriptive, and optimized for creating visually appealing images."
+    if any(0x0600 <= ord(char) <= 0x06FF for char in original_prompt):
+        system_prompt += "\nRespond in Arabic with a polished prompt suitable for image generation."
+    prompt = f"{system_prompt}\n\nUser Input: {original_prompt}\n\nRewritten Prompt:"
+    magic_prompt = "Ultra HD, 4K, cinematic composition"
+    try:
+        client = OpenAI(api_key=HF_TOKEN, base_url=FALLBACK_API_ENDPOINT, timeout=120.0)
+        polished_prompt = client.chat.completions.create(
+            model=SECONDARY_MODEL_NAME,
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=200
+        ).choices[0].message.content.strip()
+        polished_prompt = polished_prompt.replace("\n", " ")
+    except Exception as e:
+        logger.error(f"Error during prompt polishing: {e}")
+        polished_prompt = original_prompt
+    return polished_prompt + " " + magic_prompt
 
 def generate(message, history, system_prompt, temperature, reasoning_effort, enable_browsing, max_new_tokens, input_type="text", audio_data=None, image_data=None, output_format="text"):
     if not message.strip() and not audio_data and not image_data:
