@@ -60,25 +60,43 @@ PROVIDER_ENDPOINTS = {
 }
 
 def check_model_availability(model_name: str, api_key: str) -> tuple[bool, str, str]:
+    """التحقق من توفر النموذج — مع استثناء لنماذج الصور."""
+    
+    # ✅ القائمة الشاملة لنماذج الصور (تحليل أو توليد)
+    IMAGE_MODELS = [
+        CLIP_BASE_MODEL,
+        CLIP_LARGE_MODEL,
+        IMAGE_GEN_MODEL,
+        SECONDARY_IMAGE_GEN_MODEL
+    ]
+    
+    # ✅ لو النموذج من نوع صورة — نعتبره متاح دايمًا ونرجع endpoint الصور
+    if any(img_model in model_name for img_model in IMAGE_MODELS):
+        logger.info(f"✅ Skipping availability check for image model: {model_name}")
+        # نرجع endpoint التوليد/التحليل الصحيح
+        clean_model_name = model_name.split(":")[0]  # عشان نشيل أي provider مثل :novita
+        return True, api_key, f"{IMAGE_INFERENCE_API}/{clean_model_name}"
+
+    # ✅ لو مش صورة — نستخدم الطريقة العادية (للدردشة)
     try:
         response = requests.get(
             f"{ROUTER_API_URL}/v1/models/{model_name}",
             headers={"Authorization": f"Bearer {api_key}"},
             timeout=30
         )
-        logger.debug(f"Checking model {model_name}: {response.status_code} - {response.text}")
+        logger.debug(f"📡 Checking model {model_name}: {response.status_code} - {response.text}")
         if response.status_code == 200:
-            logger.info(f"Model {model_name} is available at {API_ENDPOINT}")
+            logger.info(f"✅ Model {model_name} is available at {API_ENDPOINT}")
             return True, api_key, API_ENDPOINT
         elif response.status_code == 429 and BACKUP_HF_TOKEN and api_key != BACKUP_HF_TOKEN:
-            logger.warning(f"Rate limit reached for token {api_key}. Switching to backup token.")
+            logger.warning(f"⚠️ Rate limit reached for token {api_key}. Switching to backup token.")
             return check_model_availability(model_name, BACKUP_HF_TOKEN)
-        logger.error(f"Model {model_name} not available: {response.status_code} - {response.text}")
+        logger.error(f"❌ Model {model_name} not available: {response.status_code} - {response.text}")
         return False, api_key, API_ENDPOINT
     except Exception as e:
-        logger.error(f"Failed to check model availability for {model_name}: {e}")
+        logger.error(f"🔥 Failed to check model availability for {model_name}: {e}")
         if BACKUP_HF_TOKEN and api_key != BACKUP_HF_TOKEN:
-            logger.warning(f"Retrying with backup token for {model_name}")
+            logger.warning(f"🔁 Retrying with backup token for {model_name}")
             return check_model_availability(model_name, BACKUP_HF_TOKEN)
         return False, api_key, API_ENDPOINT
 
