@@ -172,7 +172,7 @@ def request_generation(
     enhanced_system_prompt = system_prompt
     buffer = ""
 
-    # معالجة الصوت
+    # === معالجة الصوت ===
     if model_name == ASR_MODEL and audio_data:
         task_type = "audio_transcription"
         try:
@@ -196,7 +196,7 @@ def request_generation(
             yield f"Error: Audio transcription failed: {e}"
             return
 
-    # معالجة تحويل النص إلى صوت
+    # === معالجة تحويل النص إلى صوت ===
     if model_name == TTS_MODEL or output_format == "audio":
         task_type = "text_to_speech"
         try:
@@ -223,47 +223,47 @@ def request_generation(
                 del model
             torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
-    # معالجة تحليل الصور
-# معالجة تحليل الصور
-if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:
-    task_type = "image_analysis"
-    try:
-        url = f"{IMAGE_INFERENCE_API}/{model_name}"
-        headers = {"Authorization": f"Bearer {api_key}"}
-        response = requests.post(url, headers=headers, data=image_data)
-        if response.status_code == 200:
-            result = response.json()
-            caption = result[0]['generated_text'] if isinstance(result, list) else result.get('generated_text', 'No caption generated')
-            logger.debug(f"Image analysis result: {caption}")
-            if output_format == "audio":
-                dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-                device = "cuda" if torch.cuda.is_available() else "cpu"
-                model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL, torch_dtype=dtype).to(device)
-                processor = AutoProcessor.from_pretrained(TTS_MODEL)
-                inputs = processor(text=caption, return_tensors="pt").to(device)
-                audio = model.generate(**inputs)
-                audio_file = io.BytesIO()
-                torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
-                audio_file.seek(0)
-                audio_data = audio_file.read()
-                yield audio_data
+    # === معالجة تحليل الصور ===
+    if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:
+        task_type = "image_analysis"
+        try:
+            url = f"{IMAGE_INFERENCE_API}/{model_name}"
+            headers = {"Authorization": f"Bearer {api_key}"}
+            response = requests.post(url, headers=headers, data=image_data)
+            if response.status_code == 200:
+                result = response.json()
+                caption = result[0]['generated_text'] if isinstance(result, list) else result.get('generated_text', 'No caption generated')
+                logger.debug(f"Image analysis result: {caption}")
+                if output_format == "audio":
+                    dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+                    device = "cuda" if torch.cuda.is_available() else "cpu"
+                    model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL, torch_dtype=dtype).to(device)
+                    processor = AutoProcessor.from_pretrained(TTS_MODEL)
+                    inputs = processor(text=caption, return_tensors="pt").to(device)
+                    audio = model.generate(**inputs)
+                    audio_file = io.BytesIO()
+                    torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
+                    audio_file.seek(0)
+                    audio_data = audio_file.read()
+                    yield audio_data
+                else:
+                    yield caption
+                cache[cache_key] = [caption]
+                return
             else:
-                yield caption
-            cache[cache_key] = [caption]
+                logger.error(f"Image analysis failed with status {response.status_code}: {response.text}")
+                yield f"Error: Image analysis failed with status {response.status_code}: {response.text}"
+                return
+        except Exception as e:
+            logger.error(f"Image analysis failed: {e}")
+            yield f"Error: Image analysis failed: {e}"
             return
-        else:
-            logger.error(f"Image analysis failed with status {response.status_code}: {response.text}")
-            yield f"Error: Image analysis failed with status {response.status_code}: {response.text}"
-            return
-    except Exception as e:
-        logger.error(f"Image analysis failed: {e}")
-        yield f"Error: Image analysis failed: {e}"
-        return
-    finally:
-        if 'model' in locals():
-            del model
-        torch.cuda.empty_cache() if torch.cuda.is_available() else None
-    # معالجة توليد الصور أو تحريرها
+        finally:
+            if 'model' in locals():
+                del model
+            torch.cuda.empty_cache() if torch.cuda.is_available() else None
+
+    # === معالجة توليد الصور أو تحريرها ===
     if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "image_gen":
         task_type = "image_generation"
         try:
@@ -302,7 +302,7 @@ if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:
                 del pipe
             torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
-    # معالجة النصوص
+    # === معالجة النصوص (الدردشة) ===
     if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL]:
         task_type = "image"
         enhanced_system_prompt = f"{system_prompt}\nYou are an expert in image analysis and description. Provide detailed descriptions, classifications, or analysis of images based on the query."
@@ -652,7 +652,6 @@ if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:
         else:
             yield f"Error: Failed to load model {model_name}: {e}"
             return
-
 def format_final(analysis_text: str, visible_text: str) -> str:
     reasoning_safe = html.escape((analysis_text or "").strip())
     response = (visible_text or "").strip()
