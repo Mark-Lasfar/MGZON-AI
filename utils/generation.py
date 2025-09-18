@@ -106,10 +106,10 @@ def select_model(query: str, input_type: str = "text", preferred_model: Optional
         r"\bimage\s+edit\b", r"\bتحرير\s+صورة\b"
     ]
    for pattern in image_patterns:
-    if re.search(pattern, query_lower, re.IGNORECASE):
-        model = CLIP_LARGE_MODEL if preferred_model == "image_advanced" else CLIP_BASE_MODEL  # ← اضغط Tab هنا
-        logger.info(f"Selected {model} with endpoint {IMAGE_INFERENCE_API} for image-related query: {query[:50]}...")
-        return model, f"{IMAGE_INFERENCE_API}/{model}"
+         if re.search(pattern, query_lower, re.IGNORECASE):
+            model = CLIP_LARGE_MODEL if preferred_model == "image_advanced" else CLIP_BASE_MODEL  # ← اضغط Tab هنا
+            logger.info(f"Selected {model} with endpoint {IMAGE_INFERENCE_API} for image-related query: {query[:50]}...")
+            return model, f"{IMAGE_INFERENCE_API}/{model}"
     for pattern in image_gen_patterns:
         if re.search(pattern, query_lower, re.IGNORECASE) or input_type == "image_gen":
             logger.info(f"Selected {IMAGE_GEN_MODEL} with endpoint {FALLBACK_API_ENDPOINT} for image generation query: {query[:50]}...")
