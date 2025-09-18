@@ -32,6 +32,8 @@ import anyio
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("pymongo").setLevel(logging.WARNING)
+logging.getLogger("motor").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 logger.info("Starting application...")
 logger.debug("Files in current directory: %s", os.listdir(os.getcwd()))
