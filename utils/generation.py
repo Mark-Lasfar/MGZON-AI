@@ -1,4 +1,3 @@
-# utils/generation.py
 import os
 import re
 import json
@@ -16,13 +15,10 @@ import torchaudio
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor, AutoProcessor
 from parler_tts import ParlerTTSForConditionalGeneration
-from utils.web_search import web_search
-from huggingface_hub import snapshot_download
 import torch
-from qwenimage.pipeline_qwen_image_edit import QwenImageEditPipeline
-from qwenimage.pipeline_qwen_image import QwenImagePipeline
 from diffusers import DiffusionPipeline
 from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL
+
 logger = logging.getLogger(__name__)
 
 # إعداد Cache
@@ -36,7 +32,6 @@ LATEX_DELIMS = [
     {"left": "\\(", "right": "\\)", "display": False},
 ]
 
-
 # إعداد العميل لـ Hugging Face API
 HF_TOKEN = os.getenv("HF_TOKEN")
 BACKUP_HF_TOKEN = os.getenv("BACKUP_HF_TOKEN")
@@ -44,39 +39,6 @@ ROUTER_API_URL = os.getenv("ROUTER_API_URL", "https://router.huggingface.co")
 API_ENDPOINT = os.getenv("API_ENDPOINT", "https://router.huggingface.co/v1")
 FALLBACK_API_ENDPOINT = os.getenv("FALLBACK_API_ENDPOINT", "https://api-inference.huggingface.co/v1")
 
-# تحميل نموذج FLUX.1-dev مسبقًا إذا لزم الأمر
-model_path = None
-try:
-    model_path = snapshot_download(
-        repo_id="black-forest-labs/FLUX.1-dev",
-        repo_type="model",
-        ignore_patterns=["*.md", "*..gitattributes"],
-        local_dir="FLUX.1-dev",
-    )
-except Exception as e:
-    logger.error(f"Failed to download FLUX.1-dev: {e}")
-    model_path = None
-
-
-
-
-
-    # دعم FlashAttention-3
-# _flash_attn_func = None
-# _kernels_err = None
-# try:
-#     _k = get_kernel("kernels-community/vllm-flash-attn3")
-#     _flash_attn_func = _k.flash_attn_func
-# except Exception as e:
-#     _flash_attn_func = None
-#     _kernels_err = e
-
-# def _ensure_fa3_available():
-#     if _flash_attn_func is None:
-#         raise ImportError(
-#             "FlashAttention-3 via Hugging Face `kernels` is required. "
-#             f"Tried `get_kernel('kernels-community/vllm-flash-attn3')` and failed with:\n{_kernels_err}"
-#         )
 # تعطيل PROVIDER_ENDPOINTS لأننا بنستخدم Hugging Face فقط
 PROVIDER_ENDPOINTS = {
     "huggingface": API_ENDPOINT
@@ -149,7 +111,29 @@ def select_model(query: str, input_type: str = "text", preferred_model: Optional
     logger.error("No models available. Falling back to default.")
     return MODEL_NAME, API_ENDPOINT
 
-    
+def polish_prompt(original_prompt: str, image: Optional[Image.Image] = None) -> str:
+    original_prompt = original_prompt.strip()
+    system_prompt = "You are an expert in generating high-quality prompts for image generation. Rewrite the user input to be clear, descriptive, and optimized for creating visually appealing images."
+    if any(0x0600 <= ord(char) <= 0x06FF for char in original_prompt):
+        system_prompt += "\nRespond in Arabic with a polished prompt suitable for image generation."
+    prompt = f"{system_prompt}\n\nUser Input: {original_prompt}\n\nRewritten Prompt:"
+    magic_prompt = "Ultra HD, 4K, cinematic composition"
+
+    try:
+        client = OpenAI(api_key=HF_TOKEN, base_url=FALLBACK_API_ENDPOINT, timeout=120.0)
+        polished_prompt = client.chat.completions.create(
+            model=SECONDARY_MODEL_NAME,  # استخدام نموذج متوافق
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=200
+        ).choices[0].message.content.strip()
+        polished_prompt = polished_prompt.replace("\n", " ")
+    except Exception as e:
+        logger.error(f"Error during prompt polishing: {e}")
+        polished_prompt = original_prompt
+
+    return polished_prompt + " " + magic_prompt
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=2, min=4, max=60))
 def request_generation(
     api_key: str,
@@ -223,9 +207,11 @@ def request_generation(
     if model_name == TTS_MODEL or output_format == "audio":
         task_type = "text_to_speech"
         try:
-            model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
+            dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL, torch_dtype=dtype).to(device)
             processor = AutoProcessor.from_pretrained(TTS_MODEL)
-            inputs = processor(text=message, return_tensors="pt")
+            inputs = processor(text=message, return_tensors="pt").to(device)
             audio = model.generate(**inputs)
             audio_file = io.BytesIO()
             torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
@@ -239,24 +225,30 @@ def request_generation(
             logger.error(f"Text-to-speech failed: {e}")
             yield f"Error: Text-to-speech failed: {e}"
             return
+        finally:
+            if 'model' in locals():
+                del model
+            torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
     # معالجة تحليل الصور
     if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL] and image_data:
         task_type = "image_analysis"
         try:
-            model = CLIPModel.from_pretrained(model_name)
+            dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            model = CLIPModel.from_pretrained(model_name, torch_dtype=dtype).to(device)
             processor = CLIPProcessor.from_pretrained(model_name)
             image = Image.open(io.BytesIO(image_data)).convert("RGB")
-            inputs = processor(text=message, images=image, return_tensors="pt", padding=True)
+            inputs = processor(text=message, images=image, return_tensors="pt", padding=True).to(device)
             outputs = model(**inputs)
             logits_per_image = outputs.logits_per_image
             probs = logits_per_image.softmax(dim=1)
             result = f"Image analysis result: {probs.tolist()}"
             logger.debug(f"Image analysis result: {result}")
             if output_format == "audio":
-                model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
+                model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL, torch_dtype=dtype).to(device)
                 processor = AutoProcessor.from_pretrained(TTS_MODEL)
-                inputs = processor(text=result, return_tensors="pt")
+                inputs = processor(text=result, return_tensors="pt").to(device)
                 audio = model.generate(**inputs)
                 audio_file = io.BytesIO()
                 torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
@@ -271,45 +263,60 @@ def request_generation(
             logger.error(f"Image analysis failed: {e}")
             yield f"Error: Image analysis failed: {e}"
             return
+        finally:
+            if 'model' in locals():
+                del model
+            torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
-    # معالجة توليد الصور أو تحريرها
+    # معالجة توليد الصور
+    if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "image_gen":
+        task_type = "image_generation"
+        try:
+            dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            logger.info(f"Using device: {device}, dtype: {dtype}")
+            if model_name == IMAGE_GEN_MODEL:
+                pipe = DiffusionPipeline.from_pretrained(
+                    "runwayml/stable-diffusion-v1-5",
+                    torch_dtype=dtype,
+                    use_auth_token=HF_TOKEN if HF_TOKEN else None
+                ).to(device)
+            else:
+                pipe = DiffusionPipeline.from_pretrained(
+                    "black-forest-labs/FLUX.1-dev",
+                    torch_dtype=dtype,
+                    use_auth_token=HF_TOKEN if HF_TOKEN else None
+                ).to(device)
 
-if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "image_gen":
-    task_type = "image_generation"
-    try:
-        dtype = torch.float16
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        if model_name == IMAGE_GEN_MODEL:
-            pipe = DiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=dtype).to(device)
-        else:
-            pipe = DiffusionPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=dtype).to(device)
+            polished_prompt = polish_prompt(message)
+            image_params = {
+                "prompt": polished_prompt,
+                "num_inference_steps": 50,
+                "guidance_scale": 7.5,
+            }
+            if input_type == "image_gen" and image_data:
+                image = Image.open(io.BytesIO(image_data)).convert("RGB")
+                image_params["image"] = image
 
-        polished_prompt = polish_prompt(message)
-        image_params = {
-            "prompt": polished_prompt,
-            "num_inference_steps": 50,
-            "guidance_scale": 7.5,
-        }
-        if input_type == "image_gen" and image_data:
-            image = Image.open(io.BytesIO(image_data)).convert("RGB")
-            image_params["image"] = image
+            output = pipe(**image_params)
+            image_file = io.BytesIO()
+            output.images[0].save(image_file, format="PNG")
+            image_file.seek(0)
+            image_data = image_file.read()
+            logger.debug(f"Generated image data of length: {len(image_data)} bytes")
+            yield image_data
+            cache[cache_key] = [image_data]
+            return
+        except Exception as e:
+            logger.error(f"Image generation failed: {e}")
+            yield f"Error: Image generation failed: {e}"
+            return
+        finally:
+            if 'pipe' in locals():
+                del pipe
+            torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
-        output = pipe(**image_params)
-        image_file = io.BytesIO()
-        output.images[0].save(image_file, format="PNG")
-        image_file.seek(0)
-        image_data = image_file.read()
-        logger.debug(f"Generated image data of length: {len(image_data)} bytes")
-        yield image_data
-        cache[cache_key] = [image_data]
-        return
-    except Exception as e:
-        logger.error(f"Image generation failed: {e}")
-        yield f"Error: Image generation failed: {e}"
-        return
-
-
-    # معالجة النصوص (كما هو موجود في الكود الأصلي)
+    # معالجة النصوص
     if model_name in [CLIP_BASE_MODEL, CLIP_LARGE_MODEL]:
         task_type = "image"
         enhanced_system_prompt = f"{system_prompt}\nYou are an expert in image analysis and description. Provide detailed descriptions, classifications, or analysis of images based on the query."
@@ -341,16 +348,17 @@ if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "
 
     if deep_search:
         try:
+            from utils.web_search import web_search
             search_result = web_search(message)
             input_messages.append({"role": "user", "content": f"User query: {message}\nWeb search context: {search_result}"})
-        except Exception as e:
-            logger.error(f"Web search failed: {e}")
+        except (ImportError, Exception) as e:
+            logger.error(f"Web search failed or not available: {e}")
             input_messages.append({"role": "user", "content": message})
     else:
         input_messages.append({"role": "user", "content": message})
 
     tools = tools if tools and model_name in [MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME] else []
-    tool_choice = tool_choice if tool_choice in ["auto", "none", "any", "required"] and model_name in [MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME] else "none"
+    tool_choice = tool_choice if tool_choice in ["auto", "none", "any", "required"] else "none"
 
     cached_chunks = []
     try:
@@ -444,9 +452,11 @@ if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "
 
         if output_format == "audio":
             try:
-                model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
+                dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+                model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL, torch_dtype=dtype).to(device)
                 processor = AutoProcessor.from_pretrained(TTS_MODEL)
-                inputs = processor(text=buffer, return_tensors="pt")
+                inputs = processor(text=buffer, return_tensors="pt").to(device)
                 audio = model.generate(**inputs)
                 audio_file = io.BytesIO()
                 torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
@@ -457,6 +467,10 @@ if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "
             except Exception as e:
                 logger.error(f"Text-to-speech conversion failed: {e}")
                 yield f"Error: Text-to-speech conversion failed: {e}"
+            finally:
+                if 'model' in locals():
+                    del model
+                torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
         cache[cache_key] = cached_chunks
 
@@ -556,9 +570,11 @@ if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "
 
                 if buffer and output_format == "audio":
                     try:
-                        model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
+                        dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+                        device = "cuda" if torch.cuda.is_available() else "cpu"
+                        model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL, torch_dtype=dtype).to(device)
                         processor = AutoProcessor.from_pretrained(TTS_MODEL)
-                        inputs = processor(text=buffer, return_tensors="pt")
+                        inputs = processor(text=buffer, return_tensors="pt").to(device)
                         audio = model.generate(**inputs)
                         audio_file = io.BytesIO()
                         torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
@@ -569,6 +585,10 @@ if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "
                     except Exception as e:
                         logger.error(f"Text-to-speech conversion failed: {e}")
                         yield f"Error: Text-to-speech conversion failed: {e}"
+                    finally:
+                        if 'model' in locals():
+                            del model
+                        torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
                 cache[cache_key] = cached_chunks
 
@@ -620,9 +640,11 @@ if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "
                             break
                     if buffer and output_format == "audio":
                         try:
-                            model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL)
+                            dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+                            device = "cuda" if torch.cuda.is_available() else "cpu"
+                            model = ParlerTTSForConditionalGeneration.from_pretrained(TTS_MODEL, torch_dtype=dtype).to(device)
                             processor = AutoProcessor.from_pretrained(TTS_MODEL)
-                            inputs = processor(text=buffer, return_tensors="pt")
+                            inputs = processor(text=buffer, return_tensors="pt").to(device)
                             audio = model.generate(**inputs)
                             audio_file = io.BytesIO()
                             torchaudio.save(audio_file, audio[0], sample_rate=22050, format="wav")
@@ -633,6 +655,10 @@ if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "
                         except Exception as e:
                             logger.error(f"Text-to-speech conversion failed: {e}")
                             yield f"Error: Text-to-speech conversion failed: {e}"
+                        finally:
+                            if 'model' in locals():
+                                del model
+                            torch.cuda.empty_cache() if torch.cuda.is_available() else None
                     cache[cache_key] = cached_chunks
                 except Exception as e3:
                     logger.error(f"[Gateway] Streaming failed for tertiary model {TERTIARY_MODEL_NAME}: {e3}")
@@ -641,7 +667,6 @@ if model_name in [IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL] or input_type == "
         else:
             yield f"Error: Failed to load model {model_name}: {e}"
             return
-
 
 def format_final(analysis_text: str, visible_text: str) -> str:
     reasoning_safe = html.escape((analysis_text or "").strip())
@@ -657,32 +682,6 @@ def format_final(analysis_text: str, visible_text: str) -> str:
         f"{response}" if response else "No final response available."
     )
 
-
-def polish_prompt(original_prompt: str, image: Optional[Image.Image] = None) -> str:
-    original_prompt = original_prompt.strip()
-    system_prompt = "You are an expert in generating high-quality prompts for image generation. Rewrite the user input to be clear, descriptive, and optimized for creating visually appealing images."
-    if any(0x0600 <= ord(char) <= 0x06FF for char in original_prompt):
-        system_prompt += "\nRespond in Arabic with a polished prompt suitable for image generation."
-    prompt = f"{system_prompt}\n\nUser Input: {original_prompt}\n\nRewritten Prompt:"
-    magic_prompt = "Ultra HD, 4K, cinematic composition"
-    success = False
-    while not success:
-        try:
-            polished_prompt = client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
-                temperature=0.7,
-                max_tokens=200
-            ).choices[0].message.content.strip()
-            polished_prompt = polished_prompt.replace("\n", " ")
-            success = True
-        except Exception as e:
-            logger.error(f"Error during prompt polishing: {e}")
-            polished_prompt = original_prompt
-            break
-    return polished_prompt + " " + magic_prompt
-
-    
 def generate(message, history, system_prompt, temperature, reasoning_effort, enable_browsing, max_new_tokens, input_type="text", audio_data=None, image_data=None, output_format="text"):
     if not message.strip() and not audio_data and not image_data:
         yield "Please enter a prompt or upload a file."
