@@ -1,6 +1,5 @@
-# api/auth.py
 # SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
-# SPDX-License-License: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
@@ -8,15 +7,15 @@ from fastapi_users.router.oauth import get_oauth_router
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
-from fastapi import Depends, Request, FastAPI
+from fastapi import Depends, Request, FastAPI, Response
+from fastapi.responses import RedirectResponse , JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi_users.models import UP
-from typing import Optional, Dict
+from typing import Optional
 import os
 import logging
 import secrets
-from fastapi.responses import RedirectResponse
 
 from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db
 from api.models import UserRead, UserCreate, UserUpdate
@@ -145,14 +144,14 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 async def get_user_manager(user_db: CustomSQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
-# OAuth Routers مع معالجة مخصصة لـ GitHub
+# تعديل الـ OAuth Routers لتضمين redirect مخصص
 google_oauth_router = get_oauth_router(
     google_oauth_client,
     auth_backend,
     get_user_manager,
     state_secret=SECRET,
     associate_by_email=True,
-    redirect_url="https://mgzon-mgzon-app.hf.space/auth/google/callback",  # تعديل الـ redirect_url ليحوّل مباشرة إلى /chat
+    redirect_url=GOOGLE_REDIRECT_URL,
 )
 
 github_oauth_client._access_token_url = "https://github.com/login/oauth/access_token"
@@ -163,7 +162,7 @@ github_oauth_router = get_oauth_router(
     get_user_manager,
     state_secret=SECRET,
     associate_by_email=True,
-    redirect_url="https://mgzon-mgzon-app.hf.space/auth/github/callback",  # تعديل الـ redirect_url ليحوّل مباشرة إلى /chat
+    redirect_url=GITHUB_REDIRECT_URL,
 )
 
 fastapi_users = FastAPIUsers[User, int](
@@ -173,12 +172,93 @@ fastapi_users = FastAPIUsers[User, int](
 
 current_active_user = fastapi_users.current_user(active=True, optional=True)
 
+# إضافة route مخصص للتعامل مع الـ callback
+
+# تعديل الـ OAuth Callback لـ Google
+async def custom_oauth_callback(
+    code: str,
+    user_manager: UserManager = Depends(get_user_manager),
+    oauth_client=Depends(lambda: google_oauth_client),
+    redirect_url: str = GOOGLE_REDIRECT_URL,
+    response: Response = None,
+):
+    # جلب access token من Google
+    token_data = await oauth_client.get_access_token(code, redirect_url)
+    access_token = token_data["access_token"]
+    user_info = await oauth_client.get_user_info(access_token)
+
+    # استدعاء oauth_callback من UserManager
+    user = await user_manager.oauth_callback(
+        oauth_name="google",
+        access_token=access_token,
+        account_id=user_info["sub"],
+        account_email=user_info["email"],
+        expires_at=token_data.get("expires_in"),
+        refresh_token=token_data.get("refresh_token"),
+        associate_by_email=True,
+        is_verified_by_default=True,
+    )
+
+    # إنشاء JWT token
+    jwt_strategy = get_jwt_strategy()
+    token = await jwt_strategy.write(user)
+
+    # تعيين الـ token في الكوكيز
+    cookie_transport.set_cookie(response, token)
+
+    # رجع JSON بدل redirect – الـ frontend هيتحكم في التوجيه
+    return JSONResponse(content={
+        "message": "Google login successful",
+        "access_token": token
+    }, status_code=200)
+
+# تعديل الـ OAuth Callback لـ GitHub
+async def custom_github_oauth_callback(
+    code: str,
+    user_manager: UserManager = Depends(get_user_manager),
+    oauth_client=Depends(lambda: github_oauth_client),
+    redirect_url: str = GITHUB_REDIRECT_URL,
+    response: Response = None,
+):
+    # جلب access token من GitHub
+    token_data = await oauth_client.get_access_token(code, redirect_url)
+    access_token = token_data["access_token"]
+    user_info = await oauth_client.get_user_info(access_token)
+
+    # استدعاء oauth_callback من UserManager
+    user = await user_manager.oauth_callback(
+        oauth_name="github",
+        access_token=access_token,
+        account_id=str(user_info["id"]),
+        account_email=user_info.get("email") or f"{user_info['login']}@github.com",
+        expires_at=token_data.get("expires_in"),
+        refresh_token=token_data.get("refresh_token"),
+        associate_by_email=True,
+        is_verified_by_default=True,
+    )
+
+    # إنشاء JWT token
+    jwt_strategy = get_jwt_strategy()
+    token = await jwt_strategy.write(user)
+
+    # تعيين الـ token في الكوكيز
+    cookie_transport.set_cookie(response, token)
+
+    # رجع JSON بدل redirect – الـ frontend هيتحكم في التوجيه
+    return JSONResponse(content={
+        "message": "GitHub login successful",
+        "access_token": token
+    }, status_code=200)
+
 # تضمين الراوترات داخل التطبيق
 def get_auth_router(app: FastAPI):
-    app.include_router(google_oauth_router, prefix="/auth/google", tags=["auth"])
-    app.include_router(github_oauth_router, prefix="/auth/github", tags=["auth"])
     app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
     app.include_router(fastapi_users.get_register_router(UserRead, UserCreate), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_reset_password_router(), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_verify_router(UserRead), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate), prefix="/users", tags=["users"])
+
+    # إضافة الـ custom callback routes
+    app.get("/auth/google/callback")(custom_oauth_callback)
+    app.get("/auth/github/callback")(custom_github_oauth_callback)
+

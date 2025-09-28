@@ -1,284 +1,888 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.">
-  <meta name="keywords" content="MGZon Chatbot, API documentation, code generation, e-commerce, FastAPI, Mark Al-Asfar">
-  <meta name="author" content="Mark Al-Asfar">
-  <meta name="robots" content="index, follow">
-  <title>API Documentation - MGZon Chatbot</title>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-  <link rel="apple-touch-icon" href="/static/images/mg.svg">
-  <!-- Open Graph -->
-  <meta property="og:title" content="API Documentation - MGZon Chatbot">
-  <meta property="og:description" content="Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.">
-  <meta property="og:image" content="/static/images/mg.svg">
-  <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/docs">
-  <meta property="og:type" content="website">
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="API Documentation - MGZon Chatbot">
-  <meta name="twitter:description" content="Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.">
-  <meta name="twitter:image" content="/static/images/mg.svg">
-  <!-- JSON-LD -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebPage",
-  "name": "API Documentation - MGZon Chatbot",
-  "url": "https://mgzon-mgzon-app.hf.space/docs",
-  "description": "Explore MGZon Chatbot API documentation for integrating AI-powered code generation and e-commerce tools.",
-  "keywords": ["MGZon Chatbot", "API documentation", "code generation", "e-commerce", "FastAPI", "Mark Al-Asfar", "MGZon", "MGZon AI", "AI chatbot", "Code generation bot", "Python AI chatbot", "FastAPI integration", "AI for coding", "AI developer tools", "text generation"],
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "MGZon Chatbot",
-    "url": "https://mgzon-mgzon-app.hf.space/"
-  }
-}
-</script>
-  <!-- Tailwind (v3) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Boxicons -->
-  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  <!-- Prism (for code highlighting) -->
-  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-  <style>
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    body {
-      background: linear-gradient(135deg, #0f172a, #0e7490, #065f46, #064e3b);
-      background-size: 400% 400%;
-      animation: gradientShift 15s ease infinite;
-      font-family: system-ui, sans-serif;
-    }
-    .glass {
-      background: rgba(255, 255, 255, 0.07);
-      border-radius: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .sidebar {
-      transition: transform 0.3s ease-in-out;
-    }
-    .sidebar.collapsed .logo {
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    .main-content {
-      min-height: calc(100vh - 4rem);
-    }
-    .glass:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-      background: rgba(255, 255, 255, 0.15);
-    }
-    @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
-      }
-      .sidebar.active {
-        transform: translateX(0);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MGZon Chatbot API Documentation – Detailed guide for integrating AI-powered features like code generation, web search, and e-commerce solutions by Mark Al-Asfar.">
+    <meta name="keywords" content="MGZon API Docs, AI Chatbot Integration, Code Generation API, E-commerce AI, Mark Al-Asfar, FastAPI, Gradio">
+    <meta name="author" content="Mark Al-Asfar">
+    <meta name="robots" content="index, follow">
+    <title>MGZon Chatbot API Documentation</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/mg-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="MGZon">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#00f0ff">
+    <meta property="og:title" content="MGZon Chatbot API Documentation">
+    <meta property="og:description" content="Comprehensive API docs for MGZon Chatbot: Integrate AI for code, search, and e-commerce by Mark Al-Asfar.">
+    <meta property="og:image" content="/static/images/mg.svg">
+    <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/docs">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MGZon Chatbot API Documentation">
+    <meta name="twitter:description" content="Comprehensive API docs for MGZon Chatbot: Integrate AI for code, search, and e-commerce by Mark Al-Asfar.">
+    <meta name="twitter:image" content="/static/images/mg.svg">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "MGZon Chatbot API Docs",
+      "url": "https://mgzon-mgzon-app.hf.space/docs",
+      "description": "API Documentation for MGZon Chatbot by Mark Al-Asfar: Integrate AI for code generation, real-time web search, and e-commerce solutions.",
+      "keywords": ["MGZon API", "AI Integration", "Code Generation API", "E-commerce API", "Mark Al-Asfar", "FastAPI Docs", "Hugging Face API", "2025 AI API", "chatgpt api", "grok api", "deepseek api", "text generation api"],
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MGZon AI",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "/static/images/mg.svg"
+        }
       }
     }
-  </style>
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <style>
+        :root {
+            --font-sans: 'Poppins', sans-serif;
+            --font-mono: 'Orbitron', monospace;
+            --radius: 1rem;
+        }
+
+        :root.dark {
+            --background: 220 70% 10%;
+            --foreground: 0 0% 95%;
+            --card: 220 70% 15%;
+            --card-foreground: 0 0% 90%;
+            --primary: 180 100% 50%;
+            --primary-foreground: 0 0% 0%;
+            --secondary: 260 80% 30%;
+            --secondary-foreground: 0 0% 95%;
+            --muted: 220 50% 20%;
+            --muted-foreground: 0 0% 70%;
+            --accent: 320 100% 60%;
+            --accent-foreground: 0 0% 95%;
+            --border: 220 50% 25%;
+        }
+
+        :root.light {
+            --background: 0 0% 100%;
+            --foreground: 220 70% 10%;
+            --card: 0 0% 95%;
+            --card-foreground: 220 70% 15%;
+            --primary: 180 100% 50%;
+            --primary-foreground: 0 0% 100%;
+            --secondary: 260 80% 40%;
+            --secondary-foreground: 0 0% 10%;
+            --muted: 0 0% 90%;
+            --muted-foreground: 0 0% 40%;
+            --accent: 320 100% 50%;
+            --accent-foreground: 0 0% 10%;
+            --border: 0 0% 80%;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .header {
+            padding: 2rem 0;
+            text-align: center;
+            background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--card)));
+        }
+
+        .logo {
+            width: 200px;
+            height: auto;
+            filter: drop-shadow(0 0 20px hsl(var(--primary) / 0.5));
+            animation: logoSpin 10s linear infinite;
+        }
+
+        @keyframes logoSpin {
+            0% { transform: rotateY(0deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.1); }
+            100% { transform: rotateY(360deg) scale(1); }
+        }
+
+        .hero {
+            padding: 3rem 0;
+            text-align: center;
+            position: relative;
+            background: transparent;
+        }
+
+        .hero-tagline {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .hero .subtitle {
+            font-size: 1.2rem;
+            color: hsl(var(--muted-foreground));
+            margin-bottom: 2rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+
+        .highlight {
+            color: hsl(var(--primary));
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+            animation: fadeIn 1s ease-out 0.6s both;
+        }
+
+        .nav-link {
+            padding: 1rem 2.5rem;
+            border-radius: var(--radius);
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted)));
+            color: hsl(var(--card-foreground));
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px hsl(var(--foreground) / 0.2);
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            color: hsl(var(--primary-foreground));
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 30px hsl(var(--primary) / 0.5);
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-link:hover::before {
+            left: 100%;
+        }
+
+        .cta-button {
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            color: hsl(var(--primary-foreground));
+            border: none !important;
+            font-size: 1.2rem;
+            padding: 1.2rem 3rem !important;
+            font-weight: 700;
+        }
+
+        .cta-button:hover {
+            box-shadow: 0 15px 40px hsl(var(--primary) / 0.6);
+            transform: translateY(-8px) scale(1.1);
+        }
+
+        .code-snippet {
+            background: hsl(var(--muted));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            color: hsl(var(--primary));
+            margin: 0 auto;
+            overflow-x: auto;
+            max-width: 700px;
+            position: relative;
+            animation: fadeIn 1s ease-out 0.8s both;
+            box-shadow: 0 5px 20px hsl(var(--primary) / 0.3);
+        }
+
+        .code-snippet::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)));
+        }
+
+        .quick-features {
+            padding: 4rem 0;
+            background: transparent;
+        }
+
+        .quick-features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .quick-feature {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted)));
+            border-radius: var(--radius);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px hsl(var(--foreground) / 0.2);
+        }
+
+        .quick-feature:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 30px hsl(var(--primary) / 0.4);
+        }
+
+        .quick-feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            display: block;
+            color: hsl(var(--primary));
+            transition: transform 0.3s ease;
+        }
+
+        .quick-feature:hover .quick-feature-icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        .quick-feature h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: hsl(var(--foreground));
+        }
+
+        .quick-feature p {
+            color: hsl(var(--muted-foreground));
+            font-size: 1rem;
+        }
+
+        .wave-divider {
+            height: 120px;
+            background: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wave-divider::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--background)));
+            border-radius: 50%;
+            animation: wave 10s ease-in-out infinite;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: translateX(-50%) translateY(70%); }
+            50% { transform: translateX(-50%) translateY(50%); }
+        }
+
+        .features {
+            padding: 5rem 0;
+            background: hsl(var(--card));
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            padding: 2.5rem;
+            background: hsl(var(--background));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 20px hsl(var(--foreground) / 0.2);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, hsl(var(--primary) / 0.2), transparent, hsl(var(--accent) / 0.2));
+            border-radius: var(--radius);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 20px 40px hsl(var(--primary) / 0.5);
+        }
+
+        .feature-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            background: linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--accent) / 0.2));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            color: hsl(var(--primary));
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: rotate(360deg) scale(1.2);
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: hsl(var(--card-foreground));
+        }
+
+        .feature-card p {
+            color: hsl(var(--muted-foreground));
+            font-size: 1rem;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: hsl(var(--muted-foreground));
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer {
+            padding: 4rem 0;
+            border-top: 1px solid hsl(var(--border));
+            text-align: center;
+            background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--card)));
+        }
+
+        .disclaimer {
+            background: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+            padding: 2rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            border-left: 5px solid hsl(var(--primary));
+            box-shadow: 0 5px 20px hsl(var(--primary) / 0.3);
+        }
+
+        .disclaimer h4 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: hsl(var(--foreground));
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted)));
+            border: 1px solid hsl(var(--border));
+            color: hsl(var(--card-foreground));
+            padding: 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            transform: scale(1.2) rotate(360deg);
+            box-shadow: 0 10px 20px hsl(var(--primary) / 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .hero-tagline {
+                font-size: 2rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .nav-link {
+                width: 250px;
+                text-align: center;
+            }
+
+            .container {
+                padding: 0 1.5rem;
+            }
+
+            .quick-features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
-<body class="text-white flex flex-col min-h-screen">
-  <!-- Mobile toggle button -->
-  <button id="sidebarToggle" class="md:hidden fixed top-4 left-4 z-50 p-2 text-2xl text-white rounded bg-gray-800/60 hover:bg-gray-700/80 transition" aria-label="Toggle navigation">
-    <i class="bx bx-menu"></i>
-  </button>
-  <!-- Sidebar -->
-  <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-teal-800 to-emerald-900 p-6 flex flex-col overflow-y-auto z-40">
-    <button id="closeSidebar" class="md:hidden text-white text-2xl absolute top-4 right-4" aria-label="Close sidebar">✕</button>
-    <img src="/static/images/mg.svg" alt="MGZon Logo" class="logo w-20 h-20 mx-auto mb-8 animate-pulse">
-    <nav class="flex flex-col gap-3">
-      <a href="/" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Home</a>
-      <a href="/docs" class="px-4 py-2 rounded-lg bg-emerald-600">API Documentation</a>
-      <a href="/about" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">About MGZon</a>
-      <a href="/login" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Login</a>
-      <a href="/register" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Register</a>
-      <a href="https://hager-zon.vercel.app/community" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Community</a>
-      <a href="https://mark-elasfar.web.app/" target="_blank" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Mark Al-Asfar</a>
-    </nav>
-  </aside>
-  <!-- Main content -->
-  <main class="flex-1 md:ml-64 p-6 main-content">
-    <section class="container max-w-6xl mx-auto">
-      <div class="text-center py-12">
-        <img src="/static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
-<h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">About MGZon AI by Mark Al-Asfar</h1>
-          MGZon Chatbot API Documentation
-        </h1>
-        <p class="text-lg max-w-2xl mx-auto mb-8">
-          Integrate MGZon Chatbot's AI-powered features into your applications. Learn how to use our APIs for code generation, web search, and e-commerce solutions.
-        </p>
-        <p>Explore the MGZon Chatbot API for seamless integration of AI-powered code generation, text generation, and e-commerce automation. Built by Mark Al-Asfar using FastAPI and Hugging Face AI.</p>
-        <a href="https://x.ai/api" target="_blank" class="inline-flex items-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-lg hover:shadow-xl">
-          Get API Key <i class="bx bx-key ml-2"></i>
-        </a>
-      </div>
-      <!-- API Overview -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">API Overview</h2>
-        <div class="glass p-6">
-          <p class="mb-4">The MGZon Chatbot API provides endpoints for code generation, real-time web search, and e-commerce functionalities. Built with FastAPI, it offers secure and scalable integration.</p>
-          <p>Base URL: <code class="bg-gray-800/60 p-1 rounded">https://mgzon-mgzon-app.hf.space/api</code></p>
+<body>
+    <div id="particles-js"></div>
+
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+    <header class="header">
+        <div class="container">
+            <img src="/static/images/mg.svg" alt="MGZon Logo" class="logo">
         </div>
-      </section>
-      <!-- Authentication -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Authentication</h2>
-        <div class="glass p-6">
-          <p class="mb-4">Use JWT tokens for authentication. Register or login to obtain a token.</p>
-          <pre><code class="language-bash">
-curl -X POST "https://mgzon-mgzon-app.hf.space/auth/jwt/login" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=your_email&password=your_password"
-          </code></pre>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1 class="hero-tagline">MGZon Chatbot API Documentation</h1>
+            <p class="subtitle">
+                Explore the <span class="highlight">MGZon Chatbot API</span> for seamless integration of AI-powered code generation, text generation, and e-commerce automation. Built by Mark Al-Asfar using FastAPI and Hugging Face AI. Rivals tools like ChatGPT, Grok, and DeepSeek.
+            </p>
+            
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/docs" class="nav-link">API Documentation</a>
+                <a href="/about" class="nav-link">About MGZon</a>
+                <a href="https://hager-zon.vercel.app/community" class="nav-link">Community</a>
+                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                <a href="/chat" class="nav-link cta-button">Launch Chatbot</a>
+            </div>
+
+            <div class="code-snippet">
+                curl -X POST "https://mgzon-mgzon-app.hf.space/api/chat" -H "Content-Type: application/json" -d '{"message": "Hello MGZon!"}'
+            </div>
         </div>
-      </section>
-      <!-- Endpoints -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Endpoints</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="glass p-6">
-            <h3 class="text-xl font-semibold mb-2">/chat (POST)</h3>
-            <p class="mb-4">Interact with the AI chatbot for code generation or queries.</p>
-            <pre><code class="language-bash">
-curl -X POST "https://mgzon-mgzon-app.hf.space/chat" \
-  -H "Authorization: Bearer your_token" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Generate a Python function"}'
-            </code></pre>
-          </div>
-          <div class="glass p-6">
-            <h3 class="text-xl font-semibold mb-2">/web_search (POST)</h3>
-            <p class="mb-4">Perform real-time web searches.</p>
-            <pre><code class="language-bash">
-curl -X POST "https://mgzon-mgzon-app.hf.space/web_search" \
-  -H "Authorization: Bearer your_token" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "AI trends 2025"}'
-            </code></pre>
-          </div>
-        </div>
-      </section>
-      <!-- Getting Started -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Getting Started</h2>
-        <div class="glass p-6">
-          <p class="mb-4">1. Register at <a href="/register" class="text-emerald-300 hover:underline">/register</a>.</p>
-          <p class="mb-4">2. Obtain your API key from <a href="https://x.ai/api" target="_blank" class="text-emerald-300 hover:underline">xAI API</a>.</p>
-          <p>3. Use the endpoints above to integrate MGZon Chatbot into your application.</p>
-        </div>
-      </section>
     </section>
-  </main>
-  <!-- Footer -->
-  <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 mt-8">
-    <div class="container max-w-6xl mx-auto text-center">
-<img src="/static/images/mg.svg" alt="MGZon Chatbot Logo by Mark Al-Asfar" class="w-32 h-32 mx-auto mb-6 animate-bounce">
-      <p class="mb-4">
-        Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
-        | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('email')">
-          <i class="bx bx-mail-send text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Email Us</h4>
-          <p><a href="mailto:support@mgzon.com" class="text-emerald-300 hover:underline">support@mgzon.com</a></p>
-          <div id="email-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Reach out to our support team for any inquiries or assistance.</p>
-            <button onclick="closeCardDetails('email')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
+
+    <section class="quick-features">
+        <div class="container">
+            <div class="quick-features-grid">
+                <div class="quick-feature">
+                    <span class="quick-feature-icon">🔑</span>
+                    <h3>Authentication</h3>
+                    <p>Secure JWT-based auth for all endpoints. Register and login to get started.</p>
+                </div>
+                
+                <div class="quick-feature">
+                    <span class="quick-feature-icon">📡</span>
+                    <h3>Real-Time APIs</h3>
+                    <p>Endpoints for chat, code generation, image analysis, and more.</p>
+                </div>
+                
+                <div class="quick-feature">
+                    <span class="quick-feature-icon">📊</span>
+                    <h3>Performance Stats</h3>
+                    <p>Monitor API performance and model info in real-time.</p>
+                </div>
+                
+                <div class="quick-feature">
+                    <span class="quick-feature-icon">🛡️</span>
+                    <h3>Secure & Scalable</h3>
+                    <p>Built with FastAPI for high performance and security.</p>
+                </div>
+            </div>
         </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('phone')">
-          <i class="bx bx-phone text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Phone Support</h4>
-          <p>+1-800-123-4567</p>
-          <div id="phone-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Contact our support team via phone for immediate assistance.</p>
-            <button onclick="closeCardDetails('phone')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
+    </section>
+
+    <div class="wave-divider"></div>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">API Endpoints Dashboard</h2>
+            <p class="section-subtitle">Browse and explore all available endpoints with examples and schemas.</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📄</div>
+                    <h3>GET /openapi.json</h3>
+                    <p>Retrieve the full OpenAPI specification in JSON format.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/openapi.json"
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <h3>GET /api/settings</h3>
+                    <p>Get current API settings and configurations.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/api/settings"
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>GET /api/model-info</h3>
+                    <p>Fetch information about the AI models in use.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/api/model-info"
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>GET /api/performance</h3>
+                    <p>View performance statistics for the API.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/api/performance"
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <h3>POST /api/chat</h3>
+                    <p>Interact with the chatbot for queries and code generation.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X POST "https://mgzon-mgzon-app.hf.space/api/chat" -H "Content-Type: application/json" -d '{"message": "Generate code"}'
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3>POST /api/image-generation</h3>
+                    <p>Generate images based on text prompts.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X POST "https://mgzon-mgzon-app.hf.space/api/image-generation" -H "Content-Type: application/json" -d '{"prompt": "A futuristic city"}'
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎤</div>
+                    <h3>POST /api/audio-transcription</h3>
+                    <p>Transcribe audio files to text.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X POST "https://mgzon-mgzon-app.hf.space/api/audio-transcription" -F "file=@audio.wav"
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔊</div>
+                    <h3>POST /api/text-to-speech</h3>
+                    <p>Convert text to speech audio.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X POST "https://mgzon-mgzon-app.hf.space/api/text-to-speech" -H "Content-Type: application/json" -d '{"text": "Hello world"}'
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3>POST /api/code</h3>
+                    <p>Generate or analyze code snippets.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X POST "https://mgzon-mgzon-app.hf.space/api/code" -H "Content-Type: application/json" -d '{"prompt": "Write a Python function"}'
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>POST /api/analysis</h3>
+                    <p>Perform text or data analysis.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X POST "https://mgzon-mgzon-app.hf.space/api/analysis" -H "Content-Type: application/json" -d '{"data": "Analyze this text"}'
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3>POST /api/image-analysis</h3>
+                    <p>Analyze images for content and features.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X POST "https://mgzon-mgzon-app.hf.space/api/image-analysis" -F "file=@image.jpg"
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🧪</div>
+                    <h3>GET /api/test-model</h3>
+                    <p>Test the AI model with a sample query.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/api/test-model"
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📜</div>
+                    <h3>GET /api/conversations</h3>
+                    <p>List all user conversations.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/api/conversations"
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">➕</div>
+                    <h3>POST /api/conversations</h3>
+                    <p>Create a new conversation.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X POST "https://mgzon-mgzon-app.hf.space/api/conversations" -H "Content-Type: application/json" -d '{}'
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📖</div>
+                    <h3>GET /api/conversations/{conversation_id}</h3>
+                    <p>Get details of a specific conversation.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/api/conversations/123"
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🗑️</div>
+                    <h3>DELETE /api/conversations/{conversation_id}</h3>
+                    <p>Delete a conversation.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X DELETE "https://mgzon-mgzon-app.hf.space/api/conversations/123"
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">✏️</div>
+                    <h3>PUT /api/conversations/{conversation_id}/title</h3>
+                    <p>Update conversation title.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X PUT "https://mgzon-mgzon-app.hf.space/api/conversations/123/title" -H "Content-Type: application/json" -d '{"title": "New Title"}'
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">👤</div>
+                    <h3>PUT /users/me</h3>
+                    <p>Update current user settings.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X PUT "https://mgzon-mgzon-app.hf.space/users/me" -H "Content-Type: application/json" -d '{"settings": {}}'
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>GET /api/verify-token</h3>
+                    <p>Verify authentication token.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/api/verify-token"
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🚪</div>
+                    <h3>POST /logout</h3>
+                    <p>Logout the current user.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X POST "https://mgzon-mgzon-app.hf.space/logout"
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🐞</div>
+                    <h3>GET /debug/routes</h3>
+                    <p>Debug API routes (dev only).</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/debug/routes"
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🏠</div>
+                    <h3>GET /</h3>
+                    <p>Root endpoint for the app.</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/"
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>GET /docs</h3>
+                    <p>API Documentation page (you're here!).</p>
+                    <div class="code-snippet mt-2 text-sm">
+                        curl -X GET "https://mgzon-mgzon-app.hf.space/docs"
+                    </div>
+                </div>
+
+                <!-- Add more endpoints as needed, following the same pattern -->
+
+            </div>
         </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('community')">
-          <i class="bx bx-group text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Community</h4>
-          <p><a href="https://hager-zon.vercel.app/community" class="text-emerald-300 hover:underline">Join us</a></p>
-          <div id="community-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Join our vibrant community to share ideas and collaborate.</p>
-            <button onclick="closeCardDetails('community')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="disclaimer">
+                <h4>API Usage Guidelines</h4>
+                <p>
+                    All endpoints require authentication unless specified. Use your JWT token in the Authorization header. 
+                    For full schemas and advanced usage, refer to /openapi.json.
+                </p>
+                <div style="text-align:center; margin-top: 1.5rem;">
+                    <a href="/openapi.json" class="nav-link cta-button">Download OpenAPI JSON</a>
+                </div>
+            </div>
+            <div class="flex justify-center gap-6 mb-4">
+                <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-[hsl(var(--primary))] transition"><i class="bx bxl-github"></i></a>
+                <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-[hsl(var(--primary))] transition"><i class="bx bxl-twitter"></i></a>
+                <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-[hsl(var(--primary))] transition"><i class="bx bxl-facebook"></i></a>
+            </div>
+            <p>© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
         </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('api-docs')">
-          <i class="bx bx-code-alt text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">API Docs</h4>
-          <p><a href="/docs" class="text-emerald-300 hover:underline">Explore Docs</a></p>
-          <div id="api-docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Explore our API documentation for seamless integration.</p>
-            <button onclick="closeCardDetails('api-docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('faq')">
-          <i class="bx bx-help-circle text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">FAQ</h4>
-          <p><a href="https://hager-zon.vercel.app/faq" target="_blank" class="text-emerald-300 hover:underline">Read FAQ</a></p>
-          <div id="faq-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Find answers to common questions in our FAQ section.</p>
-            <button onclick="closeCardDetails('faq')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('docs')">
-          <i class="bx bx-book text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Documentation</h4>
-          <p><a href="/docs" class="text-emerald-300 hover:underline">Full Docs</a></p>
-          <div id="docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Access comprehensive documentation for MGZon Chatbot.</p>
-            <button onclick="closeCardDetails('docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-      </div>
-      <div class="flex justify-center gap-6 mt-6">
-        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-github"></i></a>
-        <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-twitter"></i></a>
-        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-facebook"></i></a>
-      </div>
-      <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
-    </div>
-  </footer>
-  <script>
-    const sidebar = document.getElementById('sidebar');
-    const toggleBtn = document.getElementById('sidebarToggle');
-    const closeSidebarBtn = document.getElementById('closeSidebar');
-    toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
-      sidebar.classList.toggle('-translate-x-full');
-      sidebar.classList.toggle('translate-x-0');
-    });
-    closeSidebarBtn.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-      sidebar.classList.add('-translate-x-full');
-      sidebar.classList.remove('translate-x-0');
-    });
-    document.addEventListener('click', (e) => {
-      if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target) && window.innerWidth < 768) {
-        sidebar.classList.remove('active');
-        sidebar.classList.add('-translate-x-full');
-        sidebar.classList.remove('translate-x-0');
-      }
-    });
-    function showCardDetails(cardId) {
-      document.getElementById(`${cardId}-details`).classList.remove('hidden');
-    }
-    function closeCardDetails(cardId) {
-      document.getElementById(`${cardId}-details`).classList.add('hidden');
-    }
-  </script>
+    </footer>
+
+    <button id="installAppBtn" style="display: none;" class="fixed bottom-4 right-4 bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white px-6 py-3 rounded-full shadow-lg z-50">
+        📲 Install MG Chat
+    </button>
+
+    <script>
+        // Particles.js initialization
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: ['#00f0ff', '#ff007a', '#6b21a8'] },
+                shape: { type: 'circle' },
+                opacity: { value: 0.5, random: true },
+                size: { value: 3, random: true },
+                line_linked: { enable: true, distance: 150, color: '#00f0ff', opacity: 0.4, width: 1 },
+                move: { enable: true, speed: 3, direction: 'none', random: true }
+            },
+            interactivity: {
+                detect_on: 'canvas',
+                events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' } },
+                modes: { repulse: { distance: 100 }, push: { particles_nb: 4 } }
+            },
+            retina_detect: true
+        });
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const button = document.querySelector('.theme-toggle');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                button.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.remove('light');
+                html.classList.add('dark');
+                button.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme preference or system preference
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.classList.remove('dark', 'light');
+            document.documentElement.classList.add(savedTheme);
+            document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+            document.querySelector('.theme-toggle').textContent = '☀️';
+            localStorage.setItem('theme', 'light');
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/js/sw.js')
+                .then(reg => console.log('✅ Service Worker Registered', reg))
+                .catch(err => console.error('❌ Service Worker registration failed', err));
+        }
+
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.getElementById('installAppBtn');
+            if (installBtn) {
+                installBtn.style.display = 'block';
+                installBtn.addEventListener('click', () => {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(choice => {
+                        console.log(choice.outcome === 'accepted' ? '✅ User accepted the install prompt' : '❌ User dismissed the install prompt');
+                        deferredPrompt = null;
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>

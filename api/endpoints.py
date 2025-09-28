@@ -15,6 +15,8 @@ from sqlalchemy import select, delete
 from utils.generation import request_generation, select_model, check_model_availability
 from utils.web_search import web_search
 import io
+import asyncio
+import json
 from openai import OpenAI
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
@@ -22,7 +24,7 @@ import logging
 from typing import List, Optional
 # from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL
 from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL, IMAGE_INFERENCE_API
-
+from fastapi import Body
 import psutil
 import time
 router = APIRouter()
@@ -138,6 +140,7 @@ async def performance_stats():
         "uptime": time.time() - psutil.boot_time()  # مدة تشغيل النظام بالثواني
     }
 
+
 @router.post("/api/chat")
 async def chat_endpoint(
     request: Request,
@@ -175,7 +178,6 @@ async def chat_endpoint(
     preferred_model = user.preferred_model if user else None
     model_name, api_endpoint = select_model(req.message, input_type="text", preferred_model=preferred_model)
     
-    # جرب النموذج الأساسي
     is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
     if not is_available:
         logger.warning(f"Model {model_name} is not available at {api_endpoint}, trying fallback model.")
@@ -219,67 +221,71 @@ async def chat_endpoint(
             logger.error(f"Audio generation failed: {e}")
             raise HTTPException(status_code=502, detail=f"Audio generation failed: {str(e)}")
     
-    response_chunks = []
-    try:
-        for chunk in stream:
-            logger.debug(f"Processing text chunk: {chunk[:100]}...")
-            if isinstance(chunk, str) and chunk.strip() and chunk not in ["analysis", "assistantfinal"]:
-                response_chunks.append(chunk)
-            else:
-                logger.warning(f"Skipping chunk: {chunk}")
-        response = "".join(response_chunks)
-        if not response.strip():
-            logger.warning(f"Empty response from {model_name}. Trying fallback model {SECONDARY_MODEL_NAME}.")
-            model_name = SECONDARY_MODEL_NAME
-            is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
-            if not is_available:
-                logger.error(f"Fallback model {model_name} is not available at {selected_endpoint}")
-                raise HTTPException(status_code=503, detail=f"No available models. Tried {MODEL_NAME} and {SECONDARY_MODEL_NAME}.")
-            
-            stream = request_generation(
-                api_key=api_key,
-                api_base=selected_endpoint,
-                message=req.message,
-                system_prompt=system_prompt,
-                model_name=model_name,
-                chat_history=req.history,
-                temperature=req.temperature,
-                max_new_tokens=req.max_new_tokens or 2048,
-                deep_search=req.enable_browsing,
-                input_type="text",
-                output_format=req.output_format
-            )
-            response_chunks = []
+    async def stream_response():
+        response_chunks = []
+        try:
             for chunk in stream:
-                logger.debug(f"Processing fallback text chunk: {chunk[:100]}...")
                 if isinstance(chunk, str) and chunk.strip() and chunk not in ["analysis", "assistantfinal"]:
                     response_chunks.append(chunk)
+                    yield chunk.encode('utf-8')  # إرسال الـ chunk مباشرةً
+                    await asyncio.sleep(0.05)  # تأخير بسيط لمحاكاة الكتابة
                 else:
-                    logger.warning(f"Skipping fallback chunk: {chunk}")
+                    logger.warning(f"Skipping chunk: {chunk}")
+            
             response = "".join(response_chunks)
             if not response.strip():
-                logger.error(f"Empty response from fallback model {model_name}.")
-                raise HTTPException(status_code=502, detail=f"Empty response from both {MODEL_NAME} and {SECONDARY_MODEL_NAME}.")
-        logger.info(f"Chat response: {response[:100]}...")
-    except Exception as e:
-        logger.error(f"Chat generation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Chat generation failed: {str(e)}")
-    
-    if user and conversation:
-        assistant_msg = Message(role="assistant", content=response, conversation_id=conversation.id)
-        db.add(assistant_msg)
-        await db.commit()
-        conversation.updated_at = datetime.utcnow()
-        await db.commit()
-        return {
-            "response": response,
-            "conversation_id": conversation.conversation_id,
-            "conversation_url": f"https://mgzon-mgzon-app.hf.space/chat/{conversation.conversation_id}",
-            "conversation_title": conversation.title
-        }
-    
-    return {"response": response}
+                logger.warning(f"Empty response from {model_name}. Trying fallback model {SECONDARY_MODEL_NAME}.")
+                model_name = SECONDARY_MODEL_NAME
+                is_available, api_key, selected_endpoint = check_model_availability(model_name, HF_TOKEN)
+                if not is_available:
+                    logger.error(f"Fallback model {model_name} is not available at {selected_endpoint}")
+                    yield f"Error: No available models. Tried {MODEL_NAME} and {SECONDARY_MODEL_NAME}.".encode('utf-8')
+                    return
+                
+                stream = request_generation(
+                    api_key=api_key,
+                    api_base=selected_endpoint,
+                    message=req.message,
+                    system_prompt=system_prompt,
+                    model_name=model_name,
+                    chat_history=req.history,
+                    temperature=req.temperature,
+                    max_new_tokens=req.max_new_tokens or 2048,
+                    deep_search=req.enable_browsing,
+                    input_type="text",
+                    output_format=req.output_format
+                )
+                response_chunks = []
+                for chunk in stream:
+                    if isinstance(chunk, str) and chunk.strip() and chunk not in ["analysis", "assistantfinal"]:
+                        response_chunks.append(chunk)
+                        yield chunk.encode('utf-8')
+                        await asyncio.sleep(0.05)
+                    else:
+                        logger.warning(f"Skipping fallback chunk: {chunk}")
+                
+                response = "".join(response_chunks)
+                if not response.strip():
+                    logger.error(f"Empty response from fallback model {model_name}.")
+                    yield f"Error: Empty response from both {MODEL_NAME} and {SECONDARY_MODEL_NAME}.".encode('utf-8')
+                    return
+            
+            if user and conversation:
+                assistant_msg = Message(role="assistant", content=response, conversation_id=conversation.id)
+                db.add(assistant_msg)
+                await db.commit()
+                conversation.updated_at = datetime.utcnow()
+                await db.commit()
+                yield json.dumps({
+                    "conversation_id": conversation.conversation_id,
+                    "conversation_url": f"https://mgzon-mgzon-app.hf.space/chat/{conversation.conversation_id}",
+                    "conversation_title": conversation.title
+                }, ensure_ascii=False).encode('utf-8')
+        except Exception as e:
+            logger.error(f"Chat generation failed: {e}")
+            yield f"Error: Chat generation failed: {str(e)}".encode('utf-8')
 
+    return StreamingResponse(stream_response(), media_type="text/plain")
 
 @router.post("/api/image-generation")
 async def image_generation_endpoint(
@@ -942,3 +948,88 @@ async def update_user_settings(
         "is_active": user.is_active,
         "is_superuser": user.is_superuser
     }}
+    
+
+
+@router.post("/api/conversations/sync", response_model=ConversationOut)
+async def sync_conversation(
+    request: Request,
+    payload: dict = Body(...),
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required")
+    
+    messages = payload.get("messages", [])
+    title = payload.get("title", "Untitled Conversation")
+    conversation_id = payload.get("conversation_id")
+    
+    logger.info(f"Syncing conversation for user {user.email}, conversation_id: {conversation_id}")
+
+    try:
+        # Check if conversation exists
+        if conversation_id:
+            result = await db.execute(
+                select(Conversation).filter(
+                    Conversation.conversation_id == conversation_id,
+                    Conversation.user_id == user.id
+                )
+            )
+            conversation = result.scalar_one_or_none()
+            if not conversation:
+                raise HTTPException(status_code=404, detail="Conversation not found")
+            
+            # Update existing conversation
+            conversation.title = title
+            conversation.updated_at = datetime.utcnow()
+            
+            # Delete old messages
+            await db.execute(
+                delete(Message).filter(Message.conversation_id == conversation.id)
+            )
+            
+            # Add new messages
+            for msg in messages:
+                new_message = Message(
+                    conversation_id=conversation.id,
+                    role=msg.get("role", "user"),
+                    content=msg.get("content", ""),
+                    created_at=datetime.utcnow()
+                )
+                db.add(new_message)
+            
+            await db.commit()
+            await db.refresh(conversation)
+            logger.info(f"Updated conversation {conversation_id} for user {user.email}")
+        else:
+            # Create new conversation
+            conversation_id = str(uuid.uuid4())
+            conversation = Conversation(
+                conversation_id=conversation_id,
+                user_id=user.id,
+                title=title,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            db.add(conversation)
+            await db.commit()
+            await db.refresh(conversation)
+            
+            # Add messages
+            for msg in messages:
+                new_message = Message(
+                    conversation_id=conversation.id,
+                    role=msg.get("role", "user"),
+                    content=msg.get("content", ""),
+                    created_at=datetime.utcnow()
+                )
+                db.add(new_message)
+            
+            await db.commit()
+            logger.info(f"Created new conversation {conversation_id} for user {user.email}")
+
+        return ConversationOut.from_orm(conversation)
+    except Exception as e:
+        logger.error(f"Error syncing conversation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to sync conversation: {str(e)}")

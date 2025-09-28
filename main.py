@@ -120,13 +120,17 @@ app.add_middleware(
         "https://mgzon-mgzon-app.hf.space",
         "http://localhost:7860",
         "http://localhost:8000",
+        "http://localhost",  # إضافة لدعم Capacitor على Android/iOS
+        "https://localhost",  # إضافة لدعم HTTPS المحلي
+        "capacitor://localhost",  # دعم Capacitor native apps
+        "file://",  # دعم الملفات المحلية في offline mode
         "https://hager-zon.vercel.app",
         "https://mgzon-mgzon-app.hf.space/auth/google/callback",
         "https://mgzon-mgzon-app.hf.space/auth/github/callback",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-    allow_headers=["Accept", "Content-Type", "Authorization", "X-Requested-With", "X-Session-ID"],
+    allow_methods=["*"],  # سمح بكل الـ methods
+    allow_headers=["*"],  # سمح بكل الـ headers
 )
 logger.debug("CORS middleware configured with allowed origins")
 

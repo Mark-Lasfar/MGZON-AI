@@ -1,0 +1,4 @@
+frontend/
+.env
+generated_image.png
+.vscode/
