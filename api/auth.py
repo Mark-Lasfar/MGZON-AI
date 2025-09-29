@@ -3,12 +3,11 @@
 
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
-from fastapi_users.router.oauth import get_oauth_router
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
 from fastapi import Depends, Request, FastAPI, Response
-from fastapi.responses import RedirectResponse , JSONResponse
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi_users.models import UP
@@ -55,8 +54,10 @@ GITHUB_REDIRECT_URL = os.getenv("GITHUB_REDIRECT_URL", "https://mgzon-mgzon-app.
 
 google_oauth_client = GoogleOAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
 github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
+github_oauth_client._access_token_url = "https://github.com/login/oauth/access_token"
+github_oauth_client._access_token_params = {"headers": {"Accept": "application/json"}}
 
-# مدير المستخدمين
+# مدير المستخدمين (بدون تغيير)
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
@@ -144,27 +145,6 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 async def get_user_manager(user_db: CustomSQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
-# تعديل الـ OAuth Routers لتضمين redirect مخصص
-google_oauth_router = get_oauth_router(
-    google_oauth_client,
-    auth_backend,
-    get_user_manager,
-    state_secret=SECRET,
-    associate_by_email=True,
-    redirect_url=GOOGLE_REDIRECT_URL,
-)
-
-github_oauth_client._access_token_url = "https://github.com/login/oauth/access_token"
-github_oauth_client._access_token_params = {"headers": {"Accept": "application/json"}}
-github_oauth_router = get_oauth_router(
-    github_oauth_client,
-    auth_backend,
-    get_user_manager,
-    state_secret=SECRET,
-    associate_by_email=True,
-    redirect_url=GITHUB_REDIRECT_URL,
-)
-
 fastapi_users = FastAPIUsers[User, int](
     get_user_db,
     [auth_backend],
@@ -172,9 +152,40 @@ fastapi_users = FastAPIUsers[User, int](
 
 current_active_user = fastapi_users.current_user(active=True, optional=True)
 
-# إضافة route مخصص للتعامل مع الـ callback
+# --- إضافة custom authorize endpoints (يرجع JSON مع authorization_url) ---
 
-# تعديل الـ OAuth Callback لـ Google
+# Custom Google Authorize
+async def custom_google_authorize(
+    state: Optional[str] = None,
+    oauth_client=Depends(lambda: google_oauth_client),
+):
+    logger.debug("Generating Google authorization URL")
+    state_data = secrets.token_urlsafe(32) if state is None else state
+    authorization_url = await oauth_client.get_authorization_url(
+        redirect_uri=GOOGLE_REDIRECT_URL,
+        state=state_data,
+    )
+    return JSONResponse(content={
+        "authorization_url": authorization_url
+    }, status_code=200)
+
+# Custom GitHub Authorize
+async def custom_github_authorize(
+    state: Optional[str] = None,
+    oauth_client=Depends(lambda: github_oauth_client),
+):
+    logger.debug("Generating GitHub authorization URL")
+    state_data = secrets.token_urlsafe(32) if state is None else state
+    authorization_url = await oauth_client.get_authorization_url(
+        redirect_uri=GITHUB_REDIRECT_URL,
+        state=state_data,
+    )
+    return JSONResponse(content={
+        "authorization_url": authorization_url
+    }, status_code=200)
+
+# --- Custom Callback endpoints (بدون تغيير، يرجع JSON مع token) ---
+
 async def custom_oauth_callback(
     code: str,
     user_manager: UserManager = Depends(get_user_manager),
@@ -184,12 +195,10 @@ async def custom_oauth_callback(
 ):
     logger.debug(f"Processing Google callback with code: {code}")
     try:
-        # جلب access token من Google
         token_data = await oauth_client.get_access_token(code, redirect_url)
         access_token = token_data["access_token"]
         user_info = await oauth_client.get_user_info(access_token)
 
-        # استدعاء oauth_callback من UserManager
         user = await user_manager.oauth_callback(
             oauth_name="google",
             access_token=access_token,
@@ -201,22 +210,19 @@ async def custom_oauth_callback(
             is_verified_by_default=True,
         )
 
-        # إنشاء JWT token
         jwt_strategy = get_jwt_strategy()
         token = await jwt_strategy.write(user)
 
-        # تعيين الـ token في الكوكيز
         cookie_transport.set_cookie(response, token)
 
-        # رجع JSON بدل redirect
         return JSONResponse(content={
             "message": "Google login successful",
             "access_token": token
         }, status_code=200)
     except Exception as e:
         logger.error(f"Error in Google OAuth callback: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-# تعديل الـ OAuth Callback لـ GitHub
+        return JSONResponse(content={"detail": str(e)}, status_code=400)
+
 async def custom_github_oauth_callback(
     code: str,
     user_manager: UserManager = Depends(get_user_manager),
@@ -226,12 +232,10 @@ async def custom_github_oauth_callback(
 ):
     logger.debug(f"Processing GitHub callback with code: {code}")
     try:
-        # جلب access token من GitHub
         token_data = await oauth_client.get_access_token(code, redirect_url)
         access_token = token_data["access_token"]
         user_info = await oauth_client.get_user_info(access_token)
 
-        # استدعاء oauth_callback من UserManager
         user = await user_manager.oauth_callback(
             oauth_name="github",
             access_token=access_token,
@@ -243,22 +247,20 @@ async def custom_github_oauth_callback(
             is_verified_by_default=True,
         )
 
-        # إنشاء JWT token
         jwt_strategy = get_jwt_strategy()
         token = await jwt_strategy.write(user)
 
-        # تعيين الـ token في الكوكيز
         cookie_transport.set_cookie(response, token)
 
-        # رجع JSON بدل redirect
         return JSONResponse(content={
             "message": "GitHub login successful",
             "access_token": token
         }, status_code=200)
     except Exception as e:
         logger.error(f"Error in GitHub OAuth callback: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-# تضمين الراوترات داخل التطبيق
+        return JSONResponse(content={"detail": str(e)}, status_code=400)
+
+# تضمين الراوترات داخل التطبيق (بدون OAuth routers هنا، هنضيفهم يدويًا)
 def get_auth_router(app: FastAPI):
     app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
     app.include_router(fastapi_users.get_register_router(UserRead, UserCreate), prefix="/auth", tags=["auth"])
@@ -266,7 +268,8 @@ def get_auth_router(app: FastAPI):
     app.include_router(fastapi_users.get_verify_router(UserRead), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate), prefix="/users", tags=["users"])
 
-    # إضافة الـ custom callback routes
+    # إضافة الـ custom OAuth endpoints يدويًا (authorize + callback)
+    app.get("/auth/google/authorize")(custom_google_authorize)
     app.get("/auth/google/callback")(custom_oauth_callback)
+    app.get("/auth/github/authorize")(custom_github_authorize)
     app.get("/auth/github/callback")(custom_github_oauth_callback)
-

@@ -13,7 +13,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
-from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router , google_oauth_router, github_oauth_router
+from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router  # أزل أي ذكر لـ google_oauth_router, github_oauth_router
 from api.database import User, Conversation, get_db, init_db
 from api.models import UserRead, UserCreate, UserUpdate
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -141,10 +141,8 @@ logger.debug("CORS middleware configured with allowed origins")
 
 # Include routers
 app.include_router(api_router)
-app.include_router(google_oauth_router, prefix="/auth", tags=["auth"])  # إضافة Google OAuth router
-app.include_router(github_oauth_router, prefix="/auth", tags=["auth"])  # إضافة GitHub OAuth router
-get_auth_router(app)  # الراوترات الأخرى (JWT, register, etc.)
-logger.debug("API, Google OAuth, GitHub OAuth, and auth routers included")
+get_auth_router(app)  # يضيف الـ custom OAuth endpoints + JWT + register
+logger.debug("API and auth routers included")
 
 # Add logout endpoint
 @app.post("/logout")
