@@ -22,7 +22,7 @@ from api.models import UserRead, UserCreate, UserUpdate
 # إعداد اللوقينج
 logger = logging.getLogger(__name__)
 
-cookie_transport = CookieTransport(cookie_max_age=3600)
+cookie_transport = CookieTransport(cookie_max_age=3600, cookie_name="fastapiusersauth")
 
 SECRET = os.getenv("JWT_SECRET")
 if not SECRET or len(SECRET) < 32:
@@ -236,8 +236,15 @@ async def custom_oauth_callback(
         # توليد الـ JWT token يدويًا
         token = await generate_jwt_token(user, SECRET, 3600)
 
-        # ضبط الـ cookie باستخدام auth_backend
-        await auth_backend.get_login_response(token, response)
+        # ضبط الـ cookie يدويًا
+        response.set_cookie(
+            key="fastapiusersauth",
+            value=token,
+            max_age=3600,
+            httponly=True,
+            samesite="lax",
+            secure=True,
+        )
 
         return JSONResponse(content={
             "message": "Google login successful",
@@ -308,8 +315,15 @@ async def custom_github_oauth_callback(
         # توليد الـ JWT token يدويًا
         token = await generate_jwt_token(user, SECRET, 3600)
 
-        # ضبط الـ cookie باستخدام auth_backend
-        await auth_backend.get_login_response(token, response)
+        # ضبط الـ cookie يدويًا
+        response.set_cookie(
+            key="fastapiusersauth",
+            value=token,
+            max_age=3600,
+            httponly=True,
+            samesite="lax",
+            secure=True,
+        )
 
         return JSONResponse(content={
             "message": "GitHub login successful",
