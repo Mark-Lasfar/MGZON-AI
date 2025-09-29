@@ -15,6 +15,7 @@ from typing import Optional
 import os
 import logging
 import secrets
+import httpx
 
 from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db
 from api.models import UserRead, UserCreate, UserUpdate
@@ -154,7 +155,6 @@ current_active_user = fastapi_users.current_user(active=True, optional=True)
 
 # --- إضافة custom authorize endpoints (يرجع JSON مع authorization_url) ---
 
-# Custom Google Authorize
 async def custom_google_authorize(
     state: Optional[str] = None,
     oauth_client=Depends(lambda: google_oauth_client),
@@ -169,7 +169,6 @@ async def custom_google_authorize(
         "authorization_url": authorization_url
     }, status_code=200)
 
-# Custom GitHub Authorize
 async def custom_github_authorize(
     state: Optional[str] = None,
     oauth_client=Depends(lambda: github_oauth_client),
@@ -184,7 +183,7 @@ async def custom_github_authorize(
         "authorization_url": authorization_url
     }, status_code=200)
 
-# --- Custom Callback endpoints (بدون تغيير، يرجع JSON مع token) ---
+# --- Custom Callback endpoints ---
 
 async def custom_oauth_callback(
     code: str,
@@ -195,9 +194,19 @@ async def custom_oauth_callback(
 ):
     logger.debug(f"Processing Google callback with code: {code}")
     try:
+        # Get access token
         token_data = await oauth_client.get_access_token(code, redirect_url)
         access_token = token_data["access_token"]
-        user_info = await oauth_client.get_user_info(access_token)
+        
+        # Manually fetch user info from Google API
+        async with httpx.AsyncClient() as client:
+            user_info_response = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            if user_info_response.status_code != 200:
+                raise ValueError(f"Failed to fetch user info: {user_info_response.text}")
+            user_info = user_info_response.json()
 
         user = await user_manager.oauth_callback(
             oauth_name="google",
@@ -232,15 +241,43 @@ async def custom_github_oauth_callback(
 ):
     logger.debug(f"Processing GitHub callback with code: {code}")
     try:
+        # Get access token
         token_data = await oauth_client.get_access_token(code, redirect_url)
         access_token = token_data["access_token"]
-        user_info = await oauth_client.get_user_info(access_token)
+        
+        # Manually fetch user info from GitHub API
+        async with httpx.AsyncClient() as client:
+            user_info_response = await client.get(
+                "https://api.github.com/user",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Accept": "application/vnd.github.v3+json"
+                }
+            )
+            if user_info_response.status_code != 200:
+                raise ValueError(f"Failed to fetch user info: {user_info_response.text}")
+            user_info = user_info_response.json()
+
+            # Get email if not in user info
+            email = user_info.get("email")
+            if not email:
+                email_response = await client.get(
+                    "https://api.github.com/user/emails",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Accept": "application/vnd.github.v3+json"
+                    }
+                )
+                if email_response.status_code == 200:
+                    emails = email_response.json()
+                    primary_email = next((e["email"] for e in emails if e["primary"] and e["verified"]), None)
+                    email = primary_email or f"{user_info['login']}@github.com"
 
         user = await user_manager.oauth_callback(
             oauth_name="github",
             access_token=access_token,
             account_id=str(user_info["id"]),
-            account_email=user_info.get("email") or f"{user_info['login']}@github.com",
+            account_email=email,
             expires_at=token_data.get("expires_in"),
             refresh_token=token_data.get("refresh_token"),
             associate_by_email=True,
@@ -260,7 +297,7 @@ async def custom_github_oauth_callback(
         logger.error(f"Error in GitHub OAuth callback: {str(e)}")
         return JSONResponse(content={"detail": str(e)}, status_code=400)
 
-# تضمين الراوترات داخل التطبيق (بدون OAuth routers هنا، هنضيفهم يدويًا)
+# تضمين الراوترات داخل التطبيق
 def get_auth_router(app: FastAPI):
     app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
     app.include_router(fastapi_users.get_register_router(UserRead, UserCreate), prefix="/auth", tags=["auth"])
@@ -268,7 +305,7 @@ def get_auth_router(app: FastAPI):
     app.include_router(fastapi_users.get_verify_router(UserRead), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate), prefix="/users", tags=["users"])
 
-    # إضافة الـ custom OAuth endpoints يدويًا (authorize + callback)
+    # إضافة الـ custom OAuth endpoints يدويًا
     app.get("/auth/google/authorize")(custom_google_authorize)
     app.get("/auth/google/callback")(custom_oauth_callback)
     app.get("/auth/github/authorize")(custom_github_authorize)

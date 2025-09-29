@@ -433,7 +433,7 @@
             const token = localStorage.getItem('token');
             if (!token) {
                 console.log('No token found in localStorage');
-                return;
+                return false;
             }
             const response = await fetch('/api/verify-token', {
                 method: 'GET',
@@ -445,13 +445,16 @@
             if (response.ok) {
                 console.log('User is authenticated, redirecting to /chat');
                 window.location.href = '/chat';
+                return true;
             } else {
                 console.log('Token verification failed, clearing token');
                 localStorage.removeItem('token');
+                return false;
             }
         } catch (error) {
             console.error('Error checking auth status:', error);
             localStorage.removeItem('token');
+            return false;
         }
     }
 
@@ -571,7 +574,6 @@
             errorMsg.classList.remove('hidden');
             return;
         }
-        await checkAuthStatus();
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
@@ -580,34 +582,41 @@
             errorMsg.classList.remove('hidden');
             console.error('OAuth error from URL:', error);
         } else if (code) {
-            console.log('OAuth code detected in URL, processing callback');
-            const provider = window.location.pathname.includes('google') ? 'google' : 'github';
-            const callbackEndpoint = `/auth/${provider}/callback?code=${code}`;
-            try {
-                const response = await fetch(callbackEndpoint, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.access_token) {
-                        localStorage.setItem('token', data.access_token);
-                        console.log(`${provider} login successful, token saved`);
-                        window.location.href = '/chat';
+            console.log('OAuth code detected in URL, letting server handle callback');
+            // The server handles /auth/google/callback or /auth/github/callback
+            // Check auth status to detect the set cookie
+            const isAuthenticated = await checkAuthStatus();
+            if (!isAuthenticated) {
+                // Fetch the callback response to get the access_token
+                const provider = window.location.pathname.includes('google') ? 'google' : 'github';
+                try {
+                    const response = await fetch(window.location.href, {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.access_token) {
+                            localStorage.setItem('token', data.access_token);
+                            console.log(`${provider} login successful, token saved`);
+                            window.location.href = '/chat';
+                        } else {
+                            throw new Error('No access token received');
+                        }
                     } else {
-                        throw new Error('No access token received');
+                        const errorData = await response.json();
+                        errorMsg.textContent = errorData.detail || `Failed to complete ${provider} login`;
+                        errorMsg.classList.remove('hidden');
+                        console.error(`Failed to complete ${provider} login:`, errorData);
                     }
-                } else {
-                    const errorData = await response.json();
-                    errorMsg.textContent = errorData.detail || `Failed to complete ${provider} login`;
+                } catch (error) {
+                    errorMsg.textContent = `Failed to process ${provider} login. Please try again.`;
                     errorMsg.classList.remove('hidden');
-                    console.error(`Failed to complete ${provider} login:`, errorData);
+                    console.error(`Error processing ${provider} callback:`, error);
                 }
-            } catch (error) {
-                errorMsg.textContent = `Failed to process ${provider} login. Please try again.`;
-                errorMsg.classList.remove('hidden');
-                console.error(`Error processing ${provider} callback:`, error);
             }
+        } else {
+            await checkAuthStatus();
         }
     });
 
