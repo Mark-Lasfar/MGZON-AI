@@ -4,7 +4,7 @@ from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
 from fastapi import Depends, Request, FastAPI, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi_users.models import UP
@@ -200,6 +200,7 @@ async def custom_oauth_callback(
     oauth_client=Depends(lambda: google_oauth_client),
     redirect_url: str = GOOGLE_REDIRECT_URL,
     response: Response = None,
+    request: Request = None,
 ):
     logger.debug(f"Processing Google callback with code: {code}, state: {state}")
     try:
@@ -246,10 +247,19 @@ async def custom_oauth_callback(
             secure=True,
         )
 
-        return JSONResponse(content={
-            "message": "Google login successful",
-            "access_token": token
-        }, status_code=200)
+        # تحقق إذا كان الطلب من التطبيق (Capacitor) أو الويب
+        is_app = request.headers.get("X-Capacitor-App", False)
+
+        if is_app:
+            # للتطبيق: إرجاع JSON مع الـ token
+            return JSONResponse(content={
+                "message": "Google login successful",
+                "access_token": token
+            }, status_code=200)
+        else:
+            # للويب: إرجاع redirect إلى /chat
+            return RedirectResponse(url="/chat", status_code=303)
+
     except Exception as e:
         logger.error(f"Error in Google OAuth callback: {str(e)}")
         return JSONResponse(content={"detail": str(e)}, status_code=400)
@@ -261,6 +271,7 @@ async def custom_github_oauth_callback(
     oauth_client=Depends(lambda: github_oauth_client),
     redirect_url: str = GITHUB_REDIRECT_URL,
     response: Response = None,
+    request: Request = None,
 ):
     logger.debug(f"Processing GitHub callback with code: {code}, state: {state}")
     try:
@@ -325,10 +336,19 @@ async def custom_github_oauth_callback(
             secure=True,
         )
 
-        return JSONResponse(content={
-            "message": "GitHub login successful",
-            "access_token": token
-        }, status_code=200)
+        # تحقق إذا كان الطلب من التطبيق (Capacitor) أو الويب
+        is_app = request.headers.get("X-Capacitor-App", False)
+
+        if is_app:
+            # للتطبيق: إرجاع JSON مع الـ token
+            return JSONResponse(content={
+                "message": "GitHub login successful",
+                "access_token": token
+            }, status_code=200)
+        else:
+            # للويب: إرجاع redirect إلى /chat
+            return RedirectResponse(url="/chat", status_code=303)
+
     except Exception as e:
         logger.error(f"Error in GitHub OAuth callback: {str(e)}")
         return JSONResponse(content={"detail": str(e)}, status_code=400)
