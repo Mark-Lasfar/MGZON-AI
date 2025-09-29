@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
-# SPDX-License-Identifier: Apache-2.0
-
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
 from httpx_oauth.clients.google import GoogleOAuth2
@@ -17,7 +14,7 @@ import logging
 import secrets
 import httpx
 from datetime import datetime
-import jwt  # إضافة مكتبة pyjwt لتوليد الـ token يدويًا
+import jwt
 
 from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db
 from api.models import UserRead, UserCreate, UserUpdate
@@ -209,8 +206,6 @@ async def custom_oauth_callback(
         # تحقق من الـ state لو موجود (اختياري لـ CSRF protection)
         if state:
             logger.debug(f"Received state: {state}")
-            # إضافة تحقق من الـ state لو بتستخدمه لمنع CSRF
-            # مثال: if state != stored_state: raise ValueError("Invalid state parameter")
 
         # Get access token
         token_data = await oauth_client.get_access_token(code, redirect_url)
@@ -233,6 +228,7 @@ async def custom_oauth_callback(
             account_email=user_info["email"],
             expires_at=token_data.get("expires_in"),
             refresh_token=token_data.get("refresh_token"),
+            request=Request(scope={"type": "http"}),
             associate_by_email=True,
             is_verified_by_default=True,
         )
@@ -240,8 +236,8 @@ async def custom_oauth_callback(
         # توليد الـ JWT token يدويًا
         token = await generate_jwt_token(user, SECRET, 3600)
 
-        # ضبط الـ cookie
-        cookie_transport.set_cookie(response, token)
+        # ضبط الـ cookie باستخدام auth_backend
+        await auth_backend.get_login_response(token, response)
 
         return JSONResponse(content={
             "message": "Google login successful",
@@ -249,11 +245,6 @@ async def custom_oauth_callback(
         }, status_code=200)
     except Exception as e:
         logger.error(f"Error in Google OAuth callback: {str(e)}")
-        if "400" in str(e):
-            return JSONResponse(
-                content={"detail": "Invalid authorization code. Please try logging in again."},
-                status_code=400
-            )
         return JSONResponse(content={"detail": str(e)}, status_code=400)
 
 async def custom_github_oauth_callback(
@@ -269,8 +260,6 @@ async def custom_github_oauth_callback(
         # تحقق من الـ state لو موجود (اختياري لـ CSRF protection)
         if state:
             logger.debug(f"Received state: {state}")
-            # إضافة تحقق من الـ state لو بتستخدمه لمنع CSRF
-            # مثال: if state != stored_state: raise ValueError("Invalid state parameter")
 
         # Get access token
         token_data = await oauth_client.get_access_token(code, redirect_url)
@@ -311,6 +300,7 @@ async def custom_github_oauth_callback(
             account_email=email,
             expires_at=token_data.get("expires_in"),
             refresh_token=token_data.get("refresh_token"),
+            request=Request(scope={"type": "http"}),
             associate_by_email=True,
             is_verified_by_default=True,
         )
@@ -318,8 +308,8 @@ async def custom_github_oauth_callback(
         # توليد الـ JWT token يدويًا
         token = await generate_jwt_token(user, SECRET, 3600)
 
-        # ضبط الـ cookie
-        cookie_transport.set_cookie(response, token)
+        # ضبط الـ cookie باستخدام auth_backend
+        await auth_backend.get_login_response(token, response)
 
         return JSONResponse(content={
             "message": "GitHub login successful",
@@ -327,11 +317,6 @@ async def custom_github_oauth_callback(
         }, status_code=200)
     except Exception as e:
         logger.error(f"Error in GitHub OAuth callback: {str(e)}")
-        if "400" in str(e):
-            return JSONResponse(
-                content={"detail": "Invalid authorization code. Please try logging in again."},
-                status_code=400
-            )
         return JSONResponse(content={"detail": str(e)}, status_code=400)
 
 # تضمين الراوترات داخل التطبيق
