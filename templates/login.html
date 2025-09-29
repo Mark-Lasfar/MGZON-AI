@@ -427,14 +427,14 @@
         localStorage.setItem('theme', 'light');
     }
 
-    // Check authentication status on page load
+    // Check authentication status
     async function checkAuthStatus() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.log('No token found in localStorage');
+            return false;
+        }
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                console.log('No token found in localStorage');
-                return false;
-            }
             const response = await fetch('/api/verify-token', {
                 method: 'GET',
                 headers: {
@@ -442,17 +442,17 @@
                     'Accept': 'application/json'
                 }
             });
-            if (response.ok) {
-                console.log('User is authenticated, redirecting to /chat');
-                window.location.href = '/chat';
+            const data = await response.json();
+            if (response.ok && data.status === 'valid') {
+                console.log('Token is valid, user:', data.user);
                 return true;
             } else {
-                console.log('Token verification failed, clearing token');
+                console.log('Token verification failed:', data.detail || 'Invalid token');
                 localStorage.removeItem('token');
                 return false;
             }
         } catch (error) {
-            console.error('Error checking auth status:', error);
+            console.error('Error verifying token:', error);
             localStorage.removeItem('token');
             return false;
         }
@@ -566,7 +566,7 @@
         });
     }
 
-    // Check for OAuth callback on load (for web)
+    // Check for OAuth callback on load
     window.addEventListener('load', async () => {
         console.log('Page loaded, checking for auth status and OAuth callback');
         if (!navigator.onLine) {
@@ -582,38 +582,38 @@
             errorMsg.classList.remove('hidden');
             console.error('OAuth error from URL:', error);
         } else if (code) {
-            console.log('OAuth code detected in URL, letting server handle callback');
-            // The server handles /auth/google/callback or /auth/github/callback
-            // Check auth status to detect the set cookie
-            const isAuthenticated = await checkAuthStatus();
-            if (!isAuthenticated) {
-                // Fetch the callback response to get the access_token
-                const provider = window.location.pathname.includes('google') ? 'google' : 'github';
-                try {
-                    const response = await fetch(window.location.href, {
-                        method: 'GET',
-                        headers: { 'Accept': 'application/json' }
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.access_token) {
-                            localStorage.setItem('token', data.access_token);
-                            console.log(`${provider} login successful, token saved`);
+            console.log('OAuth code detected in URL, processing callback');
+            const provider = window.location.pathname.includes('google') ? 'google' : 'github';
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.access_token) {
+                        localStorage.setItem('token', data.access_token);
+                        console.log(`${provider} login successful, token saved`);
+                        const isAuthenticated = await checkAuthStatus();
+                        if (isAuthenticated) {
+                            console.log('Redirecting to /chat');
                             window.location.href = '/chat';
                         } else {
-                            throw new Error('No access token received');
+                            throw new Error('Authentication failed after receiving token');
                         }
                     } else {
-                        const errorData = await response.json();
-                        errorMsg.textContent = errorData.detail || `Failed to complete ${provider} login`;
-                        errorMsg.classList.remove('hidden');
-                        console.error(`Failed to complete ${provider} login:`, errorData);
+                        throw new Error('No access token received');
                     }
-                } catch (error) {
-                    errorMsg.textContent = `Failed to process ${provider} login. Please try again.`;
+                } else {
+                    const errorData = await response.json();
+                    errorMsg.textContent = errorData.detail || `Failed to complete ${provider} login`;
                     errorMsg.classList.remove('hidden');
-                    console.error(`Error processing ${provider} callback:`, error);
+                    console.error(`Failed to complete ${provider} login:`, errorData);
                 }
+            } catch (error) {
+                errorMsg.textContent = `Failed to process ${provider} login. Please try again.`;
+                errorMsg.classList.remove('hidden');
+                console.error(`Error processing ${provider} callback:`, error);
             }
         } else {
             await checkAuthStatus();

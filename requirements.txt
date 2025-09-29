@@ -51,4 +51,5 @@ diffusers>=0.30.0
 psutil>=5.9.0
 xformers>=0.0.27
 anyio==4.6.0
+pyjwt>=2.4.0
 duckduckgo-search

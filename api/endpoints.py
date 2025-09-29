@@ -4,7 +4,7 @@
 
 import os
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File , Body
 from fastapi.responses import StreamingResponse
 from api.database import User, Conversation, Message
 from api.models import QueryRequest, ConversationOut, ConversationCreate, UserUpdate
@@ -24,7 +24,6 @@ import logging
 from typing import List, Optional
 # from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL
 from utils.constants import MODEL_ALIASES, MODEL_NAME, SECONDARY_MODEL_NAME, TERTIARY_MODEL_NAME, CLIP_BASE_MODEL, CLIP_LARGE_MODEL, ASR_MODEL, TTS_MODEL, IMAGE_GEN_MODEL, SECONDARY_IMAGE_GEN_MODEL, IMAGE_INFERENCE_API
-from fastapi import Body
 import psutil
 import time
 router = APIRouter()
@@ -899,12 +898,19 @@ async def get_user_settings(user: User = Depends(current_active_user)):
     }
 
 
+
 @router.get("/api/verify-token")
 async def verify_token(user: User = Depends(current_active_user)):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    return {"status": "valid"}
-
+    return {
+        "status": "valid",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "is_active": user.is_active
+        }
+    }
 
 @router.put("/users/me")
 async def update_user_settings(

@@ -61,17 +61,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Force chat view to be visible immediately
   enterChatView(true);
 
-  if (await checkAuth() && currentConversationId) {
-    console.log('Loading conversation with ID:', currentConversationId);
+  const authResult = await checkAuth();
+  if (authResult.authenticated && currentConversationId) {
+    console.log('Authenticated user, loading conversation with ID:', currentConversationId);
     await loadConversation(currentConversationId);
-  } else if (!(await checkAuth()) && conversationHistory.length > 0) {
-    console.log('Restoring conversation history from sessionStorage:', conversationHistory);
+    // عرض بيانات المستخدم في الواجهة
+    const userInfoElement = document.getElementById('user-info');
+    if (userInfoElement && authResult.user) {
+      userInfoElement.textContent = `Welcome, ${authResult.user.email}`;
+    }
+  } else if (!authResult.authenticated && conversationHistory.length > 0) {
+    console.log('Unauthenticated user, restoring conversation history from sessionStorage:', conversationHistory);
     conversationHistory.forEach(msg => {
       console.log('Adding message from history:', msg);
       addMsg(msg.role, msg.content);
     });
+    // عرض Anonymous لو مفيش مستخدم موثّق
+    const userInfoElement = document.getElementById('user-info');
+    if (userInfoElement) {
+      userInfoElement.textContent = 'Anonymous';
+    }
   } else {
     console.log('No conversation history or ID, starting fresh');
+    const userInfoElement = document.getElementById('user-info');
+    if (userInfoElement) {
+      userInfoElement.textContent = 'Anonymous';
+    }
   }
 
   autoResizeTextarea();
@@ -88,28 +103,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function checkAuth() {
   const token = localStorage.getItem('token');
   if (!token) {
-    console.log('No auth token found');
-    return false;
+    console.log('No auth token found in localStorage');
+    return { authenticated: false, user: null };
   }
   try {
     const response = await fetch('/api/verify-token', {
-      headers: { 'Authorization': `Bearer ${token}` }
+      method: 'GET',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
     });
-    if (response.ok) {
-      console.log('Auth token verified');
-      return true;
+    const data = await response.json();
+    if (response.ok && data.status === 'valid') {
+      console.log('Auth token verified, user:', data.user);
+      return { authenticated: true, user: data.user };
     } else {
-      console.log('Token verification failed:', response.status);
+      console.log('Token verification failed:', data.detail || response.status);
       localStorage.removeItem('token');
-      return false;
+      return { authenticated: false, user: null };
     }
   } catch (error) {
     console.error('Error verifying token:', error);
     localStorage.removeItem('token');
-    return false;
+    return { authenticated: false, user: null };
   }
 }
-
 // Handle session for non-logged-in users
 async function handleSession() {
   const sessionId = sessionStorage.getItem('session_id');

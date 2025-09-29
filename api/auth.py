@@ -16,6 +16,8 @@ import os
 import logging
 import secrets
 import httpx
+from datetime import datetime
+import jwt  # إضافة مكتبة pyjwt لتوليد الـ token يدويًا
 
 from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db
 from api.models import UserRead, UserCreate, UserUpdate
@@ -58,7 +60,7 @@ github_oauth_client = GitHubOAuth2(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
 github_oauth_client._access_token_url = "https://github.com/login/oauth/access_token"
 github_oauth_client._access_token_params = {"headers": {"Accept": "application/json"}}
 
-# مدير المستخدمين (بدون تغيير)
+# مدير المستخدمين
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
@@ -153,6 +155,15 @@ fastapi_users = FastAPIUsers[User, int](
 
 current_active_user = fastapi_users.current_user(active=True, optional=True)
 
+# دالة مساعدة لتوليد JWT token يدويًا
+async def generate_jwt_token(user: User, secret: str, lifetime_seconds: int) -> str:
+    payload = {
+        "sub": str(user.id),
+        "aud": "fastapi-users:auth",
+        "exp": int(datetime.utcnow().timestamp()) + lifetime_seconds,
+    }
+    return jwt.encode(payload, secret, algorithm="HS256")
+
 # --- إضافة custom authorize endpoints (يرجع JSON مع authorization_url) ---
 
 async def custom_google_authorize(
@@ -187,13 +198,20 @@ async def custom_github_authorize(
 
 async def custom_oauth_callback(
     code: str,
+    state: Optional[str] = None,
     user_manager: UserManager = Depends(get_user_manager),
     oauth_client=Depends(lambda: google_oauth_client),
     redirect_url: str = GOOGLE_REDIRECT_URL,
     response: Response = None,
 ):
-    logger.debug(f"Processing Google callback with code: {code}")
+    logger.debug(f"Processing Google callback with code: {code}, state: {state}")
     try:
+        # تحقق من الـ state لو موجود (اختياري لـ CSRF protection)
+        if state:
+            logger.debug(f"Received state: {state}")
+            # إضافة تحقق من الـ state لو بتستخدمه لمنع CSRF
+            # مثال: if state != stored_state: raise ValueError("Invalid state parameter")
+
         # Get access token
         token_data = await oauth_client.get_access_token(code, redirect_url)
         access_token = token_data["access_token"]
@@ -219,9 +237,10 @@ async def custom_oauth_callback(
             is_verified_by_default=True,
         )
 
-        jwt_strategy = get_jwt_strategy()
-        token = await jwt_strategy.write(user)
+        # توليد الـ JWT token يدويًا
+        token = await generate_jwt_token(user, SECRET, 3600)
 
+        # ضبط الـ cookie
         cookie_transport.set_cookie(response, token)
 
         return JSONResponse(content={
@@ -230,17 +249,29 @@ async def custom_oauth_callback(
         }, status_code=200)
     except Exception as e:
         logger.error(f"Error in Google OAuth callback: {str(e)}")
+        if "400" in str(e):
+            return JSONResponse(
+                content={"detail": "Invalid authorization code. Please try logging in again."},
+                status_code=400
+            )
         return JSONResponse(content={"detail": str(e)}, status_code=400)
 
 async def custom_github_oauth_callback(
     code: str,
+    state: Optional[str] = None,
     user_manager: UserManager = Depends(get_user_manager),
     oauth_client=Depends(lambda: github_oauth_client),
     redirect_url: str = GITHUB_REDIRECT_URL,
     response: Response = None,
 ):
-    logger.debug(f"Processing GitHub callback with code: {code}")
+    logger.debug(f"Processing GitHub callback with code: {code}, state: {state}")
     try:
+        # تحقق من الـ state لو موجود (اختياري لـ CSRF protection)
+        if state:
+            logger.debug(f"Received state: {state}")
+            # إضافة تحقق من الـ state لو بتستخدمه لمنع CSRF
+            # مثال: if state != stored_state: raise ValueError("Invalid state parameter")
+
         # Get access token
         token_data = await oauth_client.get_access_token(code, redirect_url)
         access_token = token_data["access_token"]
@@ -284,9 +315,10 @@ async def custom_github_oauth_callback(
             is_verified_by_default=True,
         )
 
-        jwt_strategy = get_jwt_strategy()
-        token = await jwt_strategy.write(user)
+        # توليد الـ JWT token يدويًا
+        token = await generate_jwt_token(user, SECRET, 3600)
 
+        # ضبط الـ cookie
         cookie_transport.set_cookie(response, token)
 
         return JSONResponse(content={
@@ -295,6 +327,11 @@ async def custom_github_oauth_callback(
         }, status_code=200)
     except Exception as e:
         logger.error(f"Error in GitHub OAuth callback: {str(e)}")
+        if "400" in str(e):
+            return JSONResponse(
+                content={"detail": "Invalid authorization code. Please try logging in again."},
+                status_code=400
+            )
         return JSONResponse(content={"detail": str(e)}, status_code=400)
 
 # تضمين الراوترات داخل التطبيق
