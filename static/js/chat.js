@@ -49,126 +49,129 @@ let currentAssistantText = '';
 let isSidebarOpen = window.innerWidth >= 768;
 let abortController = null;
 
-// Forcefully initialize chat view on load
-document.addEventListener('DOMContentLoaded', async () => {
-  AOS.init({
-    duration: 800,
-    easing: 'ease-out-cubic',
-    once: true,
-    offset: 50,
-  });
 
-  // Force chat view to be visible immediately
-  enterChatView(true);
 
-  const authResult = await checkAuth();
-  if (authResult.authenticated && currentConversationId) {
-    console.log('Authenticated user, loading conversation with ID:', currentConversationId);
-    await loadConversation(currentConversationId);
-    // عرض بيانات المستخدم في الواجهة
-    const userInfoElement = document.getElementById('user-info');
-    if (userInfoElement && authResult.user) {
-      userInfoElement.textContent = `Welcome, ${authResult.user.email}`;
-    }
-  } else if (!authResult.authenticated && conversationHistory.length > 0) {
-    console.log('Unauthenticated user, restoring conversation history from sessionStorage:', conversationHistory);
-    conversationHistory.forEach(msg => {
-      console.log('Adding message from history:', msg);
-      addMsg(msg.role, msg.content);
-    });
-    // عرض Anonymous لو مفيش مستخدم موثّق
-    const userInfoElement = document.getElementById('user-info');
-    if (userInfoElement) {
-      userInfoElement.textContent = 'Anonymous';
-    }
-  } else {
-    console.log('No conversation history or ID, starting fresh');
-    const userInfoElement = document.getElementById('user-info');
-    if (userInfoElement) {
-      userInfoElement.textContent = 'Anonymous';
-    }
-  }
 
-  autoResizeTextarea();
-  updateSendButtonState();
-  if (uiElements.swipeHint) {
-    setTimeout(() => {
-      uiElements.swipeHint.style.display = 'none';
-    }, 3000);
-  }
-  setupTouchGestures();
-});
 
-// Check authentication token
 async function checkAuth() {
-  // تحقق من وجود token في query parameters
-  const urlParams = new URLSearchParams(window.location.search);
-  const accessTokenFromUrl = urlParams.get('access_token');
-  if (accessTokenFromUrl) {
-    console.log('Access token found in URL, saving to localStorage');
-    localStorage.setItem('token', accessTokenFromUrl);
-    // إزالة الـ access_token من الـ URL عشان الأمان
-    window.history.replaceState({}, document.title, '/chat');
-  }
-
-  // تحقق من وجود token في localStorage
-  let token = localStorage.getItem('token');
-
-  // لو مفيش token في localStorage، حاول استخرج الـ token من الـ cookie (اختياري)
-  if (!token && typeof Cookies !== 'undefined') {
-    token = Cookies.get('fastapiusersauth');
-    if (token) {
-      console.log('Access token found in cookie, saving to localStorage');
-      localStorage.setItem('token', token);
+    // تحقق من وجود access_token في query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessTokenFromUrl = urlParams.get('access_token');
+    if (accessTokenFromUrl) {
+        console.log('Access token found in URL, saving to localStorage');
+        localStorage.setItem('token', accessTokenFromUrl);
+        // إزالة access_token من الـ URL عشان الأمان
+        window.history.replaceState({}, document.title, '/chat');
     }
-  }
 
-  if (!token) {
-    console.log('No auth token found in localStorage or cookie');
-    return { authenticated: false, user: null };
-  }
+    // تحقق من وجود token في localStorage
+    let token = localStorage.getItem('token');
 
-  try {
-    const response = await fetch('/api/verify-token', {
-      method: 'GET',
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      }
-    });
-    const data = await response.json();
-    if (response.ok && data.status === 'valid') {
-      console.log('Auth token verified, user:', data.user);
-      return { authenticated: true, user: data.user };
-    } else {
-      console.log('Token verification failed:', data.detail || response.status);
-      localStorage.removeItem('token');
-      if (typeof Cookies !== 'undefined') {
-        Cookies.remove('fastapiusersauth');
-      }
-      return { authenticated: false, user: null };
+    // لو مفيش token في localStorage، حاول استخرج الـ token من الـ cookie
+    if (!token && typeof Cookies !== 'undefined') {
+        token = Cookies.get('fastapiusersauth');
+        if (token) {
+            console.log('Access token found in cookie, saving to localStorage');
+            localStorage.setItem('token', token);
+        }
     }
-  } catch (error) {
-    console.error('Error verifying token:', error);
-    localStorage.removeItem('token');
-    if (typeof Cookies !== 'undefined') {
-      Cookies.remove('fastapiusersauth');
+
+    if (!token) {
+        console.log('No auth token found in localStorage or cookie');
+        return { authenticated: false, user: null };
     }
-    return { authenticated: false, user: null };
-  }
+
+    try {
+        const response = await fetch('/api/verify-token', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
+        const data = await response.json();
+        if (response.ok && data.status === 'valid') {
+            console.log('Auth token verified, user:', data.user);
+            return { authenticated: true, user: data.user };
+        } else {
+            console.log('Token verification failed:', data.detail || 'Invalid token');
+            localStorage.removeItem('token');
+            if (typeof Cookies !== 'undefined') {
+                Cookies.remove('fastapiusersauth');
+            }
+            return { authenticated: false, user: null };
+        }
+    } catch (error) {
+        console.error('Error verifying token:', error);
+        localStorage.removeItem('token');
+        if (typeof Cookies !== 'undefined') {
+            Cookies.remove('fastapiusersauth');
+        }
+        return { authenticated: false, user: null };
+    }
 }
-// Handle session for non-logged-in users
+
 async function handleSession() {
-  const sessionId = sessionStorage.getItem('session_id');
-  if (!sessionId) {
-    const newSessionId = crypto.randomUUID();
-    sessionStorage.setItem('session_id', newSessionId);
-    console.log('New session_id created:', newSessionId);
-    return newSessionId;
-  }
-  console.log('Existing session_id:', sessionId);
-  return sessionId;
+    const sessionId = sessionStorage.getItem('session_id');
+    if (!sessionId) {
+        const newSessionId = crypto.randomUUID();
+        sessionStorage.setItem('session_id', newSessionId);
+        console.log('New session_id created:', newSessionId);
+        return newSessionId;
+    }
+    console.log('Existing session_id:', sessionId);
+    return sessionId;
 }
+
+window.addEventListener('load', async () => {
+    console.log('Chat page loaded, checking authentication');
+    AOS.init({
+        duration: 800,
+        easing: 'ease-out-cubic',
+        once: true,
+        offset: 50,
+    });
+
+    // Force chat view to be visible immediately
+    enterChatView(true);
+
+    const authResult = await checkAuth();
+    const userInfoElement = document.getElementById('user-info');
+    if (authResult.authenticated) {
+        console.log('User authenticated:', authResult.user);
+        if (userInfoElement) {
+            userInfoElement.textContent = `Welcome, ${authResult.user.email}`;
+        }
+        if (currentConversationId) {
+            console.log('Authenticated user, loading conversation with ID:', currentConversationId);
+            await loadConversation(currentConversationId);
+        }
+    } else {
+        console.log('User not authenticated, handling as anonymous');
+        if (userInfoElement) {
+            userInfoElement.textContent = 'Anonymous';
+        }
+        await handleSession();
+        if (conversationHistory.length > 0) {
+            console.log('Restoring conversation history from sessionStorage:', conversationHistory);
+            conversationHistory.forEach(msg => {
+                console.log('Adding message from history:', msg);
+                addMsg(msg.role, msg.content);
+            });
+        } else {
+            console.log('No conversation history, starting fresh');
+        }
+    }
+
+    autoResizeTextarea();
+    updateSendButtonState();
+    if (uiElements.swipeHint) {
+        setTimeout(() => {
+            uiElements.swipeHint.style.display = 'none';
+        }, 3000);
+    }
+    setupTouchGestures();
+});
 
 // Update send button state
 function updateSendButtonState() {

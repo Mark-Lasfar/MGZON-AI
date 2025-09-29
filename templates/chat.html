@@ -100,6 +100,9 @@
   <link rel="preload" href="/static/css/chat/style.css" as="style">
   <link rel="preload" href="/static/images/mg.svg" as="image">
   <link rel="preload" href="https://raw.githubusercontent.com/4gels/icons/refs/heads/main/splash-screen.png" as="image">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </head>
 
 <body class="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-teal-900 to-emerald-900">
@@ -354,6 +357,7 @@
       </div>
       <form id="settingsForm" class="space-y-4">
         <div>
+        <div id="user-info">Loading...</div>
           <label for="display_name" class="block text-sm text-gray-300">Display Name</label>
           <input type="text" id="display_name" name="display_name" class="w-full p-2 bg-gray-700 text-white rounded">
         </div>
@@ -419,8 +423,8 @@
 
   <!-- Scripts -->
   <script src="/static/js/chat.js?v=1.2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+
+
 
   <script>
     // تهيئة مكتبة AOS
