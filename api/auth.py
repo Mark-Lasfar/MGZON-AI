@@ -1,17 +1,13 @@
-# api/auth.py
-# SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
-# SPDX-License-License: Apache-2.0
-
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
-from fastapi_users.manager import BaseUserManager, UUIDIDMixin
+from fastapi_users.manager import BaseUserManager, IntegerIDMixin
 from fastapi import Depends, Request, FastAPI, Response
 from fastapi.responses import JSONResponse
-from fastapi_users_db_mongobeanie import MongoBeanieUserDatabase
-from api.database import User, get_user_db
-from api.models import UserRead, UserCreate, UserUpdate
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from fastapi_users.models import UP
 from typing import Optional
 import os
 import logging
@@ -19,6 +15,9 @@ import secrets
 import httpx
 from datetime import datetime
 import jwt
+
+from api.database import User, OAuthAccount, CustomSQLAlchemyUserDatabase, get_user_db
+from api.models import UserRead, UserCreate, UserUpdate
 
 # إعداد اللوقينج
 logger = logging.getLogger(__name__)
@@ -59,9 +58,24 @@ github_oauth_client._access_token_url = "https://github.com/login/oauth/access_t
 github_oauth_client._access_token_params = {"headers": {"Accept": "application/json"}}
 
 # مدير المستخدمين
-class UserManager(UUIDIDMixin, BaseUserManager[User, str]):
+class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
+
+    async def get_by_oauth_account(self, oauth_name: str, account_id: str):
+        logger.info(f"Checking OAuth account: {oauth_name}/{account_id}")
+        statement = select(OAuthAccount).where(
+            OAuthAccount.oauth_name == oauth_name,
+            OAuthAccount.account_id == account_id
+        )
+        result = await self.user_db.session.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def add_oauth_account(self, oauth_account: OAuthAccount):
+        logger.info(f"Adding OAuth account for user {oauth_account.user_id}")
+        self.user_db.session.add(oauth_account)
+        await self.user_db.session.commit()
+        await self.user_db.session.refresh(oauth_account)
 
     async def oauth_callback(
         self,
@@ -75,22 +89,25 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, str]):
         *,
         associate_by_email: bool = False,
         is_verified_by_default: bool = False,
-    ) -> User:
+    ) -> UP:
         logger.info(f"OAuth callback for {oauth_name} account {account_id}")
 
-        oauth_account_dict = {
-            "oauth_name": oauth_name,
-            "access_token": access_token,
-            "account_id": account_id,
-            "account_email": account_email,
-            "expires_at": expires_at,
-            "refresh_token": refresh_token,
-        }
+        oauth_account = OAuthAccount(
+            oauth_name=oauth_name,
+            access_token=access_token,
+            account_id=account_id,
+            account_email=account_email,
+            expires_at=expires_at,
+            refresh_token=refresh_token,
+        )
 
-        existing_oauth_account = await self.user_db.oauth.get_by_oauth_account(oauth_name, account_id)
+        existing_oauth_account = await self.get_by_oauth_account(oauth_name, account_id)
         if existing_oauth_account:
             logger.info(f"Fetching user for OAuth account with user_id: {existing_oauth_account.user_id}")
-            user = await self.user_db.get(existing_oauth_account.user_id)
+            statement = select(User).where(User.id == existing_oauth_account.user_id)
+            result = await self.user_db.session.execute(statement)
+            user = result.scalar_one_or_none()
+
             if user:
                 logger.info(f"User found: {user.email}, proceeding with on_after_login")
                 await self.on_after_login(user, request)
@@ -103,8 +120,8 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, str]):
             logger.info(f"Associating OAuth account by email: {account_email}")
             user = await self.user_db.get_by_email(account_email)
             if user:
-                oauth_account_dict["user_id"] = user.id
-                await self.user_db.oauth.create(oauth_account_dict)
+                oauth_account.user_id = user.id
+                await self.add_oauth_account(oauth_account)
                 logger.info(f"User associated: {user.email}, proceeding with on_after_login")
                 await self.on_after_login(user, request)
                 return user
@@ -118,17 +135,17 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, str]):
         }
 
         user = await self.user_db.create(user_dict)
-        oauth_account_dict["user_id"] = user.id
-        await self.user_db.oauth.create(oauth_account_dict)
+        oauth_account.user_id = user.id
+        await self.add_oauth_account(oauth_account)
         logger.info(f"New user created: {user.email}, proceeding with on_after_login")
         await self.on_after_login(user, request)
         return user
 
 # استدعاء user manager من get_user_db
-async def get_user_manager(user_db: MongoBeanieUserDatabase = Depends(get_user_db)):
+async def get_user_manager(user_db: CustomSQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
-fastapi_users = FastAPIUsers[User, str](
+fastapi_users = FastAPIUsers[User, int](
     get_user_db,
     [auth_backend],
 )

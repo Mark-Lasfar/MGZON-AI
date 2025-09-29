@@ -13,8 +13,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
-from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router
-from api.database import User, Conversation, get_user_db, init_db
+from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router  # أزل أي ذكر لـ google_oauth_router, github_oauth_router
+from api.database import User, Conversation, get_db, init_db
 from api.models import UserRead, UserCreate, UserUpdate
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
@@ -22,6 +22,7 @@ from typing import List
 from contextlib import asynccontextmanager
 import uvicorn
 import markdown2
+from sqlalchemy.ext.asyncio import AsyncSession
 from pathlib import Path
 from hashlib import md5
 from datetime import datetime
@@ -95,7 +96,7 @@ logger.debug(f"Application settings: QUEUE_SIZE={QUEUE_SIZE}, CONCURRENCY_LIMIT=
 # Initialize FastAPI app
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing MongoDB...")
+    logger.info("Initializing database and MongoDB index...")
     await init_db()
     await setup_mongo_index()
     yield
@@ -104,8 +105,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="MGZon Chatbot API",
     lifespan=lifespan,
-    docs_url=None,
-    redoc_url=None
+    docs_url=None,  # تعطيل Swagger UI الافتراضي على /docs
+    redoc_url=None   # تعطيل ReDoc الافتراضي لو مش عايزه
 )
 
 # Add SessionMiddleware
@@ -124,23 +125,23 @@ app.add_middleware(
         "https://mgzon-mgzon-app.hf.space",
         "http://localhost:7860",
         "http://localhost:8000",
-        "http://localhost",
-        "https://localhost",
-        "capacitor://localhost",
-        "file://",
+        "http://localhost",  # إضافة لدعم Capacitor على Android/iOS
+        "https://localhost",  # إضافة لدعم HTTPS المحلي
+        "capacitor://localhost",  # دعم Capacitor native apps
+        "file://",  # دعم الملفات المحلية في offline mode
         "https://hager-zon.vercel.app",
         "https://mgzon-mgzon-app.hf.space/auth/google/callback",
         "https://mgzon-mgzon-app.hf.space/auth/github/callback",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # سمح بكل الـ methods
+    allow_headers=["*"],  # سمح بكل الـ headers
 )
 logger.debug("CORS middleware configured with allowed origins")
 
 # Include routers
 app.include_router(api_router)
-get_auth_router(app)
+get_auth_router(app)  # يضيف الـ custom OAuth endpoints + JWT + register
 logger.debug("API and auth routers included")
 
 # Add logout endpoint
@@ -183,6 +184,13 @@ class NotFoundMiddleware(BaseHTTPMiddleware):
                 return templates.TemplateResponse(
                     "500.html",
                     {"request": request, "error": "Async context error"},
+                    status_code=500
+                )
+            elif "SQLAlchemyUserDatabase' object has no attribute 'parse_id" in str(e):
+                logger.error("JWT error: Missing parse_id in UserDatabase. Check api/database.py configuration.")
+                return templates.TemplateResponse(
+                    "500.html",
+                    {"request": request, "error": "JWT authentication configuration error"},
                     status_code=500
                 )
             return templates.TemplateResponse(
@@ -250,15 +258,19 @@ async def chat_conversation(
     request: Request,
     conversation_id: str,
     user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_db)
 ):
     if not user:
         logger.debug("Anonymous user attempted to access conversation page, redirecting to /login")
         return RedirectResponse(url="/login", status_code=302)
     
-    conversation = await mongo_db.conversation.find_one({
-        "conversation_id": conversation_id,
-        "user_id": user.id
-    })
+    conversation = await db.execute(
+        select(Conversation).filter(
+            Conversation.conversation_id == conversation_id,
+            Conversation.user_id == user.id
+        )
+    )
+    conversation = conversation.scalar_one_or_none()
     if not conversation:
         logger.warning(f"Conversation {conversation_id} not found for user {user.email}")
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -269,8 +281,8 @@ async def chat_conversation(
         {
             "request": request,
             "user": user,
-            "conversation_id": conversation["conversation_id"],
-            "conversation_title": conversation["title"] or "Untitled Conversation"
+            "conversation_id": conversation.conversation_id,
+            "conversation_title": conversation.title or "Untitled Conversation"
         }
     )
 
