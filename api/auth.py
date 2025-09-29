@@ -182,36 +182,40 @@ async def custom_oauth_callback(
     redirect_url: str = GOOGLE_REDIRECT_URL,
     response: Response = None,
 ):
-    # جلب access token من Google
-    token_data = await oauth_client.get_access_token(code, redirect_url)
-    access_token = token_data["access_token"]
-    user_info = await oauth_client.get_user_info(access_token)
+    logger.debug(f"Processing Google callback with code: {code}")
+    try:
+        # جلب access token من Google
+        token_data = await oauth_client.get_access_token(code, redirect_url)
+        access_token = token_data["access_token"]
+        user_info = await oauth_client.get_user_info(access_token)
 
-    # استدعاء oauth_callback من UserManager
-    user = await user_manager.oauth_callback(
-        oauth_name="google",
-        access_token=access_token,
-        account_id=user_info["sub"],
-        account_email=user_info["email"],
-        expires_at=token_data.get("expires_in"),
-        refresh_token=token_data.get("refresh_token"),
-        associate_by_email=True,
-        is_verified_by_default=True,
-    )
+        # استدعاء oauth_callback من UserManager
+        user = await user_manager.oauth_callback(
+            oauth_name="google",
+            access_token=access_token,
+            account_id=user_info["sub"],
+            account_email=user_info["email"],
+            expires_at=token_data.get("expires_in"),
+            refresh_token=token_data.get("refresh_token"),
+            associate_by_email=True,
+            is_verified_by_default=True,
+        )
 
-    # إنشاء JWT token
-    jwt_strategy = get_jwt_strategy()
-    token = await jwt_strategy.write(user)
+        # إنشاء JWT token
+        jwt_strategy = get_jwt_strategy()
+        token = await jwt_strategy.write(user)
 
-    # تعيين الـ token في الكوكيز
-    cookie_transport.set_cookie(response, token)
+        # تعيين الـ token في الكوكيز
+        cookie_transport.set_cookie(response, token)
 
-    # رجع JSON بدل redirect – الـ frontend هيتحكم في التوجيه
-    return JSONResponse(content={
-        "message": "Google login successful",
-        "access_token": token
-    }, status_code=200)
-
+        # رجع JSON بدل redirect
+        return JSONResponse(content={
+            "message": "Google login successful",
+            "access_token": token
+        }, status_code=200)
+    except Exception as e:
+        logger.error(f"Error in Google OAuth callback: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 # تعديل الـ OAuth Callback لـ GitHub
 async def custom_github_oauth_callback(
     code: str,
@@ -220,36 +224,40 @@ async def custom_github_oauth_callback(
     redirect_url: str = GITHUB_REDIRECT_URL,
     response: Response = None,
 ):
-    # جلب access token من GitHub
-    token_data = await oauth_client.get_access_token(code, redirect_url)
-    access_token = token_data["access_token"]
-    user_info = await oauth_client.get_user_info(access_token)
+    logger.debug(f"Processing GitHub callback with code: {code}")
+    try:
+        # جلب access token من GitHub
+        token_data = await oauth_client.get_access_token(code, redirect_url)
+        access_token = token_data["access_token"]
+        user_info = await oauth_client.get_user_info(access_token)
 
-    # استدعاء oauth_callback من UserManager
-    user = await user_manager.oauth_callback(
-        oauth_name="github",
-        access_token=access_token,
-        account_id=str(user_info["id"]),
-        account_email=user_info.get("email") or f"{user_info['login']}@github.com",
-        expires_at=token_data.get("expires_in"),
-        refresh_token=token_data.get("refresh_token"),
-        associate_by_email=True,
-        is_verified_by_default=True,
-    )
+        # استدعاء oauth_callback من UserManager
+        user = await user_manager.oauth_callback(
+            oauth_name="github",
+            access_token=access_token,
+            account_id=str(user_info["id"]),
+            account_email=user_info.get("email") or f"{user_info['login']}@github.com",
+            expires_at=token_data.get("expires_in"),
+            refresh_token=token_data.get("refresh_token"),
+            associate_by_email=True,
+            is_verified_by_default=True,
+        )
 
-    # إنشاء JWT token
-    jwt_strategy = get_jwt_strategy()
-    token = await jwt_strategy.write(user)
+        # إنشاء JWT token
+        jwt_strategy = get_jwt_strategy()
+        token = await jwt_strategy.write(user)
 
-    # تعيين الـ token في الكوكيز
-    cookie_transport.set_cookie(response, token)
+        # تعيين الـ token في الكوكيز
+        cookie_transport.set_cookie(response, token)
 
-    # رجع JSON بدل redirect – الـ frontend هيتحكم في التوجيه
-    return JSONResponse(content={
-        "message": "GitHub login successful",
-        "access_token": token
-    }, status_code=200)
-
+        # رجع JSON بدل redirect
+        return JSONResponse(content={
+            "message": "GitHub login successful",
+            "access_token": token
+        }, status_code=200)
+    except Exception as e:
+        logger.error(f"Error in GitHub OAuth callback: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 # تضمين الراوترات داخل التطبيق
 def get_auth_router(app: FastAPI):
     app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])

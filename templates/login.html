@@ -378,85 +378,100 @@
             📲 Install MG Chat
         </button>
     </footer>
+<script>
+    // Particles.js initialization
+    particlesJS('particles-js', {
+        particles: {
+            number: { value: 80, density: { enable: true, value_area: 800 } },
+            color: { value: ['#00f0ff', '#ff007a', '#6b21a8'] },
+            shape: { type: 'circle' },
+            opacity: { value: 0.5, random: true },
+            size: { value: 3, random: true },
+            line_linked: { enable: true, distance: 150, color: '#00f0ff', opacity: 0.4, width: 1 },
+            move: { enable: true, speed: 3, direction: 'none', random: true }
+        },
+        interactivity: {
+            detect_on: 'canvas',
+            events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' } },
+            modes: { repulse: { distance: 100 }, push: { particles_nb: 4 } }
+        },
+        retina_detect: true
+    });
 
-    <script>
-        // Particles.js initialization
-        particlesJS('particles-js', {
-            particles: {
-                number: { value: 80, density: { enable: true, value_area: 800 } },
-                color: { value: ['#00f0ff', '#ff007a', '#6b21a8'] },
-                shape: { type: 'circle' },
-                opacity: { value: 0.5, random: true },
-                size: { value: 3, random: true },
-                line_linked: { enable: true, distance: 150, color: '#00f0ff', opacity: 0.4, width: 1 },
-                move: { enable: true, speed: 3, direction: 'none', random: true }
-            },
-            interactivity: {
-                detect_on: 'canvas',
-                events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' } },
-                modes: { repulse: { distance: 100 }, push: { particles_nb: 4 } }
-            },
-            retina_detect: true
-        });
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            const button = document.querySelector('.theme-toggle');
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                html.classList.add('light');
-                button.textContent = '☀️';
-                localStorage.setItem('theme', 'light');
-            } else {
-                html.classList.remove('light');
-                html.classList.add('dark');
-                button.textContent = '🌙';
-                localStorage.setItem('theme', 'dark');
-            }
-        }
-
-        // Load saved theme preference or system preference
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            document.documentElement.classList.remove('dark', 'light');
-            document.documentElement.classList.add(savedTheme);
-            document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-            document.documentElement.classList.remove('dark');
-            document.documentElement.classList.add('light');
-            document.querySelector('.theme-toggle').textContent = '☀️';
+    function toggleTheme() {
+        const html = document.documentElement;
+        const button = document.querySelector('.theme-toggle');
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            html.classList.add('light');
+            button.textContent = '☀️';
             localStorage.setItem('theme', 'light');
+        } else {
+            html.classList.remove('light');
+            html.classList.add('dark');
+            button.textContent = '🌙';
+            localStorage.setItem('theme', 'dark');
         }
+    }
 
-        // Check authentication status on page load
-        async function checkAuthStatus() {
-            try {
-                const response = await fetch('/api/check-auth', {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: { 'Accept': 'application/json' }
-                });
-                const data = await response.json();
-                if (data.is_authenticated) {
-                    console.log('User is authenticated, redirecting to /chat');
-                    window.location.href = '/chat';
-                }
-            } catch (error) {
-                console.error('Error checking auth status:', error);
+    // Load saved theme preference or system preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        document.documentElement.classList.remove('dark', 'light');
+        document.documentElement.classList.add(savedTheme);
+        document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        document.querySelector('.theme-toggle').textContent = '☀️';
+        localStorage.setItem('theme', 'light');
+    }
+
+    // Check authentication status on page load
+    async function checkAuthStatus() {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.log('No token found in localStorage');
+                return;
             }
+            const response = await fetch('/api/verify-token', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+            if (response.ok) {
+                console.log('User is authenticated, redirecting to /chat');
+                window.location.href = '/chat';
+            } else {
+                console.log('Token verification failed, clearing token');
+                localStorage.removeItem('token');
+            }
+        } catch (error) {
+            console.error('Error checking auth status:', error);
+            localStorage.removeItem('token');
         }
+    }
 
-        // Handle email/password login
-        const loginForm = document.getElementById('loginForm');
-        const loginBtn = document.getElementById('loginBtn');
-        const spinner = document.getElementById('spinner');
-        const errorMsg = document.getElementById('errorMsg');
-        const googleLoginBtn = document.getElementById('googleLoginBtn');
-        const githubLoginBtn = document.getElementById('githubLoginBtn');
+    // Handle email/password login
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const spinner = document.getElementById('spinner');
+    const errorMsg = document.getElementById('errorMsg');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const githubLoginBtn = document.getElementById('githubLoginBtn');
 
+    if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             console.log('Login form submitted');
+            if (!navigator.onLine) {
+                errorMsg.textContent = 'You are offline. Please connect to the internet and try again.';
+                errorMsg.classList.remove('hidden');
+                return;
+            }
             spinner.classList.remove('hidden');
             errorMsg.classList.add('hidden');
             const formData = new FormData(loginForm);
@@ -467,6 +482,8 @@
                 });
                 spinner.classList.add('hidden');
                 if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('token', data.access_token);
                     console.log('Login successful, redirecting to /chat');
                     window.location.href = '/chat';
                 } else {
@@ -482,148 +499,160 @@
                 console.error('Error during login:', error);
             }
         });
-
-        // Handle Google OAuth login
-googleLoginBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    console.log('Google login button clicked');
-    spinner.classList.remove('hidden');
-    errorMsg.classList.add('hidden');
-    try {
-        const response = await fetch('/auth/google/authorize', {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const data = await response.json();
-        if (data.authorization_url) {
-            console.log('Redirecting to Google:', data.authorization_url);
-            window.location.href = data.authorization_url;
-        } else {
-            throw new Error('No authorization URL received');
-        }
-    } catch (error) {
-        spinner.classList.add('hidden');
-        errorMsg.textContent = 'Failed to initiate Google login. Please try again.';
-        errorMsg.classList.remove('hidden');
-        console.error('Error initiating Google login:', error);
     }
-});
 
-// Handle GitHub OAuth login
-githubLoginBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    console.log('GitHub login button clicked');
-    spinner.classList.remove('hidden');
-    errorMsg.classList.add('hidden');
-    try {
-        const response = await fetch('/auth/github/authorize', {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const data = await response.json();
-        if (data.authorization_url) {
-            console.log('Redirecting to GitHub:', data.authorization_url);
-            window.location.href = data.authorization_url;
-        } else {
-            throw new Error('No authorization URL received');
-        }
-    } catch (error) {
-        spinner.classList.add('hidden');
-        errorMsg.textContent = 'Failed to initiate GitHub login. Please try again.';
-        errorMsg.classList.remove('hidden');
-        console.error('Error initiating GitHub login:', error);
-    }
-});
-
-// Check for OAuth callback on load (for web)
-window.addEventListener('load', async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get('code');
-  const error = urlParams.get('error');
-  if (error) {
-    errorMsg.textContent = decodeURIComponent(error);
-    errorMsg.classList.remove('hidden');
-    console.error('OAuth error from URL:', error);
-  } else if (code) {
-    console.log('OAuth code detected in URL, processing callback');
-    const provider = window.location.pathname.includes('google') ? 'google' : 'github';
-    const callbackEndpoint = `/auth/${provider}/callback?code=${code}`;
-    try {
-      const response = await fetch(callbackEndpoint, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.access_token) {
-          localStorage.setItem('token', data.access_token);  // Store token in localStorage for web
-          console.log(`${provider} login successful, token saved`);
-          window.location.href = '/chat';  // Redirect to server's /chat
-        } else {
-          throw new Error('No access token received');
-        }
-      } else {
-        const errorData = await response.json();
-        errorMsg.textContent = errorData.detail || `Failed to complete ${provider} login`;
-        errorMsg.classList.remove('hidden');
-        console.error(`Failed to complete ${provider} login:`, errorData);
-      }
-    } catch (error) {
-      errorMsg.textContent = `Failed to process ${provider} login. Please try again.`;
-      errorMsg.classList.remove('hidden');
-      console.error(`Error processing ${provider} callback:`, error);
-    }
-  }
-});
-
-        // Handle card details toggle
-        function showCardDetails(cardId) {
-            console.log('Showing card details:', cardId);
-            document.getElementById(`${cardId}-details`).classList.remove('hidden');
-        }
-
-        function closeCardDetails(cardId) {
-            console.log('Closing card details:', cardId);
-            document.getElementById(`${cardId}-details`).classList.add('hidden');
-        }
-
-        // Service Worker for PWA
-        if ('serviceWorker' in navigator) {
-            console.log('Registering service worker');
-            navigator.serviceWorker.register('/static/js/sw.js')
-                .then(reg => console.log('✅ Service Worker Registered', reg))
-                .catch(err => console.error('❌ Service Worker registration failed', err));
-        }
-
-        // Handle PWA install prompt
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('Before install prompt triggered');
+    // Handle Google OAuth login
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            deferredPrompt = e;
-            const installBtn = document.getElementById('installAppBtn');
-            if (installBtn) {
-                installBtn.style.display = 'block';
-                installBtn.addEventListener('click', () => {
-                    console.log('Install button clicked');
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then(choice => {
-                        if (choice.outcome === 'accepted') {
-                            console.log('✅ User accepted the install prompt');
-                        } else {
-                            console.log('❌ User dismissed the install prompt');
-                        }
-                        deferredPrompt = null;
-                    });
+            console.log('Google login button clicked');
+            spinner.classList.remove('hidden');
+            errorMsg.classList.add('hidden');
+            try {
+                const response = await fetch('/auth/google/authorize', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
                 });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.authorization_url) {
+                    console.log('Redirecting to Google:', data.authorization_url);
+                    window.location.href = data.authorization_url;
+                } else {
+                    throw new Error('No authorization URL received');
+                }
+            } catch (error) {
+                spinner.classList.add('hidden');
+                errorMsg.textContent = 'Failed to initiate Google login. Please try again.';
+                errorMsg.classList.remove('hidden');
+                console.error('Error initiating Google login:', error);
             }
         });
-    </script>
+    }
+
+    // Handle GitHub OAuth login
+    if (githubLoginBtn) {
+        githubLoginBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log('GitHub login button clicked');
+            spinner.classList.remove('hidden');
+            errorMsg.classList.add('hidden');
+            try {
+                const response = await fetch('/auth/github/authorize', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.authorization_url) {
+                    console.log('Redirecting to GitHub:', data.authorization_url);
+                    window.location.href = data.authorization_url;
+                } else {
+                    throw new Error('No authorization URL received');
+                }
+            } catch (error) {
+                spinner.classList.add('hidden');
+                errorMsg.textContent = 'Failed to initiate GitHub login. Please try again.';
+                errorMsg.classList.remove('hidden');
+                console.error('Error initiating GitHub login:', error);
+            }
+        });
+    }
+
+    // Check for OAuth callback on load (for web)
+    window.addEventListener('load', async () => {
+        console.log('Page loaded, checking for auth status and OAuth callback');
+        if (!navigator.onLine) {
+            errorMsg.textContent = 'You are offline. Please connect to the internet and try again.';
+            errorMsg.classList.remove('hidden');
+            return;
+        }
+        await checkAuthStatus();
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        if (error) {
+            errorMsg.textContent = decodeURIComponent(error);
+            errorMsg.classList.remove('hidden');
+            console.error('OAuth error from URL:', error);
+        } else if (code) {
+            console.log('OAuth code detected in URL, processing callback');
+            const provider = window.location.pathname.includes('google') ? 'google' : 'github';
+            const callbackEndpoint = `/auth/${provider}/callback?code=${code}`;
+            try {
+                const response = await fetch(callbackEndpoint, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.access_token) {
+                        localStorage.setItem('token', data.access_token);
+                        console.log(`${provider} login successful, token saved`);
+                        window.location.href = '/chat';
+                    } else {
+                        throw new Error('No access token received');
+                    }
+                } else {
+                    const errorData = await response.json();
+                    errorMsg.textContent = errorData.detail || `Failed to complete ${provider} login`;
+                    errorMsg.classList.remove('hidden');
+                    console.error(`Failed to complete ${provider} login:`, errorData);
+                }
+            } catch (error) {
+                errorMsg.textContent = `Failed to process ${provider} login. Please try again.`;
+                errorMsg.classList.remove('hidden');
+                console.error(`Error processing ${provider} callback:`, error);
+            }
+        }
+    });
+
+    // Handle card details toggle
+    function showCardDetails(cardId) {
+        console.log('Showing card details:', cardId);
+        document.getElementById(`${cardId}-details`).classList.remove('hidden');
+    }
+
+    function closeCardDetails(cardId) {
+        console.log('Closing card details:', cardId);
+        document.getElementById(`${cardId}-details`).classList.add('hidden');
+    }
+
+    // Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        console.log('Registering service worker');
+        navigator.serviceWorker.register('/static/js/sw.js')
+            .then(reg => console.log('✅ Service Worker Registered', reg))
+            .catch(err => console.error('❌ Service Worker registration failed', err));
+    }
+
+    // Handle PWA install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('Before install prompt triggered');
+        e.preventDefault();
+        deferredPrompt = e;
+        const installBtn = document.getElementById('installAppBtn');
+        if (installBtn) {
+            installBtn.style.display = 'block';
+            installBtn.addEventListener('click', () => {
+                console.log('Install button clicked');
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(choice => {
+                    if (choice.outcome === 'accepted') {
+                        console.log('✅ User accepted the install prompt');
+                    } else {
+                        console.log('❌ User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            });
+        }
+    });
+</script>
 </body>
 </html>
