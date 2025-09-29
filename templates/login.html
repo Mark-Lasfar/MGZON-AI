@@ -429,145 +429,146 @@
 
     // Check authentication status
     async function checkAuthStatus() {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            console.log('No token found in localStorage');
-            return false;
-        }
-        try {
-            const response = await fetch('/api/verify-token', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-            const data = await response.json();
-            if (response.ok && data.status === 'valid') {
-                console.log('Token is valid, user:', data.user);
-                return true;
-            } else {
-                console.log('Token verification failed:', data.detail || 'Invalid token');
-                localStorage.removeItem('token');
-                return false;
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('No token found in localStorage');
+        return false;
+    }
+    try {
+        const response = await fetch('/api/verify-token', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
             }
-        } catch (error) {
-            console.error('Error verifying token:', error);
+        });
+        const data = await response.json();
+        if (response.ok && data.status === 'valid') {
+            console.log('Token is valid, user:', data.user);
+            return true;
+        } else {
+            console.log('Token verification failed:', data.detail || 'Invalid token');
             localStorage.removeItem('token');
             return false;
         }
+    } catch (error) {
+        console.error('Error verifying token:', error);
+        localStorage.removeItem('token');
+        return false;
     }
+}
 
     // Handle email/password login
-    const loginForm = document.getElementById('loginForm');
-    const loginBtn = document.getElementById('loginBtn');
-    const spinner = document.getElementById('spinner');
-    const errorMsg = document.getElementById('errorMsg');
-    const googleLoginBtn = document.getElementById('googleLoginBtn');
-    const githubLoginBtn = document.getElementById('githubLoginBtn');
+const loginForm = document.getElementById('loginForm');
+const loginBtn = document.getElementById('loginBtn');
+const spinner = document.getElementById('spinner');
+const errorMsg = document.getElementById('errorMsg');
+const googleLoginBtn = document.getElementById('googleLoginBtn');
+const githubLoginBtn = document.getElementById('githubLoginBtn');
+
 
     if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            console.log('Login form submitted');
-            if (!navigator.onLine) {
-                errorMsg.textContent = 'You are offline. Please connect to the internet and try again.';
-                errorMsg.classList.remove('hidden');
-                return;
-            }
-            spinner.classList.remove('hidden');
-            errorMsg.classList.add('hidden');
-            const formData = new FormData(loginForm);
-            try {
-                const response = await fetch('/auth/jwt/login', {
-                    method: 'POST',
-                    body: formData
-                });
-                spinner.classList.add('hidden');
-                if (response.ok) {
-                    const data = await response.json();
-                    localStorage.setItem('token', data.access_token);
-                    console.log('Login successful, redirecting to /chat');
-                    window.location.href = '/chat';
-                } else {
-                    const error = await response.json();
-                    errorMsg.textContent = error.detail || 'Login failed. Please try again.';
-                    errorMsg.classList.remove('hidden');
-                    console.error('Login failed:', error);
-                }
-            } catch (error) {
-                spinner.classList.add('hidden');
-                errorMsg.textContent = 'An error occurred. Please try again.';
-                errorMsg.classList.remove('hidden');
-                console.error('Error during login:', error);
-            }
-        });
-    }
-
-    // Handle Google OAuth login
-    if (googleLoginBtn) {
-        googleLoginBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            console.log('Google login button clicked');
-            spinner.classList.remove('hidden');
-            errorMsg.classList.add('hidden');
-            try {
-                const response = await fetch('/auth/google/authorize', {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' }
-                });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log('Login form submitted');
+        if (!navigator.onLine) {
+            errorMsg.textContent = 'You are offline. Please connect to the internet and try again.';
+            errorMsg.classList.remove('hidden');
+            return;
+        }
+        spinner.classList.remove('hidden');
+        errorMsg.classList.add('hidden');
+        const formData = new FormData(loginForm);
+        try {
+            const response = await fetch('/auth/jwt/login', {
+                method: 'POST',
+                body: formData
+            });
+            spinner.classList.add('hidden');
+            if (response.ok) {
                 const data = await response.json();
-                if (data.authorization_url) {
-                    console.log('Redirecting to Google:', data.authorization_url);
-                    window.location.href = data.authorization_url;
-                } else {
-                    throw new Error('No authorization URL received');
-                }
-            } catch (error) {
-                spinner.classList.add('hidden');
-                errorMsg.textContent = 'Failed to initiate Google login. Please try again.';
+                localStorage.setItem('token', data.access_token);
+                console.log('Login successful, redirecting to /chat');
+                window.location.href = '/chat';
+            } else {
+                const error = await response.json();
+                errorMsg.textContent = error.detail || 'Login failed. Please try again.';
                 errorMsg.classList.remove('hidden');
-                console.error('Error initiating Google login:', error);
+                console.error('Login failed:', error);
             }
-        });
-    }
+        } catch (error) {
+            spinner.classList.add('hidden');
+            errorMsg.textContent = 'An error occurred. Please try again.';
+            errorMsg.classList.remove('hidden');
+            console.error('Error during login:', error);
+        }
+    });
+}
 
-    // Handle GitHub OAuth login
-    if (githubLoginBtn) {
-        githubLoginBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            console.log('GitHub login button clicked');
-            spinner.classList.remove('hidden');
-            errorMsg.classList.add('hidden');
-            try {
-                const response = await fetch('/auth/github/authorize', {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' }
-                });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                const data = await response.json();
-                if (data.authorization_url) {
-                    console.log('Redirecting to GitHub:', data.authorization_url);
-                    window.location.href = data.authorization_url;
-                } else {
-                    throw new Error('No authorization URL received');
-                }
-            } catch (error) {
-                spinner.classList.add('hidden');
-                errorMsg.textContent = 'Failed to initiate GitHub login. Please try again.';
-                errorMsg.classList.remove('hidden');
-                console.error('Error initiating GitHub login:', error);
+// Handle Google OAuth login
+if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        console.log('Google login button clicked');
+        spinner.classList.remove('hidden');
+        errorMsg.classList.add('hidden');
+        try {
+            const response = await fetch('/auth/google/authorize', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
             }
-        });
-    }
+            const data = await response.json();
+            if (data.authorization_url) {
+                console.log('Redirecting to Google:', data.authorization_url);
+                window.location.href = data.authorization_url;
+            } else {
+                throw new Error('No authorization URL received');
+            }
+        } catch (error) {
+            spinner.classList.add('hidden');
+            errorMsg.textContent = 'Failed to initiate Google login. Please try again.';
+            errorMsg.classList.remove('hidden');
+            console.error('Error initiating Google login:', error);
+        }
+    });
+}
 
-    // Check for OAuth callback on load
-    window.addEventListener('load', async () => {
+// Handle GitHub OAuth login
+if (githubLoginBtn) {
+    githubLoginBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        console.log('GitHub login button clicked');
+        spinner.classList.remove('hidden');
+        errorMsg.classList.add('hidden');
+        try {
+            const response = await fetch('/auth/github/authorize', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.authorization_url) {
+                console.log('Redirecting to GitHub:', data.authorization_url);
+                window.location.href = data.authorization_url;
+            } else {
+                throw new Error('No authorization URL received');
+            }
+        } catch (error) {
+            spinner.classList.add('hidden');
+            errorMsg.textContent = 'Failed to initiate GitHub login. Please try again.';
+            errorMsg.classList.remove('hidden');
+            console.error('Error initiating GitHub login:', error);
+        }
+    });
+}
+
+// Check for OAuth callback on load
+window.addEventListener('load', async () => {
     console.log('Page loaded, checking for auth status and OAuth callback');
     if (!navigator.onLine) {
         errorMsg.textContent = 'You are offline. Please connect to the internet and try again.';
@@ -584,14 +585,39 @@
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const error = urlParams.get('error');
+    const accessToken = urlParams.get('access_token'); // إضافة فحص access_token في الـ URL
+
     if (error) {
         errorMsg.textContent = decodeURIComponent(error);
         errorMsg.classList.remove('hidden');
         console.error('OAuth error from URL:', error);
-    } else if (code) {
+        return;
+    }
+
+    // إذا وجد access_token في الـ URL (من redirect الباك إند)
+    if (accessToken) {
+        console.log('Access token found in URL, saving to localStorage');
+        localStorage.setItem('token', accessToken);
+        // إزالة access_token من الـ URL عشان الأمان
+        window.history.replaceState({}, document.title, window.location.pathname);
+        const isAuthenticated = await checkAuthStatus();
+        if (isAuthenticated) {
+            console.log('Redirecting to /chat after saving token');
+            window.location.href = '/chat';
+        } else {
+            errorMsg.textContent = 'Authentication failed after receiving token. Please try again.';
+            errorMsg.classList.remove('hidden');
+            console.error('Authentication failed after receiving token');
+        }
+        return;
+    }
+
+    // إذا وجد code في الـ URL (حالة الـ OAuth callback)
+    if (code) {
         console.log('OAuth code detected in URL, processing callback');
         const provider = window.location.pathname.includes('google') ? 'google' : 'github';
         try {
+            // محاولة استدعاء الـ callback endpoint
             const response = await fetch(window.location.href, {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
@@ -625,10 +651,10 @@
     }
 });
     // Handle card details toggle
-    function showCardDetails(cardId) {
-        console.log('Showing card details:', cardId);
-        document.getElementById(`${cardId}-details`).classList.remove('hidden');
-    }
+  function showCardDetails(cardId) {
+    console.log('Showing card details:', cardId);
+    document.getElementById(`${cardId}-details`).classList.remove('hidden');
+}
 
     function closeCardDetails(cardId) {
         console.log('Closing card details:', cardId);

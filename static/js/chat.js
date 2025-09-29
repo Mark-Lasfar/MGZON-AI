@@ -101,11 +101,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Check authentication token
 async function checkAuth() {
-  const token = localStorage.getItem('token');
+  // تحقق من وجود token في query parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const accessTokenFromUrl = urlParams.get('access_token');
+  if (accessTokenFromUrl) {
+    console.log('Access token found in URL, saving to localStorage');
+    localStorage.setItem('token', accessTokenFromUrl);
+    // إزالة الـ access_token من الـ URL عشان الأمان
+    window.history.replaceState({}, document.title, '/chat');
+  }
+
+  // تحقق من وجود token في localStorage
+  let token = localStorage.getItem('token');
+
+  // لو مفيش token في localStorage، حاول استخرج الـ token من الـ cookie (اختياري)
+  if (!token && typeof Cookies !== 'undefined') {
+    token = Cookies.get('fastapiusersauth');
+    if (token) {
+      console.log('Access token found in cookie, saving to localStorage');
+      localStorage.setItem('token', token);
+    }
+  }
+
   if (!token) {
-    console.log('No auth token found in localStorage');
+    console.log('No auth token found in localStorage or cookie');
     return { authenticated: false, user: null };
   }
+
   try {
     const response = await fetch('/api/verify-token', {
       method: 'GET',
@@ -121,11 +143,17 @@ async function checkAuth() {
     } else {
       console.log('Token verification failed:', data.detail || response.status);
       localStorage.removeItem('token');
+      if (typeof Cookies !== 'undefined') {
+        Cookies.remove('fastapiusersauth');
+      }
       return { authenticated: false, user: null };
     }
   } catch (error) {
     console.error('Error verifying token:', error);
     localStorage.removeItem('token');
+    if (typeof Cookies !== 'undefined') {
+      Cookies.remove('fastapiusersauth');
+    }
     return { authenticated: false, user: null };
   }
 }

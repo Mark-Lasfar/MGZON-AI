@@ -257,8 +257,8 @@ async def custom_oauth_callback(
                 "access_token": token
             }, status_code=200)
         else:
-            # للويب: إرجاع redirect إلى /chat
-            return RedirectResponse(url="/chat", status_code=303)
+            # للويب: إرجاع redirect إلى /chat مع الـ token كـ query parameter
+            return RedirectResponse(url=f"/chat?access_token={token}", status_code=303)
 
     except Exception as e:
         logger.error(f"Error in Google OAuth callback: {str(e)}")
@@ -346,8 +346,8 @@ async def custom_github_oauth_callback(
                 "access_token": token
             }, status_code=200)
         else:
-            # للويب: إرجاع redirect إلى /chat
-            return RedirectResponse(url="/chat", status_code=303)
+            # للويب: إرجاع redirect إلى /chat مع الـ token كـ query parameter
+            return RedirectResponse(url=f"/chat?access_token={token}", status_code=303)
 
     except Exception as e:
         logger.error(f"Error in GitHub OAuth callback: {str(e)}")
