@@ -1,6 +1,5 @@
-# init_db.py
 # SPDX-FileCopyrightText: Hadad <hadad@linuxmail.org>
-# SPDX-License-License: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 import os
 import logging
@@ -54,9 +53,14 @@ async def init_db():
                 select(User).filter_by(email="test@example.com")
             )).scalar_one_or_none()
             if not test_user:
+                # استخدام كلمة مرور أقصر لتجنب مشكلة bcrypt
+                test_password = "testpass"
+                if len(test_password.encode('utf-8')) > 72:
+                    logger.error("Test password is too long for bcrypt (>72 bytes)")
+                    raise ValueError("Test password is too long for bcrypt (>72 bytes)")
                 test_user = User(
                     email="test@example.com",
-                    hashed_password=pwd_context.hash("testpassword123"),
+                    hashed_password=pwd_context.hash(test_password),
                     is_active=True,
                     display_name="Test User"
                 )
