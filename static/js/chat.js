@@ -54,20 +54,15 @@ let abortController = null;
 
 
 async function checkAuth() {
-    // تحقق من وجود access_token في query parameters
     const urlParams = new URLSearchParams(window.location.search);
     const accessTokenFromUrl = urlParams.get('access_token');
     if (accessTokenFromUrl) {
         console.log('Access token found in URL, saving to localStorage');
         localStorage.setItem('token', accessTokenFromUrl);
-        // إزالة access_token من الـ URL عشان الأمان
         window.history.replaceState({}, document.title, '/chat');
     }
 
-    // تحقق من وجود token في localStorage
     let token = localStorage.getItem('token');
-
-    // لو مفيش token في localStorage، حاول استخرج الـ token من الـ cookie
     if (!token && typeof Cookies !== 'undefined') {
         token = Cookies.get('fastapiusersauth');
         if (token) {
@@ -111,6 +106,7 @@ async function checkAuth() {
     }
 }
 
+
 async function handleSession() {
     const sessionId = sessionStorage.getItem('session_id');
     if (!sessionId) {
@@ -123,66 +119,78 @@ async function handleSession() {
     return sessionId;
 }
 
+
 window.addEventListener('load', async () => {
     console.log('Chat page loaded, checking authentication');
-    AOS.init({
-        duration: 800,
-        easing: 'ease-out-cubic',
-        once: true,
-        offset: 50,
-    });
+    try {
+        AOS.init({
+            duration: 800,
+            easing: 'ease-out-cubic',
+            once: true,
+            offset: 50,
+        });
 
-    // Force chat view to be visible immediately
-    enterChatView(true);
+        enterChatView(true);
 
-    const authResult = await checkAuth();
-    const userInfoElement = document.getElementById('user-info');
-    if (authResult.authenticated) {
-        console.log('User authenticated:', authResult.user);
-        if (userInfoElement) {
-            userInfoElement.textContent = `Welcome, ${authResult.user.email}`;
-        }
-        if (currentConversationId) {
-            console.log('Authenticated user, loading conversation with ID:', currentConversationId);
-            await loadConversation(currentConversationId);
-        }
-    } else {
-        console.log('User not authenticated, handling as anonymous');
-        if (userInfoElement) {
-            userInfoElement.textContent = 'Anonymous';
-        }
-        await handleSession();
-        if (conversationHistory.length > 0) {
-            console.log('Restoring conversation history from sessionStorage:', conversationHistory);
-            conversationHistory.forEach(msg => {
-                console.log('Adding message from history:', msg);
-                addMsg(msg.role, msg.content);
-            });
+        const authResult = await checkAuth();
+        const userInfoElement = document.getElementById('user-info');
+        if (authResult.authenticated) {
+            console.log('User authenticated:', authResult.user);
+            if (userInfoElement) {
+                userInfoElement.textContent = `Welcome, ${authResult.user.email}`;
+            } else {
+                console.warn('user-info element not found');
+            }
+            if (typeof currentConversationId !== 'undefined' && currentConversationId) {
+                console.log('Authenticated user, loading conversation with ID:', currentConversationId);
+                await loadConversation(currentConversationId);
+            }
         } else {
-            console.log('No conversation history, starting fresh');
+            console.log('User not authenticated, handling as anonymous');
+            if (userInfoElement) {
+                userInfoElement.textContent = 'Anonymous';
+            } else {
+                console.warn('user-info element not found');
+            }
+            await handleSession();
+            if (typeof conversationHistory !== 'undefined' && conversationHistory.length > 0) {
+                console.log('Restoring conversation history from sessionStorage:', conversationHistory);
+                conversationHistory.forEach(msg => {
+                    console.log('Adding message from history:', msg);
+                    addMsg(msg.role, msg.content);
+                });
+            } else {
+                console.log('No conversation history, starting fresh');
+            }
         }
-    }
 
-    autoResizeTextarea();
-    updateSendButtonState();
-    if (uiElements.swipeHint) {
-        setTimeout(() => {
-            uiElements.swipeHint.style.display = 'none';
-        }, 3000);
+        autoResizeTextarea();
+        updateSendButtonState();
+        if (uiElements.swipeHint) {
+            setTimeout(() => {
+                uiElements.swipeHint.style.display = 'none';
+            }, 3000);
+        } else {
+            console.warn('swipeHint element not found');
+        }
+        setupTouchGestures();
+    } catch (error) {
+        console.error('Error in window.load handler:', error);
     }
-    setupTouchGestures();
 });
-
 // Update send button state
 function updateSendButtonState() {
-  if (uiElements.sendBtn && uiElements.input && uiElements.fileInput && uiElements.audioInput) {
-    const hasInput = uiElements.input.value.trim() !== '' ||
-                     uiElements.fileInput.files.length > 0 ||
-                     uiElements.audioInput.files.length > 0;
-    uiElements.sendBtn.disabled = !hasInput || isRequestActive || isRecording;
-    console.log('Send button state updated:', { hasInput, isRequestActive, isRecording, disabled: uiElements.sendBtn.disabled });
-  }
+    if (uiElements.sendBtn && uiElements.input && uiElements.fileInput && uiElements.audioInput) {
+        const hasInput = uiElements.input.value.trim() !== '' ||
+                         uiElements.fileInput.files.length > 0 ||
+                         uiElements.audioInput.files.length > 0;
+        uiElements.sendBtn.disabled = !hasInput || isRequestActive || isRecording;
+        console.log('Send button state updated:', { hasInput, isRequestActive, isRecording, disabled: uiElements.sendBtn.disabled });
+    } else {
+        console.warn('One or more uiElements are missing:', uiElements);
+    }
 }
+
 
 // Render markdown content with RTL support
 function renderMarkdown(el) {

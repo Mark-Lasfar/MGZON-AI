@@ -1,9 +1,9 @@
 from fastapi_users import FastAPIUsers
-from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
+from fastapi_users.authentication import BearerTransport, JWTStrategy, AuthenticationBackend
 from httpx_oauth.clients.google import GoogleOAuth2
 from httpx_oauth.clients.github import GitHubOAuth2
 from fastapi_users.manager import BaseUserManager, IntegerIDMixin
-from fastapi import Depends, Request, FastAPI, Response
+from fastapi import Depends, Request, Response, FastAPI
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -22,7 +22,8 @@ from api.models import UserRead, UserCreate, UserUpdate
 # إعداد اللوقينج
 logger = logging.getLogger(__name__)
 
-cookie_transport = CookieTransport(cookie_max_age=3600, cookie_name="fastapiusersauth")
+# استخدام BearerTransport بدل CookieTransport
+bearer_transport = BearerTransport(tokenUrl="/auth/jwt/login")
 
 SECRET = os.getenv("JWT_SECRET")
 if not SECRET or len(SECRET) < 32:
@@ -34,7 +35,7 @@ def get_jwt_strategy() -> JWTStrategy:
 
 auth_backend = AuthenticationBackend(
     name="jwt",
-    transport=cookie_transport,
+    transport=bearer_transport,  # تغيير إلى BearerTransport
     get_strategy=get_jwt_strategy,
 )
 
@@ -44,7 +45,6 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 
-# تحقق من توافر بيانات الاعتماد
 if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET]):
     logger.error("One or more OAuth environment variables are missing.")
     raise ValueError("All OAuth credentials are required.")
@@ -141,7 +141,6 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         await self.on_after_login(user, request)
         return user
 
-# استدعاء user manager من get_user_db
 async def get_user_manager(user_db: CustomSQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
@@ -152,7 +151,6 @@ fastapi_users = FastAPIUsers[User, int](
 
 current_active_user = fastapi_users.current_user(active=True, optional=True)
 
-# دالة مساعدة لتوليد JWT token يدويًا
 async def generate_jwt_token(user: User, secret: str, lifetime_seconds: int) -> str:
     payload = {
         "sub": str(user.id),
@@ -160,8 +158,6 @@ async def generate_jwt_token(user: User, secret: str, lifetime_seconds: int) -> 
         "exp": int(datetime.utcnow().timestamp()) + lifetime_seconds,
     }
     return jwt.encode(payload, secret, algorithm="HS256")
-
-# --- إضافة custom authorize endpoints (يرجع JSON مع authorization_url) ---
 
 async def custom_google_authorize(
     state: Optional[str] = None,
@@ -191,8 +187,6 @@ async def custom_github_authorize(
         "authorization_url": authorization_url
     }, status_code=200)
 
-# --- Custom Callback endpoints ---
-
 async def custom_oauth_callback(
     code: str,
     state: Optional[str] = None,
@@ -204,15 +198,12 @@ async def custom_oauth_callback(
 ):
     logger.debug(f"Processing Google callback with code: {code}, state: {state}")
     try:
-        # تحقق من الـ state لو موجود (اختياري لـ CSRF protection)
         if state:
             logger.debug(f"Received state: {state}")
 
-        # Get access token
         token_data = await oauth_client.get_access_token(code, redirect_url)
         access_token = token_data["access_token"]
         
-        # Manually fetch user info from Google API
         async with httpx.AsyncClient() as client:
             user_info_response = await client.get(
                 "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -234,30 +225,25 @@ async def custom_oauth_callback(
             is_verified_by_default=True,
         )
 
-        # توليد الـ JWT token يدويًا
         token = await generate_jwt_token(user, SECRET, 3600)
+        
+        # ما نضبطش cookie لأننا بنستخدم Bearer token
+        # response.set_cookie(
+        #     key="fastapiusersauth",
+        #     value=token,
+        #     max_age=3600,
+        #     httponly=True,
+        #     samesite="lax",
+        #     secure=True,
+        # )
 
-        # ضبط الـ cookie يدويًا
-        response.set_cookie(
-            key="fastapiusersauth",
-            value=token,
-            max_age=3600,
-            httponly=True,
-            samesite="lax",
-            secure=True,
-        )
-
-        # تحقق إذا كان الطلب من التطبيق (Capacitor) أو الويب
         is_app = request.headers.get("X-Capacitor-App", False)
-
         if is_app:
-            # للتطبيق: إرجاع JSON مع الـ token
             return JSONResponse(content={
                 "message": "Google login successful",
                 "access_token": token
             }, status_code=200)
         else:
-            # للويب: إرجاع redirect إلى /chat مع الـ token كـ query parameter
             return RedirectResponse(url=f"/chat?access_token={token}", status_code=303)
 
     except Exception as e:
@@ -275,15 +261,12 @@ async def custom_github_oauth_callback(
 ):
     logger.debug(f"Processing GitHub callback with code: {code}, state: {state}")
     try:
-        # تحقق من الـ state لو موجود (اختياري لـ CSRF protection)
         if state:
             logger.debug(f"Received state: {state}")
 
-        # Get access token
         token_data = await oauth_client.get_access_token(code, redirect_url)
         access_token = token_data["access_token"]
         
-        # Manually fetch user info from GitHub API
         async with httpx.AsyncClient() as client:
             user_info_response = await client.get(
                 "https://api.github.com/user",
@@ -296,7 +279,6 @@ async def custom_github_oauth_callback(
                 raise ValueError(f"Failed to fetch user info: {user_info_response.text}")
             user_info = user_info_response.json()
 
-            # Get email if not in user info
             email = user_info.get("email")
             if not email:
                 email_response = await client.get(
@@ -323,37 +305,31 @@ async def custom_github_oauth_callback(
             is_verified_by_default=True,
         )
 
-        # توليد الـ JWT token يدويًا
         token = await generate_jwt_token(user, SECRET, 3600)
+        
+        # ما نضبطش cookie لأننا بنستخدم Bearer token
+        # response.set_cookie(
+        #     key="fastapiusersauth",
+        #     value=token,
+        #     max_age=3600,
+        #     httponly=True,
+        #     samesite="lax",
+        #     secure=True,
+        # )
 
-        # ضبط الـ cookie يدويًا
-        response.set_cookie(
-            key="fastapiusersauth",
-            value=token,
-            max_age=3600,
-            httponly=True,
-            samesite="lax",
-            secure=True,
-        )
-
-        # تحقق إذا كان الطلب من التطبيق (Capacitor) أو الويب
         is_app = request.headers.get("X-Capacitor-App", False)
-
         if is_app:
-            # للتطبيق: إرجاع JSON مع الـ token
             return JSONResponse(content={
                 "message": "GitHub login successful",
                 "access_token": token
             }, status_code=200)
         else:
-            # للويب: إرجاع redirect إلى /chat مع الـ token كـ query parameter
             return RedirectResponse(url=f"/chat?access_token={token}", status_code=303)
 
     except Exception as e:
         logger.error(f"Error in GitHub OAuth callback: {str(e)}")
         return JSONResponse(content={"detail": str(e)}, status_code=400)
 
-# تضمين الراوترات داخل التطبيق
 def get_auth_router(app: FastAPI):
     app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
     app.include_router(fastapi_users.get_register_router(UserRead, UserCreate), prefix="/auth", tags=["auth"])
@@ -361,7 +337,6 @@ def get_auth_router(app: FastAPI):
     app.include_router(fastapi_users.get_verify_router(UserRead), prefix="/auth", tags=["auth"])
     app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate), prefix="/users", tags=["users"])
 
-    # إضافة الـ custom OAuth endpoints يدويًا
     app.get("/auth/google/authorize")(custom_google_authorize)
     app.get("/auth/google/callback")(custom_oauth_callback)
     app.get("/auth/github/authorize")(custom_github_authorize)
