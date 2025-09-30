@@ -227,8 +227,7 @@ async def custom_oauth_callback(
 
         token = await generate_jwt_token(user, SECRET, 3600)
         
-        # ما نضبطش cookie لأننا بنستخدم Bearer token
-        # response.set_cookie(
+                # response.set_cookie(
         #     key="fastapiusersauth",
         #     value=token,
         #     max_age=3600,
@@ -236,6 +235,22 @@ async def custom_oauth_callback(
         #     samesite="lax",
         #     secure=True,
         # )
+        
+        is_app = request.headers.get("X-Capacitor-App", False)
+        if is_app:
+            return JSONResponse(content={
+                "message": "Google login successful",
+                "access_token": token
+            }, status_code=200)
+        else:
+            # إرجاع الـ token في الـ Authorization header
+            response.headers["Authorization"] = f"Bearer {token}"
+            return RedirectResponse(url="/chat", status_code=303)
+
+    except Exception as e:
+        logger.error(f"Error in Google OAuth callback: {str(e)}")
+        return JSONResponse(content={"detail": str(e)}, status_code=400)
+
 
         is_app = request.headers.get("X-Capacitor-App", False)
         if is_app:

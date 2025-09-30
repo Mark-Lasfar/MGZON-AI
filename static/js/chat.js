@@ -54,15 +54,17 @@ let abortController = null;
 
 
 async function checkAuth() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessTokenFromUrl = urlParams.get('access_token');
-    if (accessTokenFromUrl) {
-        console.log('Access token found in URL, saving to localStorage');
-        localStorage.setItem('token', accessTokenFromUrl);
-        window.history.replaceState({}, document.title, '/chat');
+    let token = localStorage.getItem('token');
+    if (!token) {
+        // حاول جيب الـ token من الـ response headers
+        const response = await fetch('/chat', { method: 'GET' });
+        token = response.headers.get('Authorization')?.replace('Bearer ', '');
+        if (token) {
+            console.log('Access token found in response headers, saving to localStorage');
+            localStorage.setItem('token', token);
+        }
     }
 
-    let token = localStorage.getItem('token');
     if (!token && typeof Cookies !== 'undefined') {
         token = Cookies.get('fastapiusersauth');
         if (token) {
@@ -72,7 +74,7 @@ async function checkAuth() {
     }
 
     if (!token) {
-        console.log('No auth token found in localStorage or cookie');
+        console.log('No auth token found in localStorage, headers, or cookie');
         return { authenticated: false, user: null };
     }
 
@@ -105,7 +107,6 @@ async function checkAuth() {
         return { authenticated: false, user: null };
     }
 }
-
 
 async function handleSession() {
     const sessionId = sessionStorage.getItem('session_id');
