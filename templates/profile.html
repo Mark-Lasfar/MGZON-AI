@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Profile of Mark Al-Asfar, AI Developer and Founder of MGZon Chatbot.">
+    <meta name="keywords" content="Mark Al-Asfar, AI Developer, MGZon, Chatbot Developer, Full Stack Developer">
+
+    <meta name="author" content="Mark Al-Asfar">
+    <title>Mark Al-Asfar - AI Developer</title>
+    <link rel="manifest" href="https://mgzon-mgzon-app.hf.space/static/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://mgzon-mgzon-app.hf.space/static/images/mg.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="MGZon">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#00f0ff">
+    <!-- Open Graph / Twitter Cards -->
+    <meta property="og:title" content="Mark Al-Asfar - AI Developer">
+    <meta property="og:description" content="Profile of Mark Al-Asfar, AI Developer and Founder of MGZon Chatbot.">
+    <meta property="og:image" content="https://mgzon-mgzon-app.hf.space/static/images/ibrahim_elasfar.png">
+    <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/profile">
+    <meta property="og:type" content="profile">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Mark Al-Asfar - AI Developer">
+    <meta name="twitter:description" content="Profile of Mark Al-Asfar, AI Developer and Founder of MGZon Chatbot.">
+    <meta name="twitter:image" content="https://mgzon-mgzon-app.hf.space/static/images/ibrahim_elasfar.png">
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    [
+        {
+            "@context": "https://schema.org",
+            "@type": "Person",
+            "name": "Mark Elasfar",
+            "url": "https://mark-elasfar.web.app/",
+            "image": "https://mark-elasfar.web.app/profile.jpg",
+            "jobTitle": "AI Developer and Founder of MGZon",
+            "description": "Mark Al-Asfar is a developer specializing in AI, web development, and e-commerce solutions. He is the founder of MGZon, an AI-powered chatbot platform.",
+            "sameAs": [
+                "https://github.com/Mark-Lasfar/",
+                "https://www.linkedin.com/in/ibrahim-elasfar/",
+                "https://x.com/mgz0n"
+            ],
+            "worksFor": {
+                "@type": "Organization",
+                "name": "MGZon",
+                "url": "https://mgzon-mgzon-app.hf.space/"
+            },
+            "inLanguage": "en"
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "MGZon Chatbot",
+            "url": "https://mgzon-mgzon-app.hf.space/",
+            "description": "MGZon is an AI-powered chatbot for code generation, web search, and e-commerce solutions, developed by Mark Al-Asfar.",
+            "keywords": "AI chatbot, code generation, e-commerce AI, offline AI, TTS Arabic",
+            "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+            },
+            "inLanguage": "en"
+        }
+    ]
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <style>
+        :root {
+            --font-sans: 'Poppins', sans-serif;
+            --font-mono: 'Orbitron', monospace;
+            --radius: 1rem;
+        }
+
+        :root.dark {
+            --background: 220 70% 10%;
+            --foreground: 0 0% 95%;
+            --card: 220 70% 15%;
+            --card-foreground: 0 0% 90%;
+            --primary: 180 100% 50%;
+            --primary-foreground: 0 0% 0%;
+            --secondary: 260 80% 30%;
+            --secondary-foreground: 0 0% 95%;
+            --muted: 220 50% 20%;
+            --muted-foreground: 0 0% 70%;
+            --accent: 320 100% 60%;
+            --accent-foreground: 0 0% 95%;
+            --border: 220 50% 25%;
+        }
+
+        :root.light {
+            --background: 0 0% 100%;
+            --foreground: 220 70% 10%;
+            --card: 0 0% 95%;
+            --card-foreground: 220 70% 15%;
+            --primary: 180 100% 50%;
+            --primary-foreground: 0 0% 100%;
+            --secondary: 260 80% 40%;
+            --secondary-foreground: 0 0% 10%;
+            --muted: 0 0% 90%;
+            --muted-foreground: 0 0% 40%;
+            --accent: 320 100% 50%;
+            --accent-foreground: 0 0% 10%;
+            --border: 0 0% 80%;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: var(--radius);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+        }
+
+        .glass:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .link-button {
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            color: hsl(var(--primary-foreground));
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-family: var(--font-mono);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .link-button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 20px hsl(var(--primary) / 0.5);
+        }
+
+        .link-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .link-button:hover::before {
+            left: 100%;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted)));
+            border: 1px solid hsl(var(--border));
+            color: hsl(var(--card-foreground));
+            padding: 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            transform: scale(1.2) rotate(360deg);
+            box-shadow: 0 10px 20px hsl(var(--primary) / 0.5);
+        }
+
+        .progress-bar {
+            background: hsl(var(--muted));
+            border-radius: var(--radius);
+            height: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        .skill-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .skill-item:hover .skill-icon {
+            transform: scale(1.2);
+        }
+
+        .wave-divider {
+            height: 120px;
+            background: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wave-divider::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--background)));
+            border-radius: 50%;
+            animation: wave 10s ease-in-out infinite;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: translateX(-50%) translateY(70%); }
+            50% { transform: translateX(-50%) translateY(50%); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .footer-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px hsl(var(--foreground) / 0.2);
+        }
+
+        .footer-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 30px hsl(var(--primary) / 0.4);
+        }
+
+        .footer-card-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .footer-card:hover .footer-card-icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        #chatBox .message {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: var(--radius);
+        }
+
+        #chatBox .user-message {
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            color: hsl(var(--primary-foreground));
+            text-align: right;
+        }
+
+        #chatBox .bot-message {
+            background: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+            text-align: left;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+    <div class="container flex flex-col items-center min-h-screen py-12">
+        <img src="https://mgzon-mgzon-app.hf.space/static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6" style="animation: fadeIn 1s ease-out;">
+        <h1 class="text-4xl font-bold mb-4 font-[var(--font-mono)] bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] bg-clip-text text-transparent" style="animation: fadeIn 1s ease-out 0.3s both;">
+            Mark Al-Asfar - AI Developer
+        </h1>
+        <div class="glass p-8 max-w-3xl w-full text-center" style="animation: fadeIn 1s ease-out 0.6s both;">
+            <img src="https://mgzon-mgzon-app.hf.space/static/images/ibrahim_elasfar.png" alt="Mark Al-Asfar" class="w-32 h-32 rounded-full mx-auto mb-4">
+            <h2 class="text-3xl font-semibold mb-2 font-[var(--font-mono)]">Mark Al-Asfar</h2>
+            <p class="text-lg mb-2">Full Stack Web Developer & AI Developer</p>
+            <p class="text-[hsl(var(--muted-foreground))] mb-4">Specializing in AI, web development, and e-commerce solutions. Founder of MGZon.</p>
+            <div class="flex justify-center gap-4 flex-wrap">
+                <a href="https://mgzon-mgzon-app.hf.space" target="_blank" class="link-button">
+                    MGZon Home <i class="bx bx-home-alt ml-2"></i>
+                </a>
+                <a href="https://mgzon-mgzon-app.hf.space/chat" target="_blank" class="link-button">
+                    MGZon Chat <i class="bx bx-chat ml-2"></i>
+                </a>
+                <a href="https://mark-elasfar.web.app/" target="_blank" class="link-button">
+                    Personal Website <i class="bx bx-link-external ml-2"></i>
+                </a>
+                <a href="https://github.com/Mark-Lasfar" target="_blank" class="link-button">
+                    GitHub <i class="bx bxl-github ml-2"></i>
+                </a>
+                <a href="https://www.linkedin.com/in/ibrahim-elasfar" target="_blank" class="link-button">
+                    LinkedIn <i class="bx bxl-linkedin ml-2"></i>
+                </a>
+                <a href="https://x.com/mgz0m" target="_blank" class="link-button">
+                    X <i class="bx bxl-twitter ml-2"></i>
+                </a>
+                <a href="https://drive.google.com/file/d/1-gtlJpAQI5ztA1s0EtQAP-RLxkfw2jG_/view?usp=sharing" download class="link-button">
+                    Download CV <i class="bx bx-download ml-2"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="glass p-8 max-w-3xl w-full mt-8" style="animation: fadeIn 1s ease-out 0.9s both;">
+            <h3 class="text-2xl font-semibold mb-4 font-[var(--font-mono)]">About Me</h3>
+            <p class="text-lg mb-4">Mark Al-Asfar is the founder of MGZon, an AI-powered chatbot platform designed for code generation, web search, and e-commerce solutions. With expertise in AI and web development, Mark is dedicated to building innovative solutions for global users.</p>
+            <img src="https://mgzon-mgzon-app.hf.space/static/images/mac.png" alt="Mark's Workspace" class="w-full max-w-md mx-auto rounded-lg" style="animation: fadeIn 1s ease-out 1.2s both;">
+        </div>
+
+        <div class="glass p-8 max-w-3xl w-full mt-8" style="animation: fadeIn 1s ease-out 1.2s both;">
+            <h3 class="text-2xl font-semibold mb-4 font-[var(--font-mono)]">Ask MGZon AI</h3>
+            <div id="chatBox" class="p-4 rounded-lg max-h-96 overflow-y-auto" style="animation: fadeIn 1s ease-out 1.5s both;"></div>
+            <form id="chatForm" class="flex space-x-2 mt-4">
+                <input id="chatInput" type="text" placeholder="Ask about MGZon or Mark Al-Asfar..." class="flex-1 p-2 rounded-lg border dark:border-gray-700 bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))]" style="animation: fadeIn 1s ease-out 1.8s both;">
+                <button type="submit" class="link-button">Send <i class="bx bx-send ml-2"></i></button>
+            </form>
+        </div>
+
+        <div class="glass p-8 max-w-3xl w-full mt-8" style="animation: fadeIn 1s ease-out 2.1s both;">
+            <h3 class="text-2xl font-semibold mb-4 font-[var(--font-mono)]">My Goals</h3>
+            <p class="text-lg">My mission is to advance artificial intelligence by developing cutting-edge systems that empower businesses and individuals. Through MGZon, I aim to create AI solutions that simplify complex tasks, enhance user experiences, and provide accessible tools for everyone. I am passionate about helping others achieve their goals by leveraging technology to solve real-world problems.</p>
+            <blockquote class="border-l-4 border-[hsl(var(--primary))] pl-4 mt-4 italic text-[hsl(var(--muted-foreground))]">
+                "If you want to set a goal, set it at the stars. Because even if you lose this goal, you will definitely reach the moon. Motivate yourself constantly because you deserve to be the best."
+            </blockquote>
+        </div>
+
+        <div class="glass p-8 max-w-3xl w-full mt-8" style="animation: fadeIn 1s ease-out 2.4s both;">
+            <h3 class="text-2xl font-semibold mb-4 font-[var(--font-mono)]">Education</h3>
+            <p class="text-lg">Bachelor's Degree in Computers and Information</p>
+            <p class="text-[hsl(var(--muted-foreground))]">Alexandria University, Egypt</p>
+        </div>
+
+        <div class="glass p-8 max-w-3xl w-full mt-8" style="animation: fadeIn 1s ease-out 2.7s both;">
+            <h3 class="text-2xl font-semibold mb-4 font-[var(--font-mono)]">Professional Skills</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-html5 text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">HTML5</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 95%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-css3 text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">CSS3</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-javascript text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">JavaScript</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 65%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bx-palette text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">UX/UI</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-django text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">Django</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-react text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">React</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 60%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-nodejs text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">Node.js</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 65%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-python text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">Python</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-php text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">PHP</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-typescript text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">TypeScript</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 69%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-docker text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">Docker</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 80%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-postgresql text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">PostgreSQL</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bx-file text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">Microsoft Word</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bx-spreadsheet text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">Microsoft Excel</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 70%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bx-server text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">Linux Server</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bx-briefcase text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">Microsoft Suite</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bx-data text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">SQL</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 80%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-git text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">Git</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 75%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skill-item flex items-center gap-2">
+                    <i class="bx bxl-tux text-2xl text-[hsl(var(--primary))] skill-icon"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold">Linux</p>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 95%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wave-divider"></div>
+
+    <footer class="footer py-12">
+        <div class="container">
+            <img src="https://mgzon-mgzon-app.hf.space/static/images/mg.svg" alt="MGZon Logo" class="w-24 h-24 mx-auto mb-6" style="animation: fadeIn 1s ease-out;">
+            <p class="mb-4 text-center">
+                Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-[hsl(var(--primary))] hover:underline">Mark Al-Asfar</a>
+                | Powered by <a href="https://mgzon-mgzon-app.hf.space/" target="_blank" class="text-[hsl(var(--primary))] hover:underline">MGZon AI</a>
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <div class="footer-card glass p-4 cursor-pointer" onclick="showCardDetails('email')">
+                    <i class="bx bx-mail-send text-3xl text-[hsl(var(--primary))] mb-2 footer-card-icon"></i>
+                    <h4 class="font-semibold mb-1">Email Us</h4>
+                    <p><a href="mailto:support@mgzon.com" class="text-[hsl(var(--primary))] hover:underline">support@mgzon.com</a></p>
+                    <div id="email-details" class="hidden mt-4 p-4 bg-[hsl(var(--muted))] rounded-lg">
+                        <p>Reach out to our support team for any inquiries or assistance.</p>
+                        <button onclick="closeCardDetails('email')" class="link-button mt-2">Close</button>
+                    </div>
+                </div>
+                <div class="footer-card glass p-4 cursor-pointer" onclick="showCardDetails('phone')">
+                    <i class="bx bx-phone text-3xl text-[hsl(var(--primary))] mb-2 footer-card-icon"></i>
+                    <h4 class="font-semibold mb-1">Phone Support</h4>
+                    <p>+20 1212444617</p>
+                    <div id="phone-details" class="hidden mt-4 p-4 bg-[hsl(var(--muted))] rounded-lg">
+                        <p>Contact our support team via phone for immediate assistance.</p>
+                        <button onclick="closeCardDetails('phone')" class="link-button mt-2">Close</button>
+                    </div>
+                </div>
+                <div class="footer-card glass p-4 cursor-pointer" onclick="showCardDetails('community')">
+                    <i class="bx bx-group text-3xl text-[hsl(var(--primary))] mb-2 footer-card-icon"></i>
+                    <h4 class="font-semibold mb-1">Community</h4>
+                    <p><a href="https://mgzon-mgzon-app.hf.space/community" class="text-[hsl(var(--primary))] hover:underline">Join us</a></p>
+                    <div id="community-details" class="hidden mt-4 p-4 bg-[hsl(var(--muted))] rounded-lg">
+                        <p>Join our vibrant community to share ideas and collaborate.</p>
+                        <button onclick="closeCardDetails('community')" class="link-button mt-2">Close</button>
+                    </div>
+                </div>
+                <div class="footer-card glass p-4 cursor-pointer" onclick="showCardDetails('api-docs')">
+                    <i class="bx bx-code-alt text-3xl text-[hsl(var(--primary))] mb-2 footer-card-icon"></i>
+                    <h4 class="font-semibold mb-1">API Docs</h4>
+                    <p><a href="/docs" class="text-[hsl(var(--primary))] hover:underline">Explore Docs</a></p>
+                    <div id="api-docs-details" class="hidden mt-4 p-4 bg-[hsl(var(--muted))] rounded-lg">
+                        <p>Explore our API documentation for seamless integration.</p>
+                        <button onclick="closeCardDetails('api-docs')" class="link-button mt-2">Close</button>
+                    </div>
+                </div>
+                <div class="footer-card glass p-4 cursor-pointer" onclick="showCardDetails('faq')">
+                    <i class="bx bx-help-circle text-3xl text-[hsl(var(--primary))] mb-2 footer-card-icon"></i>
+                    <h4 class="font-semibold mb-1">FAQ</h4>
+                    <p><a href="https://mgzon-mgzon-app.hf.space/faq" class="text-[hsl(var(--primary))] hover:underline">Read FAQ</a></p>
+                    <div id="faq-details" class="hidden mt-4 p-4 bg-[hsl(var(--muted))] rounded-lg">
+                        <p>Find answers to common questions in our FAQ section.</p>
+                        <button onclick="closeCardDetails('faq')" class="link-button mt-2">Close</button>
+                    </div>
+                </div>
+                <div class="footer-card glass p-4 cursor-pointer" onclick="showCardDetails('docs')">
+                    <i class="bx bx-book text-3xl text-[hsl(var(--primary))] mb-2 footer-card-icon"></i>
+                    <h4 class="font-semibold mb-1">Documentation</h4>
+                    <p><a href="/docs" class="text-[hsl(var(--primary))] hover:underline">Full Docs</a></p>
+                    <div id="docs-details" class="hidden mt-4 p-4 bg-[hsl(var(--muted))] rounded-lg">
+                        <p>Access comprehensive documentation for MGZon Chatbot.</p>
+                        <button onclick="closeCardDetails('docs')" class="link-button mt-2">Close</button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-center gap-6 mt-6">
+                <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition"><i class="bx bxl-github"></i></a>
+                <a href="https://x.com/MGZon" class="text-2xl text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition"><i class="bx bxl-twitter"></i></a>
+                <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition"><i class="bx bxl-facebook"></i></a>
+            </div>
+            <p class="mt-6 text-center">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Particles.js initialization
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: ['#00f0ff', '#ff007a', '#6b21a8'] },
+                shape: { type: 'circle' },
+                opacity: { value: 0.5, random: true },
+                size: { value: 3, random: true },
+                line_linked: { enable: true, distance: 150, color: '#00f0ff', opacity: 0.4, width: 1 },
+                move: { enable: true, speed: 3, direction: 'none', random: true }
+            },
+            interactivity: {
+                detect_on: 'canvas',
+                events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' } },
+                modes: { repulse: { distance: 100 }, push: { particles_nb: 4 } }
+            },
+            retina_detect: true
+        });
+
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const button = document.querySelector('.theme-toggle');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                button.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.remove('light');
+                html.classList.add('dark');
+                button.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme preference or system preference
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.classList.remove('dark', 'light');
+            document.documentElement.classList.add(savedTheme);
+            document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+            document.querySelector('.theme-toggle').textContent = '☀️';
+            localStorage.setItem('theme', 'light');
+        }
+
+        // Handle card details toggle
+        function showCardDetails(cardId) {
+            document.getElementById(`${cardId}-details`).classList.remove('hidden');
+        }
+
+        function closeCardDetails(cardId) {
+            document.getElementById(`${cardId}-details`).classList.add('hidden');
+        }
+
+        // Chatbot functionality
+        const dataset = [
+            {
+                prompt: "من هو إبراهيم الأصفر؟",
+                response: "إبراهيم ماجد محمد الأصفر هو مطور ويب Full Stack ومؤسس منصة MGZon AI، منصة تجارة إلكترونية ذكية مستوحاة من Amazon وShopify، ويمتلك خبرة أكثر من 5 سنوات في تطوير البرمجيات."
+            },
+            {
+                prompt: "Who is Ibrahim Al-Asfar?",
+                response: "Ibrahim Maged Mohamed Al-Asfar is a Full Stack Web Developer and the founder of MGZon AI, an AI-driven e-commerce platform inspired by Amazon and Shopify, with over 5 years of programming experience."
+            },
+            {
+                prompt: "ما هي منصة MGZon AI؟",
+                response: "MGZon AI هي منصة تجارة إلكترونية بتقنيات ذكاء اصطناعي توفر تجربة تسوق مخصصة ومتاجر مخصصة للبائعين، مع تكامل للدفع، التخزين (في الولايات المتحدة، كندا، الصين)، الدروب شيبنج، والتسويق."
+            },
+            {
+                prompt: "What is MGZon AI?",
+                response: "MGZon AI is an AI-driven e-commerce platform inspired by Amazon and Shopify, offering personalized shopping experiences and dedicated vendor stores, with integrations for payment, warehousing (U.S., Canada, China), dropshipping, and marketing."
+            },
+            {
+                question: "إيه خطوات الـ OAuth flow في MGZon؟",
+                answer: "1. وجه المستخدم لـ `/api/auth/mgz` مع `client_id`، `redirect_uri`، `scope`، و`state`. 2. المستخدم بيوافق على الصلاحيات. 3. MGZon بتعيد توجيه لـ `redirect_uri` مع `code`. 4. أرسل طلب POST إلى `/api/token` مع `code`، `client_id`، `client_secret`، و`redirect_uri` عشان تحصل على `access_token` و`refresh_token`. 5. استخدم `access_token` في طلبات API مثل `/api/userinfo`."
+            },
+            {
+                question: "إزاي أحصل على access token بعد موافقة المستخدم؟",
+                answer: 'أرسل طلب POST إلى `/api/token` مع: ```json { "grant_type": "authorization_code", "code": "AUTH_CODE", "client_id": "YOUR_CLIENT_ID", "client_secret": "YOUR_CLIENT_SECRET", "redirect_uri": "YOUR_REDIRECT_URI" } ``` الاستجابة هتديك `access_token`، `refresh_token`، و`expires_in`.'
+            }
+            // Add more dataset entries as needed
+        ];
+
+        const chatBox = document.getElementById('chatBox');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+
+        chatForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const query = chatInput.value.trim();
+            if (!query) return;
+
+            // Display user message
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user-message';
+            userMessage.textContent = query;
+            chatBox.appendChild(userMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Search dataset for matching prompt or question
+            const result = dataset.find(item => 
+                (item.prompt && item.prompt.toLowerCase() === query.toLowerCase()) ||
+                (item.question && item.question.toLowerCase() === query.toLowerCase())
+            );
+
+            // Display bot response
+            const botMessage = document.createElement('div');
+            botMessage.className = 'message bot-message';
+            if (result) {
+                botMessage.textContent = result.response || result.answer || 'No answer found.';
+            } else {
+                botMessage.textContent = 'Sorry, I couldn\'t find an answer. Please try another question or visit our dataset for more details: https://huggingface.co/datasets/MGZON/mgzon-oauth-dataset';
+                botMessage.innerHTML += '<br><a href="https://huggingface.co/datasets/MGZON/mgzon-oauth-dataset" target="_blank" class="text-[hsl(var(--primary))] hover:underline">View Dataset</a>';
+            }
+            chatBox.appendChild(botMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Clear input
+            chatInput.value = '';
+        });
+    </script>
+</body>
+</html>

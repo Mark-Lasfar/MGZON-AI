@@ -1,58 +1,63 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="dark" dir="ltr">
 <head>
+    <!-- Basic Meta Tags -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MGZon Chatbot – AI-powered assistant for code generation, web search, and e-commerce solutions by Mark Al-Asfar from Alexandria, Egypt.">
-    <meta name="keywords" content="MGZon Chatbot, AI assistant, code generation, e-commerce, Mark Al-Asfar, United States, FastAPI, Gradio">
-    <meta name="author" content="Mark Al-Asfar">
     <meta name="robots" content="index, follow">
-    <title>MGZon Chatbot – Powered by AI</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="manifest" href="/static/manifest.json">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/mg-180.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="MGZon">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#00f0ff">
-    <meta property="og:title" content="MGZon Chatbot – AI-Powered Solutions">
-    <meta property="og:description" content="Explore MGZon Chatbot for code generation, web search, and e-commerce solutions by Mark Al-Asfar.">
-    <meta property="og:image" content="/static/images/mg.svg">
-    <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="MGZon Chatbot – AI-Powered Solutions">
-    <meta name="twitter:description" content="Explore MGZon Chatbot for code generation, web search, and e-commerce solutions by Mark Al-Asfar.">
-    <meta name="twitter:image" content="/static/images/mg.svg">
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "MGZon Chatbot",
-      "url": "https://mgzon-mgzon-app.hf.space/",
-      "description": "MGZon Chatbot by Mark Al-Asfar: Your AI assistant for code generation, real-time web search, and e-commerce solutions.",
-      "keywords": ["MGZon Chatbot", "AI chatbot", "Code generation AI", "E-commerce AI solutions", "Mark Al-Asfar", "AI assistant for developers", "FastAPI chatbot", "Real-time web search AI", "MGZon AI", "Python AI chatbot", "AI for coding", "E-commerce automation", "Hugging Face AI", "2025 AI trends", "chatgpt", "grok", "deepseek", "text generation"],
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "name": "MGZon AI",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "/static/images/mg.svg"
-        }
-      }
-    }
-    </script>
+
+    <!-- Hreflang for Multilingual Support -->
+    <link rel="canonical" href="https://mgzon-mgzon-app.hf.space/" />
+    <link rel="alternate" hreflang="en" href="https://mgzon-mgzon-app.hf.space/?lang=en" />
+    <link rel="alternate" hreflang="zh" href="https://mgzon-mgzon-app.hf.space/?lang=zh" />
+    <link rel="alternate" hreflang="hi" href="https://mgzon-mgzon-app.hf.space/?lang=hi" />
+    <link rel="alternate" hreflang="es" href="https://mgzon-mgzon-app.hf.space/?lang=es" />
+    <link rel="alternate" hreflang="ar" href="https://mgzon-mgzon-app.hf.space/?lang=ar" />
+    <link rel="alternate" hreflang="fr" href="https://mgzon-mgzon-app.hf.space/?lang=fr" />
+    <link rel="alternate" hreflang="bn" href="https://mgzon-mgzon-app.hf.space/?lang=bn" />
+    <link rel="alternate" hreflang="pt" href="https://mgzon-mgzon-app.hf.space/?lang=pt" />
+    <link rel="alternate" hreflang="ru" href="https://mgzon-mgzon-app.hf.space/?lang=ru" />
+    <link rel="alternate" hreflang="ur" href="https://mgzon-mgzon-app.hf.space/?lang=ur" />
+    <link rel="alternate" hreflang="id" href="https://mgzon-mgzon-app.hf.space/?lang=id" />
+    <link rel="alternate" hreflang="de" href="https://mgzon-mgzon-app.hf.space/?lang=de" />
+
+    <!-- Default Meta Tags -->
+    <title>MGZon - Offline AI Chat | AI Voice Chat & TTS</title>
+    <meta name="description" content="MGZon is an offline AI app supporting TTS and Arabic pronunciation, AI assistant for coding, learning, and shopping." />
+    <meta name="keywords" content="MGZon, AI assistant, Offline AI, Chat AI, FastAPI chatbot, TTS Arabic, Mark Al-Asfar, AI coding assistant, Ecommerce AI, Python chatbot, Hugging Face AI" />
+    <meta name="author" content="Mark Al-Asfar" />
+
+    <!-- Open Graph and Twitter Cards -->
+    <meta property="og:title" content="MGZon Chatbot – AI-Powered Solutions" />
+    <meta property="og:description" content="Explore MGZon Chatbot for code generation, web search, and e-commerce solutions by Mark Al-Asfar." />
+    <meta property="og:image" content="/static/images/mg.svg" />
+    <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MGZon Chatbot – AI-Powered Solutions" />
+    <meta name="twitter:description" content="Explore MGZon Chatbot for code generation, web search, and e-commerce solutions by Mark Al-Asfar." />
+    <meta name="twitter:image" content="/static/images/mg.svg" />
+
+    <!-- Icons and Manifest -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/mg-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MGZon" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#00f0ff" />
+
+    <!-- Libraries and Styles -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Poppins:wght@300;400;600&family=Noto+Naskh+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://unpkg.com/franc@6.1.0/index.js"></script>
+
+    <!-- Custom Styles -->
+
     <style>
         :root {
             --font-sans: 'Poppins', sans-serif;
@@ -502,6 +507,66 @@
             }
         }
     </style>
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Mark Elasfar",
+      "url": "https://mark-elasfar.web.app/",
+      "image": [
+        "https://mark-lasfar.github.io/ofline-chat/images/mac.png",
+        "https://mark-lasfar.github.io/ofline-chat/images/ibrahim_elasfar.png"
+      ],
+      "sameAs": [
+        "https://github.com/Mark-Lasfar",
+        "https://x.com/mgz0n",
+        "https://www.linkedin.com/in/ibrahim-elasfar/"
+      ],
+      "jobTitle": "Full Stack Developer",
+      "worksFor": {
+        "@type": "Organization",
+        "name": "Mgzon AI"
+      },
+      "description": "Mark Elasfar is a developer and founder of Mgzon AI, a project focused on offline AI chat and Arabic TTS technologies.",
+      "knowsAbout": [
+        "AI",
+        "TTS",
+        "Web Development",
+        "Offline Chatbots",
+        "Machine Learning",
+        "JavaScript",
+        "Python"
+      ],
+      "alumniOf": "Mgzon AI Academy",
+      "inLanguage": "en"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "MGZon Chatbot",
+      "url": "https://mgzon-mgzon-app.hf.space/",
+      "description": "MGZon Chatbot by Mark Al-Asfar: Your AI assistant for code generation, real-time web search, and e-commerce solutions.",
+      "keywords": ["MGZon Chatbot", "AI chatbot", "Code generation AI", "E-commerce AI solutions", "Mark Al-Asfar", "AI assistant for developers", "FastAPI chatbot", "Real-time web search AI", "MGZon AI", "Python AI chatbot", "AI for coding", "E-commerce automation", "Hugging Face AI", "2025 AI trends", "chatgpt", "grok", "deepseek", "text generation"],
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MGZon AI",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "/static/images/mg.svg"
+        }
+      },
+      "inLanguage": "en"
+    }
+    </script>
 </head>
 <body>
     <div id="particles-js"></div>
@@ -514,115 +579,114 @@
         </div>
     </header>
 
-    <section class="hero">
-        <div class="container">
-            <h1 class="hero-tagline">MGZon Chatbot – Powered by AI</h1>
-            <p class="subtitle">
-                MGZon Chatbot is an <span class="highlight">AI-powered assistant</span> for code generation, web search, and e-commerce solutions. Built with Gradio and FastAPI by Mark Al-Asfar from United States. Ready to code smarter and shop better? Discover MGZon Chatbot, an AI-powered assistant by Mark Al-Asfar for code generation, real-time web search, and e-commerce automation. Built with FastAPI and Hugging Face AI, MGZon rivals tools like ChatGPT, Grok, and DeepSeek.
-            </p>
-            
-            <div class="nav-links">
-                <a href="/" class="nav-link">Home</a>
-                <a href="/docs" class="nav-link">API Documentation</a>
-                <a href="/about" class="nav-link">About MGZon</a>
-                <a href="https://hager-zon.vercel.app/community" class="nav-link">Community</a>
-                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
-                <a href="/chat" class="nav-link cta-button">Launch Chatbot</a>
+    <main id="dynamic-content">
+        <!-- المحتوى الافتراضي (سيتم تحديثه ديناميكيًا) -->
+        <section class="hero">
+            <div class="container">
+                <h1 class="hero-tagline">Welcome to MGZon Chatbot 🚀</h1>
+                <p class="subtitle">MGZon Chatbot is an AI-powered assistant for code generation, analysis, and MGZon-specific queries. Built with Gradio and FastAPI, it supports multiple frameworks and languages. Ready to explore?</p>
+                <div class="nav-links">
+                    <a href="/" class="nav-link">Home</a>
+                    <a href="/docs" class="nav-link">API Documentation</a>
+                    <a href="/about" class="nav-link">About MGZon</a>
+                    <a href="/profile" class="nav-link">About the founder</a>
+                    <a href="https://hager-zon.vercel.app/community" class="nav-link">Community</a>
+                    <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                    <a href="/chat" class="nav-link cta-button">Launch Chatbot</a>
+                </div>
+                <div class="code-snippet">uvicorn main:app --reload</div>
             </div>
+        </section>
 
-            <div class="code-snippet">
-                uvicorn main:app --reload
-            </div>
-        </div>
-    </section>
-
-    <section class="quick-features">
-        <div class="container">
-            <div class="quick-features-grid">
-                <div class="quick-feature">
-                    <span class="quick-feature-icon">🧠</span>
-                    <h3>Code Generation</h3>
-                    <p>Generate clean, well-commented code for React, Django, Flask, Node.js, and more.</p>
-                </div>
-                
-                <div class="quick-feature">
-                    <span class="quick-feature-icon">⚡</span>
-                    <h3>Web Search</h3>
-                    <p>Real-time web search for MGZon queries and industry insights.</p>
-                </div>
-                
-                <div class="quick-feature">
-                    <span class="quick-feature-icon">🔗</span>
-                    <h3>E-commerce Solutions</h3>
-                    <p>AI-driven tools to optimize your online store and boost sales.</p>
-                </div>
-                
-                <div class="quick-feature">
-                    <span class="quick-feature-icon">🌊</span>
-                    <h3>AI Assistant</h3>
-                    <p>Your AI assistant for developers, powered by FastAPI and Hugging Face AI.</p>
+        <section class="quick-features">
+            <div class="container">
+                <h2 class="section-title">Features</h2>
+                <div class="quick-features-grid">
+                    <div class="quick-feature">
+                        <span class="quick-feature-icon">🧠</span>
+                        <h3>Code Generation</h3>
+                        <p>Generate code for React, Django, Flask, and more.</p>
+                    </div>
+                    <div class="quick-feature">
+                        <span class="quick-feature-icon">⚡</span>
+                        <h3>Web Search</h3>
+                        <p>Integrated web search for MGZon-related queries.</p>
+                    </div>
+                    <div class="quick-feature">
+                        <span class="quick-feature-icon">🔗</span>
+                        <h3>E-commerce Solutions</h3>
+                        <p>AI-driven tools to optimize your online store.</p>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <div class="wave-divider"></div>
+        <div class="wave-divider"></div>
 
-    <section class="features">
-        <div class="container">
-            <h2 class="section-title">Why Choose MGZon?</h2>
-            <p class="section-subtitle">Experience the power of AI-powered solutions for code, search, and e-commerce</p>
-            
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🔒</div>
-                    <h3>Secure & Private</h3>
-                    <p>We do not persist any data regarding your interactions or API keys - everything stays local and private.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">👁️</div>
-                    <h3>Real-Time Insights</h3>
-                    <p>Get up-to-date answers and insights tailored to your needs with real-time web search.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🧠</div>
-                    <h3>Context-Aware AI</h3>
-                    <p>MGZon loads relevant data for your queries, making it fast and precise.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🤝</div>
-                    <h3>Developer-Friendly</h3>
-                    <p>Supports multiple frameworks with examples and best practices for seamless integration.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Efficient Automation</h3>
-                    <p>From product recommendations to inventory management, enhance your e-commerce experience.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3>Precision-Driven</h3>
-                    <p>AI-generated snippets are accurate and save hours, boosting productivity.</p>
+        <section class="features">
+            <div class="container">
+                <h2 class="section-title">Why Choose MGZon?</h2>
+                <p class="section-subtitle">Experience the power of AI-powered solutions for code, search, and e-commerce</p>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <h3>Secure & Private</h3>
+                        <p>We do not persist any data regarding your interactions or API keys - everything stays local and private.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">👁️</div>
+                        <h3>Real-Time Insights</h3>
+                        <p>Get up-to-date answers and insights tailored to your needs with real-time web search.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🧠</div>
+                        <h3>Context-Aware AI</h3>
+                        <p>MGZon loads relevant data for your queries, making it fast and precise.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🤝</div>
+                        <h3>Developer-Friendly</h3>
+                        <p>Supports multiple frameworks with examples and best practices for seamless integration.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Efficient Automation</h3>
+                        <p>From product recommendations to inventory management, enhance your e-commerce experience.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Precision-Driven</h3>
+                        <p>AI-generated snippets are accurate and save hours, boosting productivity.</p>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+
+        <section class="news">
+            <div class="container">
+                <h2 class="section-title">Latest MGZon News</h2>
+                <div class="quick-features-grid">
+                    <div class="quick-feature">
+                        <h3>New API Features</h3>
+                        <p>Explore our updated API with OAuth 2.0 support.</p>
+                        <a href="#">Read More →</a>
+                    </div>
+                    <div class="quick-feature">
+                        <h3>Community Meetup</h3>
+                        <p>Join our next virtual meetup on e-commerce trends.</p>
+                        <a href="#">Join Now →</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 
     <footer class="footer">
         <div class="container">
             <div class="disclaimer">
                 <h4>Getting Started</h4>
-                <p>
-                    To use MGZon Chatbot, simply launch the chatbot interface. 
-                    You can use our pre-configured AI models or bring your own. 
-                    We do not persist any data regarding your queries or interactions - everything stays local and private.
-                </p>
-                <div style="text-align:center; margin-top: 1.5rem;">
+                <p>To use MGZon Chatbot, simply launch the chatbot interface. You can use our pre-configured AI models or bring your own. We do not persist any data regarding your queries or interactions - everything stays local and private.</p>
+                <div style="text-align: center; margin-top: 1.5rem;">
                     <a href="/chat" class="nav-link cta-button">Launch Chatbot</a>
                 </div>
             </div>
@@ -640,6 +704,1393 @@
     </button>
 
     <script>
+        // Translations
+        const translations = {
+            en: {
+                title: "MGZon - Offline AI Chat | AI Voice Chat & TTS",
+                description: "MGZon is an offline AI app supporting TTS and Arabic pronunciation, AI assistant for coding, learning, and shopping.",
+                keywords: "MGZon, AI assistant, Offline AI, Chat AI, FastAPI chatbot, TTS Arabic, Mark Al-Asfar, AI coding assistant, Ecommerce AI, Python chatbot, Hugging Face AI",
+                personName: "Mark Elasfar",
+                personDescription: "Mark Elasfar is a developer and founder of Mgzon AI, a project focused on offline AI chat and Arabic TTS technologies.",
+                websiteDescription: "MGZon Chatbot by Mark Al-Asfar: Your AI assistant for code generation, real-time web search, and e-commerce solutions.",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "en",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">Welcome to MGZon Chatbot 🚀</h1>
+                            <p class="subtitle">MGZon Chatbot is an AI-powered assistant for code generation, analysis, and MGZon-specific queries. Built with Gradio and FastAPI, it supports multiple frameworks and languages. Ready to explore?</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">Home</a>
+                                <a href="/docs" class="nav-link">API Documentation</a>
+                                <a href="/about" class="nav-link">About MGZon</a>
+                                <a href="/profile" class="nav-link">About the founder</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">Community</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">Launch Chatbot</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">Features</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>Code Generation</h3>
+                                    <p>Generate code for React, Django, Flask, and more.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>Web Search</h3>
+                                    <p>Integrated web search for MGZon-related queries.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>E-commerce Solutions</h3>
+                                    <p>AI-driven tools to optimize your online store.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">Why Choose MGZon?</h2>
+                            <p class="section-subtitle">Experience the power of AI-powered solutions for code, search, and e-commerce</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>Secure & Private</h3>
+                                    <p>We do not persist any data regarding your interactions or API keys - everything stays local and private.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>Real-Time Insights</h3>
+                                    <p>Get up-to-date answers and insights tailored to your needs with real-time web search.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>Context-Aware AI</h3>
+                                    <p>MGZon loads relevant data for your queries, making it fast and precise.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>Developer-Friendly</h3>
+                                    <p>Supports multiple frameworks with examples and best practices for seamless integration.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>Efficient Automation</h3>
+                                    <p>From product recommendations to inventory management, enhance your e-commerce experience.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>Precision-Driven</h3>
+                                    <p>AI-generated snippets are accurate and save hours, boosting productivity.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">Latest MGZon News</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>New API Features</h3>
+                                    <p>Explore our updated API with OAuth 2.0 support.</p>
+                                    <a href="#">Read More →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>Community Meetup</h3>
+                                    <p>Join our next virtual meetup on e-commerce trends.</p>
+                                    <a href="#">Join Now →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            zh: {
+                title: "MGZon - 离线AI聊天 | AI语音聊天 & TTS",
+                description: "MGZon 是一个支持 TTS 和阿拉伯发音的离线 AI 应用程序，适用于编码、学习和购物的 AI 助手。",
+                keywords: "MGZon, AI助理, 离线AI, 聊天AI, FastAPI聊天机器人, TTS阿拉伯语, Mark Al-Asfar, AI编码助理, 电子商务AI, Python聊天机器人, Hugging Face AI",
+                personName: "Mark Elasfar",
+                personDescription: "马克·埃拉斯法尔是Mgzon AI的开发者和创始人，专注于离线AI聊天和阿拉伯TTS技术。",
+                websiteDescription: "MGZon 聊天机器人由 Mark Al-Asfar 提供：您的 AI 助手，用于代码生成、实时网络搜索和电子商务解决方案。",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "zh",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">欢迎来到MGZon聊天机器人 🚀</h1>
+                            <p class="subtitle">MGZon聊天机器人是一个用于代码生成、分析和MGZon特定查询的AI驱动助手。它使用Gradio和FastAPI构建，支持多种框架和语言。准备好探索了吗？</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">首页</a>
+                                <a href="/docs" class="nav-link">API文档</a>
+                                <a href="/about" class="nav-link">关于MGZon</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">社区</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">启动聊天机器人</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">功能</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>代码生成</h3>
+                                    <p>为React、Django、Flask等生成代码。</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>网络搜索</h3>
+                                    <p>集成网络搜索，处理与MGZon相关的查询。</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>电子商务解决方案</h3>
+                                    <p>AI驱动的工具优化您的在线商店。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">为什么选择MGZon？</h2>
+                            <p class="section-subtitle">体验AI驱动的代码、搜索和电子商务解决方案的强大功能</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>安全与隐私</h3>
+                                    <p>我们不会持久化存储您的交互或API密钥相关数据 - 一切都保持本地和私密。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>实时洞察</h3>
+                                    <p>通过实时网络搜索获取符合您需求的最新答案和洞察。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>上下文感知AI</h3>
+                                    <p>MGZon加载与您的查询相关的数据，快速且精准。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>开发者友好</h3>
+                                    <p>支持多种框架，提供示例和最佳实践，实现无缝集成。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>高效自动化</h3>
+                                    <p>从产品推荐到库存管理，提升您的电子商务体验。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>精准驱动</h3>
+                                    <p>AI生成的代码片段准确无误，节省时间，提高生产力。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">最新MGZon新闻</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>新API功能</h3>
+                                    <p>探索我们支持OAuth 2.0的更新API。</p>
+                                    <a href="#">阅读更多 →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>社区聚会</h3>
+                                    <p>加入我们下一次关于电子商务趋势的虚拟聚会。</p>
+                                    <a href="#">立即加入 →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            hi: {
+                title: "MGZon - ऑफलाइन AI चैट | AI वॉइस चैट और TTS",
+                description: "MGZon एक ऑफलाइन AI ऐप है जो TTS और अरबी उच्चारण का समर्थन करता है, कोडिंग, लर्निंग और शॉपिंग के लिए AI सहायक।",
+                keywords: "MGZon, AI सहायक, ऑफलाइन AI, चैट AI, FastAPI चैटबॉट, TTS अरबी, मार्क अल-असफर, AI कोडिंग सहायक, ईकॉमर्स AI, पायथन चैटबॉट, Hugging Face AI",
+                personName: "Mark Elasfar",
+                personDescription: "मार्क एलासफार एक डेवलपर और Mgzon AI के संस्थापक हैं, जो ऑफलाइन AI चैट और अरबी TTS तकनीकों पर केंद्रित हैं।",
+                websiteDescription: "MGZon चैटबॉट द्वारा मार्क अल-आसफर: कोड जनरेशन, रियल-टाइम वेब खोज और ई-कॉमर्स समाधान के लिए आपका AI सहायक।",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "hi",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">MGZon चैटबॉट में आपका स्वागत है 🚀</h1>
+                            <p class="subtitle">MGZon चैटबॉट कोड जनरेशन, विश्लेषण और MGZon-विशिष्ट प्रश्नों के लिए एक AI-आधारित सहायक है। Gradio और FastAPI के साथ बनाया गया, यह कई फ्रेमवर्क्स और भाषाओं का समर्थन करता है। तैयार हैं एक्सप्लोर करने के लिए?</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">होम</a>
+                                <a href="/docs" class="nav-link">API दस्तावेज़ीकरण</a>
+                                <a href="/about" class="nav-link">MGZon के बारे में</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">समुदाय</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">चैटबॉट लॉन्च करें</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">विशेषताएँ</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>कोड जनरेशन</h3>
+                                    <p>React, Django, Flask और अन्य के लिए कोड जनरेट करें।</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>वेब सर्च</h3>
+                                    <p>MGZon-संबंधित प्रश्नों के लिए एकीकृत वेब सर्च。</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>ई-कॉमर्स समाधान</h3>
+                                    <p>आपके ऑनलाइन स्टोर को अनुकूलित करने के लिए AI-चालित उपकरण।</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">MGZon क्यों चुनें?</h2>
+                            <p class="section-subtitle">कोड, खोज और ई-कॉमर्स के लिए AI-चालित समाधानों की शक्ति का अनुभव करें</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>सुरक्षित और निजी</h3>
+                                    <p>हम आपके इंटरैक्शन या API कुंजी से संबंधित कोई डेटा संग्रहीत नहीं करते - सब कुछ स्थानीय और निजी रहता है।</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>रियल-टाइम इनसाइट्स</h3>
+                                    <p>रियल-टाइम वेब खोज के साथ अपनी आवश्यकताओं के अनुरूप नवीनतम उत्तर और अंतर्दृष्टि प्राप्त करें।</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>संदर्भ-जागरूक AI</h3>
+                                    <p>MGZon आपके प्रश्नों के लिए प्रासंगिक डेटा लोड करता है, जो इसे तेज और सटीक बनाता है।</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>डेवलपर-मैत्रीपूर्ण</h3>
+                                    <p>उदाहरणों और सर्वोत्तम प्रथाओं के साथ कई फ्रेमवर्क्स का समर्थन करता है ताकि सहज एकीकरण हो सके।</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>कुशल स्वचालन</h3>
+                                    <p>उत्पाद सिफारिशों से लेकर इन्वेंट्री प्रबंधन तक, अपने ई-कॉमर्स अनुभव को बेहतर बनाएं।</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>सटीकता-प्रधान</h3>
+                                    <p>AI-जनरेटेड स्निपेट्स सटीक हैं और समय बचाते हैं, उत्पादकता को बढ़ाते हैं।</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">नवीनतम MGZon समाचार</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>नई API सुविधाएँ</h3>
+                                    <p>OAuth 2.0 समर्थन के साथ हमारे अपडेटेड API का अन्वेषण करें।</p>
+                                    <a href="#">और पढ़ें →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>समुदाय मिलन</h3>
+                                    <p>ई-कॉमर्स ट्रेंड्स पर हमारे अगले वर्चुअल मिलन में शामिल हों।</p>
+                                    <a href="#">अभी शामिल हों →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            es: {
+                title: "MGZon - Chat de IA sin conexión | Chat de voz de IA y TTS",
+                description: "MGZon es una aplicación de IA sin conexión que soporta TTS y pronunciación en árabe, asistente de IA para codificación, aprendizaje y compras.",
+                keywords: "MGZon, asistente de IA, IA sin conexión, Chat IA, chatbot FastAPI, TTS árabe, Mark Al-Asfar, asistente de codificación de IA, IA de comercio electrónico, chatbot de Python, IA de Hugging Face",
+                personName: "Mark Elasfar",
+                personDescription: "Mark Elasfar es un desarrollador y fundador de Mgzon AI, centrado en chat de IA sin conexión y tecnologías TTS en árabe.",
+                websiteDescription: "MGZon Chatbot por Mark Al-Asfar: Tu asistente IA para generación de código, búsqueda web en tiempo real y soluciones e-commerce.",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "es",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">Bienvenido al Chatbot de MGZon 🚀</h1>
+                            <p class="subtitle">El Chatbot de MGZon es un asistente impulsado por IA para la generación de código, análisis y consultas específicas de MGZon. Construido con Gradio y FastAPI, soporta múltiples frameworks y lenguajes. ¿Listo para explorar?</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">Inicio</a>
+                                <a href="/docs" class="nav-link">Documentación API</a>
+                                <a href="/about" class="nav-link">Sobre MGZon</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">Comunidad</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">Lanzar Chatbot</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">Características</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>Generación de Código</h3>
+                                    <p>Genera código para React, Django, Flask y más.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>Búsqueda Web</h3>
+                                    <p>Búsqueda web integrada para consultas relacionadas con MGZon.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>Soluciones E-commerce</h3>
+                                    <p>Herramientas impulsadas por IA para optimizar tu tienda en línea。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">¿Por qué elegir MGZon?</h2>
+                            <p class="section-subtitle">Experimenta el poder de las soluciones impulsadas por IA para código, búsqueda y comercio electrónico</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>Seguro y Privado</h3>
+                                    <p>No almacenamos datos sobre tus interacciones o claves de API - todo permanece local y privado.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>Perspectivas en Tiempo Real</h3>
+                                    <p>Obtén respuestas e información actualizadas adaptadas a tus necesidades con búsqueda web en tiempo real.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>IA Consciente del Contexto</h3>
+                                    <p>MGZon carga datos relevantes para tus consultas, haciéndolo rápido y preciso。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>Amigable para Desarrolladores</h3>
+                                    <p>Soporta múltiples frameworks con ejemplos y mejores prácticas para una integración sin problemas。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>Automatización Eficiente</h3>
+                                    <p>Desde recomendaciones de productos hasta gestión de inventario, mejora tu experiencia de comercio electrónico。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>Impulsado por la Precisión</h3>
+                                    <p>Los fragmentos generados por IA son precisos y ahorran horas, aumentando la productividad。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">Últimas Noticias de MGZon</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>Nuevas Características de la API</h3>
+                                    <p>Explora nuestra API actualizada con soporte para OAuth 2.0.</p>
+                                    <a href="#">Leer Más →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>Encuentro Comunitario</h3>
+                                    <p>Únete a nuestro próximo encuentro virtual sobre tendencias de comercio electrónico。</p>
+                                    <a href="#">Únete Ahora →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            ar: {
+                title: "MGZon - دردشة ذكاء صناعي بدون إنترنت | AI Voice Chat & TTS",
+                description: "MGZon هو تطبيق ذكاء صناعي يعمل بدون إنترنت، يدعم TTS والنطق العربي، ومساعد AI للبرمجة والتعلم والتسوق.",
+                keywords: "Mgzon, MGZon Chatbot, AI assistant, دردشة بدون نت, Chat AI, FastAPI chatbot, Offline AI, دردشة ذكاء صناعي, TTS عربي, Mark Al-Asfar, AI coding assistant, Ecommerce AI, Python chatbot, Hugging Face AI",
+                personName: "مارك الإسفار",
+                personDescription: "مارك الإسفار هو مطور ومؤسس Mgzon AI، مشروع يركز على الدردشة الذكية بدون إنترنت وتقنيات TTS العربية.",
+                websiteDescription: "MGZon Chatbot بواسطة مارك الإسفار: مساعدك الذكي لتوليد الكود، البحث على الويب، وحلول التجارة الإلكترونية.",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "ar",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">مرحبا بك في MGZon Chatbot 🚀</h1>
+                            <p class="subtitle">MGZon Chatbot هو مساعد ذكي مدعوم بالذكاء الصناعي لتوليد الكود، التحليل، واستفسارات MGZon. مبني بـ Gradio و FastAPI، يدعم إطارات و لغات متعددة. جاهز للاستكشاف؟</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">الرئيسية</a>
+                                <a href="/docs" class="nav-link">وثائق API</a>
+                                <a href="/about" class="nav-link">عن MGZon</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">المجتمع</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">مارك الإسفار</a>
+                                <a href="/chat" class="nav-link cta-button">إطلاق الدردشة</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">الميزات</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>توليد الكود</h3>
+                                    <p>أنشئ كود لـ React، Django، Flask، وأكثر.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>البحث على الويب</h3>
+                                    <p>بحث متكامل لاستفسارات MGZon.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>حلول التجارة الإلكترونية</h3>
+                                    <p>أدوات مدعومة بالذكاء الصناعي لتحسين متجرك الإلكتروني.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">لماذا تختار MGZon؟</h2>
+                            <p class="section-subtitle">جرب قوة الحلول المدعومة بالذكاء الصناعي للبرمجة، البحث، والتجارة الإلكترونية</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>آمن وخاص</h3>
+                                    <p>لا نحتفظ بأي بيانات تتعلق بتفاعلاتك أو مفاتيح API - كل شيء يبقى محليًا وخاصًا.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>رؤى في الوقت الحقيقي</h3>
+                                    <p>احصل على إجابات ورؤى محدثة مصممة حسب احتياجاتك مع البحث على الويب في الوقت الحقيقي.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>ذكاء صناعي واعي بالسياق</h3>
+                                    <p>يقوم MGZon بتحميل البيانات ذات الصلة باستفساراتك، مما يجعله سريعًا ودقيقًا.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>صديق للمطورين</h3>
+                                    <p>يدعم إطارات متعددة مع أمثلة وأفضل الممارسات للتكامل السلس.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>أتمتة فعالة</h3>
+                                    <p>من توصيات المنتجات إلى إدارة المخزون, عزز تجربة التجارة الإلكترونية الخاصة بك.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>مدفوع بالدقة</h3>
+                                    <p>المقتطفات التي تم إنشاؤها بواسطة الذكاء الصناعي دقيقة وتوفر ساعات، مما يعزز الإنتاجية.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">أحدث أخبار MGZon</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>ميزات API جديدة</h3>
+                                    <p>استكشف API الجديد مع دعم OAuth 2.0.</p>
+                                    <a href="#">اقرأ المزيد →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>لقاء المجتمع</h3>
+                                    <p>انضم إلى لقائنا الافتراضي التالي حول اتجاهات التجارة الإلكترونية.</p>
+                                    <a href="#">انضم الآن →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            fr: {
+                title: "MGZon - Chat IA Hors Ligne | Chat Vocal IA & TTS",
+                description: "MGZon est une application IA hors ligne prenant en charge TTS et la prononciation arabe, assistant IA pour le codage, l'apprentissage et les achats.",
+                keywords: "MGZon, assistant IA, IA hors ligne, Chat IA, chatbot FastAPI, TTS arabe, Mark Al-Asfar, assistant codage IA, IA e-commerce, chatbot Python, IA Hugging Face",
+                personName: "Mark Elasfar",
+                personDescription: "Mark Elasfar est un développeur et fondateur de Mgzon AI, un projet axé sur le chat IA hors ligne et les technologies TTS arabes.",
+                websiteDescription: "MGZon Chatbot par Mark Al-Asfar : Votre assistant IA pour la génération de code, la recherche web en temps réel et les solutions e-commerce.",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "fr",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">Bienvenue sur MGZon Chatbot 🚀</h1>
+                            <p class="subtitle">MGZon Chatbot est un assistant alimenté par l'IA pour la génération de code, l'analyse et les requêtes spécifiques à MGZon. Construit avec Gradio et FastAPI, il prend en charge plusieurs frameworks et langues. Prêt à explorer ?</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">Accueil</a>
+                                <a href="/docs" class="nav-link">Documentation API</a>
+                                <a href="/about" class="nav-link">À propos de MGZon</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">Communauté</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">Lancer le Chatbot</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">Fonctionnalités</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>Génération de Code</h3>
+                                    <p>Générez du code pour React, Django, Flask, et plus.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>Recherche Web</h3>
+                                    <p>Recherche web intégrée pour les requêtes liées à MGZon.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>Solutions E-commerce</h3>
+                                    <p>Outils alimentés par l'IA pour optimiser votre boutique en ligne.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">Pourquoi choisir MGZon ?</h2>
+                            <p class="section-subtitle">Découvrez la puissance des solutions alimentées par l'IA pour le code, la recherche et le commerce électronique</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>Sécurisé et Privé</h3>
+                                    <p>Nous ne conservons aucune donnée concernant vos interactions ou clés API - tout reste local et privé.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>Perspectives en Temps Réel</h3>
+                                    <p>Obtenez des réponses et des informations à jour adaptées à vos besoins grâce à la recherche web en temps réel.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>IA Consciente du Contexte</h3>
+                                    <p>MGZon charge les données pertinentes pour vos requêtes, le rendant rapide et précis.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>Amical pour les Développeurs</h3>
+                                    <p>Prend en charge plusieurs frameworks avec des exemples et les meilleures pratiques pour une intégration fluide.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>Automatisation Efficace</h3>
+                                    <p>Des recommandations de produits à la gestion des stocks, améliorez votre expérience de commerce électronique.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>Guidé par la Précision</h3>
+                                    <p>Les extraits générés par l'IA sont précis et font gagner des heures, augmentant la productivité.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">Dernières Nouvelles MGZon</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>Nouvelles Fonctionnalités API</h3>
+                                    <p>Explorez notre API mise à jour avec le support OAuth 2.0.</p>
+                                    <a href="#">Lire Plus →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>Rencontre Communautaire</h3>
+                                    <p>Rejoignez notre prochaine rencontre virtuelle sur les tendances e-commerce.</p>
+                                    <a href="#">Rejoindre Maintenant →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            bn: {
+                title: "MGZon - অফলাইন AI চ্যাট | AI ভয়েস চ্যাট এবং TTS",
+                description: "MGZon একটি অফলাইন AI অ্যাপ যা TTS এবং আরবি উচ্চারণ সমর্থন করে, কোডিং, শিক্ষা এবং শপিংয়ের জন্য AI সহকারী।",
+                keywords: "MGZon, AI সহকারী, অফলাইন AI, চ্যাট AI, FastAPI চ্যাটবট, TTS আরবি, মার্ক আল-আসফার, AI কোডিং সহকারী, ইকমার্স AI, পাইথন চ্যাটবট, Hugging Face AI",
+                personName: "Mark Elasfar",
+                personDescription: "মার্ক এলাসফার একজন ডেভেলপার এবং এমজেজন এআই-এর প্রতিষ্ঠাতা, যিনি অফলাইন এআই চ্যাট এবং আরবি TTS প্রযুক্তিতে ফোকাস করেন।",
+                websiteDescription: "MGZon চ্যাটবট by Mark Al-Asfar: আপনার কোড জেনারেশন, রিয়েল-টাইম ওয়েব সার্চ এবং ই-কমার্স সমাধানের জন্য আই অ্যাসিস্ট্যান্ট।",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "bn",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">MGZon চ্যাটবটে স্বাগতম 🚀</h1>
+                            <p class="subtitle">MGZon চ্যাটবট হলো কোড জেনারেশন, বিশ্লেষণ এবং MGZon-সম্পর্কিত প্রশ্নাবলির জন্য একটি AI-চালিত সহকারী। Gradio এবং FastAPI দ্বারা তৈরি, এটি একাধিক ফ্রেমওয়ার্ক এবং ভাষা সমর্থন করে। অন্বেষণ করতে প্রস্তুত?</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">হোম</a>
+                                <a href="/docs" class="nav-link">API ডকুমেন্টেশন</a>
+                                <a href="/about" class="nav-link">MGZon সম্পর্কে</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">কমিউনিটি</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">চ্যাটবট লঞ্চ করুন</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">বৈশিষ্ট্য</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>কোড জেনারেশন</h3>
+                                    <p>React, Django, Flask এবং আরও অনেক কিছুর জন্য কোড জেনারেট করুন।</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>ওয়েব সার্চ</h3>
+                                    <p>MGZon-সম্পর্কিত প্রশ্নাবলির জন্য একীভূত ওয়েব সার্চ।</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>ই-কমার্স সমাধান</h3>
+                                    <p>আপনার অনলাইন স্টোর অপ্টিমাইজ করার জন্য AI-চালিত টুল।</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">কেন MGZon বেছে নেবেন?</h2>
+                            <p class="section-subtitle">কোড, সার্চ এবং ই-কমার্সের জন্য AI-চালিত সমাধানের শক্তি উপভোগ করুন</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>নিরাপদ এবং ব্যক্তিগত</h3>
+                                    <p>আমরা আপনার ইন্টারঅ্যাকশন বা API কী সম্পর্কিত কোনো তথ্য সংরক্ষণ করি না - সবকিছু স্থানীয় এবং ব্যক্তিগত থাকে।</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>রিয়েল-টাইম ইনসাইট</h3>
+                                    <p>রিয়েল-টাইম ওয়েব সার্চের মাধ্যমে আপনার প্রয়োজন অনুযায়ী আপডেটেড উত্তর এবং ইনসাইট পান।</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>কনটেক্সট-অ্যাওয়ার AI</h3>
+                                    <p>MGZon আপনার প্রশ্নের জন্য প্রাসঙ্গিক ডেটা লোড করে, এটিকে দ্রুত এবং নির্ভুল করে।</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>ডেভেলপার-বান্ধব</h3>
+                                    <p>উদাহরণ এবং সেরা অনুশীলনের সাথে একাধিক ফ্রেমওয়ার্ক সমর্থন করে সিমলেস ইন্টিগ্রেশনের জন্য।</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>দক্ষ অটোমেশন</h3>
+                                    <p>পণ্য সুপারিশ থেকে ইনভেন্টরি ম্যানেজমেন্ট পর্যন্ত, আপনার ই-কমার্স অভিজ্ঞতা উন্নত করুন।</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>নির্ভুলতা-চালিত</h3>
+                                    <p>AI-জেনারেটেড স্নিপেটগুলি নির্ভুল এবং সময় বাঁচায়, উৎপাদনশীলতা বাড়ায়।</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">সর্বশেষ MGZon সংবাদ</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>নতুন API বৈশিষ্ট্য</h3>
+                                    <p>OAuth 2.0 সমর্থন সহ আমাদের আপডেটেড API অন্বেষণ করুন।</p>
+                                    <a href="#">আরও পড়ুন →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>কমিউনিটি মিটআপ</h3>
+                                    <p>ই-কমার্স ট্রেন্ডসে আমাদের পরবর্তী ভার্চুয়াল মিটআপে যোগ দিন।</p>
+                                    <a href="#">এখন যোগ দিন →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            pt: {
+                title: "MGZon - Bate-papo offline com IA | Bate-papo por voz com IA e TTS",
+                description: "MGZon é um aplicativo de IA offline que suporta TTS e pronúncia em árabe, assistente de IA para codificação, aprendizado e compras.",
+                keywords: "MGZon, Assistente de IA, IA Offline, Chat IA, Chatbot FastAPI, TTS Árabe, Mark Al-Asfar, Assistente de codificação de IA, IA para E-commerce, Chatbot Python, IA Hugging Face",
+                personName: "Mark Elasfar",
+                personDescription: "Mark Elasfar é um desenvolvedor e fundador da Mgzon AI, focado em chat de IA offline e tecnologias de TTS em árabe.",
+                websiteDescription: "Chatbot MGZon por Mark Al-Asfar: Seu assistente de IA para geração de código, busca na web em tempo real e soluções de e-commerce.",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "pt",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">Bem-vindo ao Chatbot MGZon 🚀</h1>
+                            <p class="subtitle">O Chatbot MGZon é um assistente alimentado por IA para geração de código, análise e consultas específicas da MGZon. Construído com Gradio e FastAPI, ele suporta múltiplos frameworks e linguagens. Pronto para explorar?</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">Início</a>
+                                <a href="/docs" class="nav-link">Documentação da API</a>
+                                <a href="/about" class="nav-link">Sobre MGZon</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">Comunidade</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">Lançar Chatbot</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">Recursos</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>Geração de Código</h3>
+                                    <p>Gere código para React, Django, Flask e mais.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>Pesquisa Web</h3>
+                                    <p>Pesquisa web integrada para consultas relacionadas à MGZon.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>Soluções de E-commerce</h3>
+                                    <p>Ferramentas impulsionadas por IA para otimizar sua loja online.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">Por que escolher MGZon?</h2>
+                            <p class="section-subtitle">Experimente o poder das soluções impulsionadas por IA para código, pesquisa e e-commerce</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>Seguro e Privado</h3>
+                                    <p>Não persistimos nenhum dado relacionado às suas interações ou chaves de API - tudo permanece local e privado.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>Insights em Tempo Real</h3>
+                                    <p>Obtenha respostas e insights atualizados adaptados às suas necessidades com pesquisa web em tempo real.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>IA Consciente do Contexto</h3>
+                                    <p>MGZon carrega dados relevantes para suas consultas, tornando-o rápido e preciso.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>Amigável para Desenvolvedores</h3>
+                                    <p>Suporta múltiplos frameworks com exemplos e melhores práticas para integração perfeita.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>Automação Eficiente</h3>
+                                    <p>De recomendações de produtos a gerenciamento de estoque, melhore sua experiência de e-commerce.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>Impulsionado pela Precisão</h3>
+                                    <p>Snippets gerados por IA são precisos e economizam horas, aumentando a produtividade.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">Últimas Notícias do MGZon</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>Novos Recursos de API</h3>
+                                    <p>Explore nossa API atualizada com suporte a OAuth 2.0.</p>
+                                    <a href="#">Ler Mais →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>Encontro da Comunidade</h3>
+                                    <p>Participe do nosso próximo encontro virtual sobre tendências de e-commerce.</p>
+                                    <a href="#">Participar Agora →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            ru: {
+                title: "MGZon - Чат с ИИ в оффлайн | Голосовой чат с ИИ и TTS",
+                description: "MGZon - это оффлайн-приложение ИИ, поддерживающее TTS и произношение на арабском, а также ИИ-ассистент для программирования, обучения и покупок.",
+                keywords: "MGZon, AI ассистент, Оффлайн AI, Чат AI, FastAPI чат-бот, TTS арабский, Марк Аль-Асфар, AI ассистент для кодирования, Ecommerce AI, Python чат-бот, Hugging Face AI",
+                personName: "Mark Elasfar",
+                personDescription: "Марк Эласфар - разработчик и основатель Mgzon AI, специализирующийся на оффлайн чатах с ИИ и технологиях арабского TTS.",
+                websiteDescription: "MGZon Chatbot от Марка Аль-Асфара: Ваш ИИ-ассистент для генерации кода, поиска в реальном времени и решений для электронной коммерции.",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "ru",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">Добро пожаловать в чат-бот MGZon 🚀</h1>
+                            <p class="subtitle">Чат-бот MGZon — это помощник на базе искусственного интеллекта для генерации кода, анализа и запросов, специфичных для MGZon. Создан с использованием Gradio и FastAPI, поддерживает множество фреймворков и языков. Готовы исследовать?</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">Главная</a>
+                                <a href="/docs" class="nav-link">Документация API</a>
+                                <a href="/about" class="nav-link">О MGZon</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">Сообщество</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">Запустить чат-бот</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">Функции</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>Генерация кода</h3>
+                                    <p>Генерируйте код для React, Django, Flask и других.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>Веб-поиск</h3>
+                                    <p>Интегрированный веб-поиск для запросов, связанных с MGZon.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>Решения для электронной коммерции</h3>
+                                    <p>Инструменты на базе ИИ для оптимизации вашего онлайн-магазина.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">Почему выбрать MGZon?</h2>
+                            <p class="section-subtitle">Испытайте мощь решений на базе ИИ для кода, поиска и электронной коммерции</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>Безопасный и приватный</h3>
+                                    <p>Мы не храним никаких данных о ваших взаимодействиях или ключах API - все остается локальным и приватным.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>Инсайты в реальном времени</h3>
+                                    <p>Получайте актуальные ответы и инсайты, адаптированные к вашим нуждам, с помощью поиска в реальном времени.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>ИИ, учитывающий контекст</h3>
+                                    <p>MGZon загружает релевантные данные для ваших запросов, делая его быстрым и точным.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>Дружественный к разработчикам</h3>
+                                    <p>Поддерживает несколько фреймворков с примерами и лучшими практиками для бесшовной интеграции.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>Эффективная автоматизация</h3>
+                                    <p>От рекомендаций продуктов до управления инвентарем, улучшите свой опыт электронной коммерции.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>Ориентированный на точность</h3>
+                                    <p>Сниппеты, сгенерированные ИИ, точны и экономят часы, повышая производительность.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">Последние новости MGZon</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>Новые функции API</h3>
+                                    <p>Изучите наш обновленный API с поддержкой OAuth 2.0.</p>
+                                    <a href="#">Узнать больше →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>Встреча сообщества</h3>
+                                    <p>Присоединяйтесь к нашей следующей виртуальной встрече по тенденциям в электронной коммерции.</p>
+                                    <a href="#">Присоединиться сейчас →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            ur: {
+                title: "MGZon - آف لائن AI چیٹ | AI وائس چیٹ اور TTS",
+                description: "MGZon ایک آف لائن AI ایپ ہے جو TTS اور عربی تلفظ کی حمایت کرتی ہے، AI اسسٹنٹ کوڈنگ, سیکھنے اور شاپنگ کے لیے۔",
+                keywords: "MGZon, AI اسسٹنٹ, آف لائن AI, چیٹ AI, FastAPI چیٹبوٹ, TTS عربی, مارک ال-اسفر, AI کوڈنگ اسسٹنٹ, ای کامرس AI, پائتھن چیٹبوٹ, ہگنگ فیس AI",
+                personName: "Mark Elasfar",
+                personDescription: "مارک الاسفر ایک ڈویلپر اور Mgzon AI کے بانی ہیں، جو آف لائن AI چیٹ اور عربی TTS ٹیکنالوجیز پر توجہ دیتے ہیں۔",
+                websiteDescription: "MGZon چیٹبوٹ بذریعہ مارک ال-اسفر: آپ کا AI اسسٹنٹ کوڈ جنریشن, ریئل ٹائم ویب سرچ اور ای کامرس حل کے لیے۔",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "ur",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">MGZon چیٹبوٹ میں خوش آمدید 🚀</h1>
+                            <p class="subtitle">MGZon چیٹبوٹ کوڈ جنریشن, تجزیہ اور MGZon سے متعلق سوالات کے لیے ایک AI سے چلنے والا اسسٹنٹ ہے۔ Gradio اور FastAPI کے ساتھ بنایا گیا، یہ متعدد فریم ورکس اور زبانوں کی حمایت کرتا ہے۔ دریافت کرنے کے لیے تیار ہیں؟</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">ہوم</a>
+                                <a href="/docs" class="nav-link">API دستاویزات</a>
+                                <a href="/about" class="nav-link">MGZon کے بارے میں</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">کمیونٹی</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">چیٹبوٹ لانچ کریں</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">خصوصیات</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>کوڈ جنریشن</h3>
+                                    <p>React، Django، Flask، اور مزید کے لیے کوڈ بنائیں。</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>ویب تلاش</h3>
+                                    <p>MGZon سے متعلق سوالات کے لیے مربوط ویب تلاش。</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>ای کامرس حل</h3>
+                                    <p>آپ کے آن لائن اسٹور کو بہتر بنانے کے لیے AI سے چلنے والے ٹولز。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">MGZon کیوں منتخب کریں؟</h2>
+                            <p class="section-subtitle">کوڈ, تلاش اور ای کامرس کے لیے AI سے چلنے والے حل کی طاقت کا تجربہ کریں</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>محفوظ اور نجی</h3>
+                                    <p>ہم آپ کی تعاملات یا API کیز سے متعلق کوئی ڈیٹا محفوظ نہیں کرتے - سب کچھ مقامی اور نجی رہتا ہے。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>ریئل ٹائم انسائٹس</h3>
+                                    <p>ریئل ٹائم ویب تلاش کے ساتھ آپ کی ضروریات کے مطابق تازہ ترین جوابات اور انسائٹس حاصل کریں。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>سیاق و سباق سے آگاہ AI</h3>
+                                    <p>MGZon آپ کے سوالات کے لیے متعلقہ ڈیٹا لوڈ کرتا ہے, جو اسے تیز اور درست بناتا ہے。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>ڈویلپر دوستانہ</h3>
+                                    <p>مثالوں اور بہترین طریقوں کے ساتھ متعدد فریم ورکس کی حمایت کرتا ہے تاکہ ہموار انٹیگریشن ہو。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>کارآمد آٹومیشن</h3>
+                                    <p>پروڈکٹ کی سفارشات سے لے کر انوینٹری مینجمنٹ تک, اپنے ای کامرس تجربے کو بہتر بنائیں。</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>درستگی سے چلنے والا</h3>
+                                    <p>AI سے تیار کردہ سنیپیٹس درست ہیں اور گھنٹے بچاتے ہیں, پیداواریت بڑھاتے ہیں。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">تازہ ترین MGZon خبریں</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>نئی API خصوصیات</h3>
+                                    <p>OAuth 2.0 سپورٹ کے ساتھ ہماری اپ ڈیٹ شدہ API دریافت کریں。</p>
+                                    <a href="#">مزید پڑھیں →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>کمیونٹی میٹ اپ</h3>
+                                    <p>ای کامرس رجحانات پر ہماری اگلی ورچوئل میٹ اپ میں شامل ہوں。</p>
+                                    <a href="#">ابھی شامل ہوں →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            id: {
+                title: "MGZon - Obrolan AI Offline | Obrolan Suara AI & TTS",
+                description: "MGZon adalah aplikasi AI offline yang mendukung TTS dan pengucapan bahasa Arab, asisten AI untuk coding, belajar, dan berbelanja.",
+                keywords: "MGZon, Asisten AI, AI Offline, Chat AI, Chatbot FastAPI, TTS Arab, Mark Al-Asfar, Asisten Coding AI, AI Ecommerce, Chatbot Python, Hugging Face AI",
+                personName: "Mark Elasfar",
+                personDescription: "Mark Elasfar adalah pengembang dan pendiri Mgzon AI, yang berfokus pada chat AI offline dan teknologi TTS Arab.",
+                websiteDescription: "MGZon Chatbot oleh Mark Al-Asfar: Asisten AI Anda untuk pembuatan kode, pencarian web real-time, dan solusi e-commerce.",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "id",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">Selamat datang di MGZon Chatbot 🚀</h1>
+                            <p class="subtitle">MGZon Chatbot adalah asisten berbasis AI untuk pembuatan kode, analisis, dan pertanyaan spesifik MGZon. Dibuat dengan Gradio dan FastAPI, ia mendukung beberapa framework dan bahasa. Siap untuk menjelajahi?</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">Beranda</a>
+                                <a href="/docs" class="nav-link">Dokumentasi API</a>
+                                <a href="/about" class="nav-link">Tentang MGZon</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">Komunitas</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">Luncurkan Chatbot</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">Fitur</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>Pembuatan Kode</h3>
+                                    <p>Buat kode untuk React, Django, Flask, dan lainnya.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>Pencarian Web</h3>
+                                    <p>Pencarian web terintegrasi untuk pertanyaan terkait MGZon.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>Solusi E-commerce</h3>
+                                    <p>Alat berbasis AI untuk mengoptimalkan toko online Anda。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">Mengapa Memilih MGZon?</h2>
+                            <p class="section-subtitle">Rasakan kekuatan solusi berbasis AI untuk kode, pencarian, dan e-commerce</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>Aman & Pribadi</h3>
+                                    <p>Kami tidak menyimpan data apa pun tentang interaksi atau kunci API Anda - semuanya tetap lokal dan pribadi.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>Insights Real-Time</h3>
+                                    <p>Dapatkan jawaban dan insights terkini yang disesuaikan dengan kebutuhan Anda dengan pencarian web real-time.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>AI Sadar Konteks</h3>
+                                    <p>MGZon memuat data relevan untuk pertanyaan Anda, membuatnya cepat dan akurat.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>Ramah Pengembang</h3>
+                                    <p>Mendukung beberapa framework dengan contoh dan praktik terbaik untuk integrasi mulus.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>Otomatisasi Efisien</h3>
+                                    <p>Dari rekomendasi produk hingga manajemen inventaris, tingkatkan pengalaman e-commerce Anda.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>Didorong oleh Presisi</h3>
+                                    <p>Snippet yang dihasilkan AI akurat dan menghemat jam, meningkatkan produktivitas.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">Berita MGZon Terbaru</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>Fitur API Baru</h3>
+                                    <p>Jelajahi API kami yang diperbarui dengan dukungan OAuth 2.0.</p>
+                                    <a href="#">Baca Selengkapnya →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>Pertemuan Komunitas</h3>
+                                    <p>Bergabunglah dengan pertemuan virtual kami berikutnya tentang tren e-commerce.</p>
+                                    <a href="#">Bergabung Sekarang →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            },
+            de: {
+                title: "MGZon - Offline KI-Chat | KI-Stimmenchat & TTS",
+                description: "MGZon ist eine Offline-KI-App, die TTS und arabische Aussprache unterstützt, ein KI-Assistent für Programmieren, Lernen und Einkaufen.",
+                keywords: "MGZon, KI-Assistent, Offline-KI, Chat-KI, FastAPI-Chatbot, TTS Arabisch, Mark Al-Asfar, KI-Coding-Assistent, E-Commerce-KI, Python-Chatbot, Hugging Face KI",
+                personName: "Mark Elasfar",
+                personDescription: "Mark Elasfar ist ein Entwickler und Gründer von Mgzon AI, der sich auf Offline-KI-Chat und arabische TTS-Technologien spezialisiert hat.",
+                websiteDescription: "MGZon Chatbot von Mark Al-Asfar: Ihr KI-Assistent für Code-Generierung, Echtzeit-Websuche und E-Commerce-Lösungen.",
+                searchTarget: "https://mgzon-mgzon-app.hf.space/?q={search_term_string}",
+                inLanguage: "de",
+                content: `
+                    <section class="hero">
+                        <div class="container">
+                            <h1 class="hero-tagline">Willkommen bei MGZon Chatbot 🚀</h1>
+                            <p class="subtitle">MGZon Chatbot ist ein KI-gestützter Assistent für Codegenerierung, -analyse und MGZon-spezifische Anfragen. Gebaut mit Gradio und FastAPI, unterstützt er mehrere Frameworks und Sprachen. Bereit zu erkunden?</p>
+                            <div class="nav-links">
+                                <a href="/" class="nav-link">Startseite</a>
+                                <a href="/docs" class="nav-link">API-Dokumentation</a>
+                                <a href="/about" class="nav-link">Über MGZon</a>
+                                <a href="https://hager-zon.vercel.app/community" class="nav-link">Community</a>
+                                <a href="https://mark-elasfar.web.app/" class="nav-link">Mark Al-Asfar</a>
+                                <a href="/chat" class="nav-link cta-button">Chatbot starten</a>
+                            </div>
+                            <div class="code-snippet">uvicorn main:app --reload</div>
+                        </div>
+                    </section>
+                    <section class="quick-features">
+                        <div class="container">
+                            <h2 class="section-title">Funktionen</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🧠</span>
+                                    <h3>Codegenerierung</h3>
+                                    <p>Generieren Sie Code für React, Django, Flask und mehr.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">⚡</span>
+                                    <h3>Web-Suche</h3>
+                                    <p>Integrierte Web-Suche für MGZon-bezogene Anfragen.</p>
+                                </div>
+                                <div class="quick-feature">
+                                    <span class="quick-feature-icon">🔗</span>
+                                    <h3>E-Commerce-Lösungen</h3>
+                                    <p>KI-gestützte Tools zur Optimierung Ihres Online-Shops.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="wave-divider"></div>
+                    <section class="features">
+                        <div class="container">
+                            <h2 class="section-title">Warum MGZon wählen?</h2>
+                            <p class="section-subtitle">Erleben Sie die Kraft von KI-gestützten Lösungen für Code, Suche und E-Commerce</p>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">🔒</div>
+                                    <h3>Sicher & Privat</h3>
+                                    <p>Wir speichern keine Daten zu Ihren Interaktionen oder API-Schlüsseln - alles bleibt lokal und privat.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">👁️</div>
+                                    <h3>Echtzeit-Einsichten</h3>
+                                    <p>Erhalten Sie aktuelle Antworten und Einsichten, die auf Ihre Bedürfnisse zugeschnitten sind, mit Echtzeit-Websuche.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🧠</div>
+                                    <h3>Kontextbewusste KI</h3>
+                                    <p>MGZon lädt relevante Daten für Ihre Anfragen, was es schnell und präzise macht.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🤝</div>
+                                    <h3>Entwicklerfreundlich</h3>
+                                    <p>Unterstützt mehrere Frameworks mit Beispielen und Best Practices für nahtlose Integration.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">⚡</div>
+                                    <h3>Effiziente Automatisierung</h3>
+                                    <p>Von Produktempfehlungen bis Inventarmanagement, verbessern Sie Ihr E-Commerce-Erlebnis.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">🎯</div>
+                                    <h3>Präzisionsgetrieben</h3>
+                                    <p>KI-generierte Snippets sind genau und sparen Stunden, was die Produktivität steigert.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="news">
+                        <div class="container">
+                            <h2 class="section-title">Aktuelle MGZon-Nachrichten</h2>
+                            <div class="quick-features-grid">
+                                <div class="quick-feature">
+                                    <h3>Neue API-Funktionen</h3>
+                                    <p>Erkunden Sie unsere aktualisierte API mit OAuth 2.0-Unterstützung.</p>
+                                    <a href="#">Mehr lesen →</a>
+                                </div>
+                                <div class="quick-feature">
+                                    <h3>Community-Meetup</h3>
+                                    <p>Nehmen Sie an unserem nächsten virtuellen Meetup zu E-Commerce-Trends teil.</p>
+                                    <a href="#">Jetzt beitreten →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `
+            }
+        };
+
+        // دالة كشف اللغة المحسنة بـ franc.js + fallback regex
+        function detectLanguageFromQuery(query) {
+            if (!query) return navigator.language.split('-')[0] || 'en';
+            if (typeof franc !== 'undefined') {
+                const detected = franc(query, { minLength: 3 });
+                if (detected !== 'und') return detected;
+            }
+            const text = query;
+            if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) return 'ar';
+            if (/[\u0400-\u04FF]/.test(text)) return 'ru';
+            if (/[\u4E00-\u9FFF]/.test(text)) return 'zh';
+            if (/[\u0900-\u097F]/.test(text)) return 'hi';
+            if (/[\u0980-\u09FF]/.test(text)) return 'bn';
+            return 'en';
+        }
+
+        // تحديث الصفحة
+        function updatePage(lang) {
+            const t = translations[lang] || translations['en'];
+            document.title = t.title;
+            document.querySelector('meta[name="description"]').content = t.description;
+            document.querySelector('meta[name="keywords"]').content = t.keywords;
+            document.documentElement.lang = t.inLanguage;
+
+            // إزالة JSON-LD القديم
+            document.querySelectorAll('script[type="application/ld+json"]').forEach(el => el.remove());
+
+            // إضافة JSON-LD جديد مع inLanguage
+            const personScript = document.createElement('script');
+            personScript.type = 'application/ld+json';
+            personScript.text = JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "Person",
+                "name": t.personName,
+                "url": "https://mark-elasfar.web.app/",
+                "image": ["https://mark-lasfar.github.io/ofline-chat/images/mac.png", "https://mark-lasfar.github.io/ofline-chat/images/ibrahim_elasfar.png"],
+                "sameAs": ["https://github.com/Mark-Lasfar", "https://x.com/mgz0n", "https://www.linkedin.com/in/ibrahim-elasfar/"],
+                "jobTitle": "Full Stack Developer",
+                "worksFor": {"@type": "Organization", "name": "Mgzon AI"},
+                "description": t.personDescription,
+                "knowsAbout": ["AI", "TTS", "Web Development", "Offline Chatbots", "Machine Learning", "JavaScript", "Python"],
+                "alumniOf": "Mgzon AI Academy",
+                "inLanguage": t.inLanguage
+            });
+            document.head.appendChild(personScript);
+
+            const websiteScript = document.createElement('script');
+            websiteScript.type = 'application/ld+json';
+            websiteScript.text = JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "MGZon Chatbot",
+                "url": "https://mgzon-mgzon-app.hf.space/",
+                "description": t.websiteDescription,
+                "keywords": ["MGZon Chatbot", "AI chatbot", "Code generation AI", "E-commerce AI solutions", "Mark Al-Asfar", "AI assistant for developers", "FastAPI chatbot", "Real-time web search AI", "MGZon AI", "Python AI chatbot", "AI for coding", "E-commerce automation", "Hugging Face AI", "2025 AI trends", "chatgpt", "grok", "deepseek", "text generation"],
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": t.searchTarget,
+                    "query-input": "required name=search_term_string"
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "MGZon AI",
+                    "logo": {"@type": "ImageObject", "url": "/static/images/mg.svg"}
+                },
+                "inLanguage": t.inLanguage
+            });
+            document.head.appendChild(websiteScript);
+
+            document.getElementById('dynamic-content').innerHTML = t.content;
+
+            // دعم RTL للعربية والأردية
+            if (lang === 'ar' || lang === 'ur') {
+                document.documentElement.dir = 'rtl';
+            } else {
+                document.documentElement.dir = 'ltr';
+            }
+        }
+
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const query = urlParams.get('q') || '';
+            const langParam = urlParams.get('lang') || detectLanguageFromQuery(query);
+            updatePage(langParam);
+        });
+
+        // System Prompts و Payload (إذا كنت تستخدمها في الـ backend)
+        const systemPrompts = {
+            'ar': 'أنت مساعد ذكي تقدم إجابات مفصلة ومنظمة باللغة العربية، مع ضمان الدقة والوضوح.',
+            'en': 'You are an expert assistant providing detailed, comprehensive, and well-structured responses.',
+            'zh': '你是一个提供详细、全面且结构良好的回答的专家助手。',
+            'hi': 'आप एक विशेषज्ञ सहायक हैं जो विस्तृत, व्यापक और अच्छी तरह से संरचित उत्तर प्रदान करते हैं।',
+            'es': 'Eres un asistente experto que proporciona respuestas detalladas, completas y bien estructuradas.',
+            'fr': 'Vous êtes un assistant expert fournissant des réponses détaillées, complètes et bien structurées.',
+            'bn': 'আপনি একজন বিশেষজ্ঞ সহকারী যিনি বিস্তারিত, ব্যাপক এবং ভালভাবে গঠিত উত্তর প্রদান করেন।',
+            'pt': 'Você é um assistente especialista que fornece respostas detalhadas, completas e bem estruturadas.',
+            'ru': 'Вы эксперт-помощник, предоставляющий подробные, всесторонние и хорошо структурированные ответы.',
+            'ur': 'آپ ایک ماہر اسسٹنٹ ہیں جو تفصیلی، جامع اور اچھی طرح سے منظم جوابات فراہم کرتے ہیں۔',
+            'id': 'Anda adalah asisten ahli yang memberikan jawaban rinci, komprehensif, dan terstruktur dengan baik.',
+            'de': 'Sie sind ein Expertenassistent, der detaillierte, umfassende und gut strukturierte Antworten liefert.'
+        };
+
+        function sendPayload(message, lang, conversationHistory = [], currentConversationId = null) {
+            const payload = {
+                message,
+                system_prompt: systemPrompts[lang] || systemPrompts['en'],
+                history: conversationHistory,
+                temperature: 0.7,
+                max_new_tokens: 128000,
+                enable_browsing: true,
+                output_format: 'text',
+                conversation_id: currentConversationId || null
+            };
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+        }
+
         // Particles.js initialization
         particlesJS('particles-js', {
             particles: {

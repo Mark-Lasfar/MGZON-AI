@@ -292,6 +292,11 @@ async def about(request: Request, user: User = Depends(current_active_user)):
     logger.debug(f"About page accessed by user: {user.email if user else 'Anonymous'}")
     return templates.TemplateResponse("about.html", {"request": request, "user": user})
 
+@app.get("/profile", response_class=HTMLResponse)
+async def about(request: Request, user: User = Depends(current_active_user)):
+    logger.debug(f"About page accessed by user: {user.email if user else 'Anonymous'}")
+    return templates.TemplateResponse("profile.html", {"request": request, "user": user})
+
 # Serve static files
 @app.get("/static/{path:path}")
 async def serve_static(path: str):
@@ -380,6 +385,12 @@ async def sitemap():
     xml += '  </url>\n'
     xml += '  <url>\n'
     xml += '    <loc>https://mgzon-mgzon-app.hf.space/docs</loc>\n'
+    xml += f'    <lastmod>{current_date}</lastmod>\n'
+    xml += '    <changefreq>weekly</changefreq>\n'
+    xml += '    <priority>0.9</priority>\n'
+    xml += '  </url>\n'
+    xml += '  <url>\n'
+    xml += '    <loc>https://mgzon-mgzon-app.hf.space/profile</loc>\n'
     xml += f'    <lastmod>{current_date}</lastmod>\n'
     xml += '    <changefreq>weekly</changefreq>\n'
     xml += '    <priority>0.9</priority>\n'
