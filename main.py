@@ -13,7 +13,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
-from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router  # أزل أي ذكر لـ google_oauth_router, github_oauth_router
+from api.auth import fastapi_users, auth_backend, current_active_user, get_auth_router 
 from api.database import User, Conversation, get_db, init_db
 from api.models import UserRead, UserCreate, UserUpdate
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -29,6 +29,8 @@ from datetime import datetime
 from httpx_oauth.exceptions import GetIdEmailError
 import re
 import anyio
+import requests  
+from bs4 import BeautifulSoup 
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -93,6 +95,25 @@ QUEUE_SIZE = int(os.getenv("QUEUE_SIZE", 80))
 CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 logger.debug(f"Application settings: QUEUE_SIZE={QUEUE_SIZE}, CONCURRENCY_LIMIT={CONCURRENCY_LIMIT}")
 
+# SearXNG instances 
+searx_instances = [
+    "https://search.ononoki.org/",      # JP
+    "https://search.mdosch.de/",        # DE
+    "https://searx.prvcy.eu/",          # EU
+    "https://searxng.biz/",             # US
+    "https://searx.tuxcloud.net/",      # DE
+    "https://search.bus-hit.me/",       # RU
+    "https://searx.tiekoetter.com/",    # DE
+    "https://searx.be/",                # BE
+    "https://searx.me/",                # NL
+    "https://searx.eu/",                # EU
+    "https://kheru.lavabit.com/searx/", # US
+    "https://search.disroot.org/",      # NL
+    "https://searx.ninja/",             # US
+    "https://searx.mastodontech.de/",   # DE
+    "https://searx.ablatednation.com/"  # US
+]
+
 # Initialize FastAPI app
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -105,8 +126,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="MGZon Chatbot API",
     lifespan=lifespan,
-    docs_url=None,  # تعطيل Swagger UI الافتراضي على /docs
-    redoc_url=None   # تعطيل ReDoc الافتراضي لو مش عايزه
+    docs_url=None, 
+    redoc_url=None 
 )
 
 # Add SessionMiddleware
@@ -123,25 +144,26 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://mgzon-mgzon-app.hf.space",
+        "https://mgzonai.vercel.app"
         "http://localhost:7860",
         "http://localhost:8000",
-        "http://localhost",  # إضافة لدعم Capacitor على Android/iOS
-        "https://localhost",  # إضافة لدعم HTTPS المحلي
-        "capacitor://localhost",  # دعم Capacitor native apps
-        "file://",  # دعم الملفات المحلية في offline mode
+        "http://localhost",
+        "https://localhost",
+        "capacitor://localhost",
+        "file://",
         "https://hager-zon.vercel.app",
         "https://mgzon-mgzon-app.hf.space/auth/google/callback",
         "https://mgzon-mgzon-app.hf.space/auth/github/callback",
     ],
     allow_credentials=True,
-    allow_methods=["*"],  # سمح بكل الـ methods
-    allow_headers=["*"],  # سمح بكل الـ headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 logger.debug("CORS middleware configured with allowed origins")
 
 # Include routers
 app.include_router(api_router)
-get_auth_router(app)  # يضيف الـ custom OAuth endpoints + JWT + register
+get_auth_router(app)
 logger.debug("API and auth routers included")
 
 # Add logout endpoint
@@ -293,9 +315,13 @@ async def about(request: Request, user: User = Depends(current_active_user)):
     return templates.TemplateResponse("about.html", {"request": request, "user": user})
 
 @app.get("/profile", response_class=HTMLResponse)
-async def about(request: Request, user: User = Depends(current_active_user)):
-    logger.debug(f"About page accessed by user: {user.email if user else 'Anonymous'}")
+async def profile(request: Request, user: User = Depends(current_active_user)):
+    logger.debug(f"Profile page accessed by user: {user.email if user else 'Anonymous'}")
     return templates.TemplateResponse("profile.html", {"request": request, "user": user})
+    
+@app.get("/download", response_class=HTMLResponse)
+async def download_page(request: Request):
+    return templates.TemplateResponse("download.html", {"request": request})
 
 # Serve static files
 @app.get("/static/{path:path}")
@@ -363,13 +389,13 @@ async def sitemap():
     xml += '    <loc>https://mgzon-mgzon-app.hf.space/chat</loc>\n'
     xml += f'    <lastmod>{current_date}</lastmod>\n'
     xml += '    <changefreq>daily</changefreq>\n'
-    xml += '    <priority>0.8</priority>\n'
+    xml += '    <priority>0.9</priority>\n'
     xml += '  </url>\n'
     xml += '  <url>\n'
     xml += '    <loc>https://mgzon-mgzon-app.hf.space/about</loc>\n'
     xml += f'    <lastmod>{current_date}</lastmod>\n'
     xml += '    <changefreq>weekly</changefreq>\n'
-    xml += '    <priority>0.7</priority>\n'
+    xml += '    <priority>0.9</priority>\n'
     xml += '  </url>\n'
     xml += '  <url>\n'
     xml += '    <loc>https://mgzon-mgzon-app.hf.space/login</loc>\n'
@@ -390,10 +416,16 @@ async def sitemap():
     xml += '    <priority>0.9</priority>\n'
     xml += '  </url>\n'
     xml += '  <url>\n'
-    xml += '    <loc>https://mgzon-mgzon-app.hf.space/profile</loc>\n'
+    xml += '    <loc>https://mgzon-mgzon-app.hf.space/download</loc>\n'
     xml += f'    <lastmod>{current_date}</lastmod>\n'
     xml += '    <changefreq>weekly</changefreq>\n'
     xml += '    <priority>0.9</priority>\n'
+    xml += '  </url>\n'
+    xml += '  <url>\n'
+    xml += '    <loc>https://mgzon-mgzon-app.hf.space/profile</loc>\n'
+    xml += f'    <lastmod>{current_date}</lastmod>\n'
+    xml += '    <changefreq>weekly</changefreq>\n'
+    xml += '    <priority>1.0</priority>\n'
     xml += '  </url>\n'
     xml += '  <url>\n'
     xml += '    <loc>https://mgzon-mgzon-app.hf.space/blog</loc>\n'
@@ -422,6 +454,55 @@ async def launch_chatbot():
 async def health_check():
     logger.debug("Health check endpoint accessed")
     return "OK"
+
+
+@app.get("/search")
+async def search_web(q: str):
+    """
+    يبحث في الويب باستخدام SearXNG instances متعددة ويجلب محتوى أعمق من الصفحات.
+    """
+    try:
+        for instance in searx_instances:
+            try:
+                url = f"{instance}search?format=json&q={requests.utils.quote(q)}&categories=general"
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                results = data.get("results", [])
+                if not results:
+                    continue
+                
+                search_results = []
+                for i, item in enumerate(results[:7]):  # More results (7 instead of 5)
+                    title = item.get("title", "No title")
+                    content = item.get("content", "No content")
+                    link = item.get("url", "No link")
+                    # Fetch deeper page content
+                    try:
+                        page_response = requests.get(link, timeout=7, headers={'User-Agent': 'Mozilla/5.0'})
+                        page_response.raise_for_status()
+                        soup = BeautifulSoup(page_response.text, "html.parser")
+                        paragraphs = soup.find_all("p")
+                        # Extract more paragraphs for depth
+                        page_content = " ".join([p.get_text(strip=True) for p in paragraphs[:15]])  # More paras
+                    except Exception as e:
+                        logger.warning(f"Failed to fetch page content for {link}: {e}")
+                        page_content = content
+                    search_results.append({
+                        "title": title,
+                        "link": link,
+                        "content": page_content[:3000]  # Deeper limit
+                    })
+                if search_results:  # Return if any results
+                    return {"success": True, "results": search_results}
+            except Exception as e:
+                logger.warning(f"Instance {instance} failed: {e}")
+                continue
+        return {"success": False, "message": "No web results found."}
+    except Exception as e:
+        logger.exception("Web search failed")
+        raise HTTPException(status_code=500, detail=f"Web search error: {str(e)}")
+
 
 if __name__ == "__main__":
     logger.info(f"Starting uvicorn server on port {os.getenv('PORT', 7860)}")

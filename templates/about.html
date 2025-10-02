@@ -1,278 +1,707 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Learn about MGZon AI, founded by Mark Al-Asfar in Alexandria, Egypt. Discover our mission, team, and achievements in AI and e-commerce.">
-  <meta name="keywords" content="MGZon AI, Mark Al-Asfar, AI chatbot, e-commerce, code generation, Alexandria, technology, team, achievements">
-  <meta name="author" content="Mark Al-Asfar">
+  <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+  <meta name="description" content="Learn about MGZon AI, an innovative AI-powered platform for e-commerce and code generation. Discover our mission, technologies, and achievements.">
+  <meta name="keywords" content="MGZon AI, AI chatbot, e-commerce, code generation, technology, achievements, MGZon, E-commerce chatbot, 5G, 6G, 2025 AI trends, 2026 trends, adaptive UI">
+  <meta name="author" content="MGZon AI Team">
   <meta name="robots" content="index, follow">
-  <title>About MGZon AI – Our Story</title>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-  <link rel="apple-touch-icon" href="/static/images/mg.svg">
+  <title data-translate="title">About MGZon AI – Adaptive Horizons</title>
+  <link rel="canonical" href="https://mgzon-mgzon-app.hf.space/about" />
+  <link rel="icon" type="image/x-icon" href="https://mgzon-mgzon-app.hf.space/static/images/mg.svg">
+  <link rel="apple-touch-icon" href="https://mgzon-mgzon-app.hf.space/static/images/mg.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MGZon">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#00f0ff">
   <!-- Open Graph -->
-  <meta property="og:title" content="About MGZon AI – Our Story">
-  <meta property="og:description" content="Learn about MGZon AI, its founder Mark Al-Asfar, and our mission to innovate in AI and e-commerce.">
-  <meta property="og:image" content="/static/images/mg.svg">
+  <meta property="og:title" content="About MGZon AI – Adaptive Horizons">
+  <meta property="og:description" content="Immerse in MGZon AI's adaptive story, powering 2026 AI frontiers for e-commerce and code generation.">
+  <meta property="og:image" content="https://mgzon-mgzon-app.hf.space/static/images/mg.svg">
   <meta property="og:url" content="https://mgzon-mgzon-app.hf.space/about">
   <meta property="og:type" content="website">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="About MGZon AI – Our Story">
-  <meta name="twitter:description" content="Learn about MGZon AI, its founder Mark Al-Asfar, and our mission to innovate in AI and e-commerce.">
-  <meta name="twitter:image" content="/static/images/mg.svg">
-  <!-- JSON-LD -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "MGZon AI",
-  "url": "https://mgzon-mgzon-app.hf.space",
-  "logo": "/static/images/mg.svg",
-  "founder": {
-    "@type": "Person",
-    "name": "Mark Al-Asfar",
-    "sameAs": "https://mark-elasfar.web.app/"
-  },
-  "description": "MGZon AI develops AI-powered solutions for e-commerce and coding, founded by Mark Al-Asfar from Alexandria, Egypt.",
-  "keywords": ["MGZon AI", "Mark Al-Asfar", "AI chatbot", "e-commerce", "code generation", "Alexandria", "technology", "team", "MGZon", "MGZon chatbot", "E-commerce chatbot", "5G", "6G", "2025 AI trends"],
-  "address": {
-    "@type": "PostalAddress",
-    "addressLocality": "Alexandria",
-    "addressCountry": "Egypt"
-  }
-}
-</script>
-  <!-- Tailwind (v3) -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="twitter:title" content="About MGZon AI – Adaptive Horizons">
+  <meta name="twitter:description" content="Immerse in MGZon AI's adaptive story, powering 2026 AI frontiers for e-commerce and code generation.">
+  <meta name="twitter:image" content="https://mgzon-mgzon-app.hf.space/static/images/mg.svg">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&family=Cairo:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- GSAP for animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <!-- Boxicons -->
-  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <!-- External JavaScript -->
+  <script src="/static/js/about.js" defer></script>
+  <!-- تحميل مشروط لـ Three.js و Particles.js -->
+  <script>
+    if (window.innerWidth > 768) {
+      const threeScript = document.createElement('script');
+      threeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+      document.head.appendChild(threeScript);
+      const particlesScript = document.createElement('script');
+      particlesScript.src = 'https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js';
+      document.head.appendChild(particlesScript);
+    }
+  </script>
+  <!-- A-Frame for AR -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js" defer></script>
+
   <style>
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    :root {
+      --primary: #00f0ff;
+      --secondary: #ff007a;
+      --accent: #6b21a8;
+      --background: #000;
+      --foreground: #f8f9fa;
+      --card-bg: rgba(10, 10, 10, 0.9);
+      --glow-primary: 0 0 25px #00f0ff;
+      --glow-secondary: 0 0 25px #ff007a;
+    }
+    [data-theme="light"] {
+      --background: #f8f9fa;
+      --foreground: #000;
+      --card-bg: rgba(248, 249, 250, 0.9);
     }
     body {
-      background: linear-gradient(135deg, #0f172a, #0e7490, #065f46, #064e3b);
-      background-size: 400% 400%;
-      animation: gradientShift 15s ease infinite;
-      font-family: system-ui, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      position: relative;
+      transition: background 0.3s, color 0.3s;
     }
-    .glass {
-      background: rgba(255, 255, 255, 0.07);
-      border-radius: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+    .rtl {
+      direction: rtl;
+      font-family: 'Cairo', sans-serif;
     }
-    .sidebar {
-      transition: transform 0.3s ease-in-out;
+    #particles-js, #3d-canvas {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.3;
+      will-change: transform;
+      display: none;
     }
-    .sidebar.collapsed .logo {
+    @media (min-width: 769px) {
+      #particles-js, #3d-canvas { display: block; }
+    }
+    #hero-orb {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 200px;
+      height: 200px;
+      transform: translate(-50%, -50%);
+      z-index: -1;
+      opacity: 0.1;
+      display: none;
+    }
+    @media (min-width: 769px) {
+      #hero-orb { display: block; }
+    }
+    .neon-gradient {
+      background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+      background-size: 300% 300%;
+      animation: gradientShift 5s ease infinite;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .glass-morphism {
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .glass-morphism:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 15px 30px rgba(0, 120, 255, 0.3);
+      border-color: var(--primary);
+    }
+    .hero-section {
+      background: radial-gradient(ellipse at center, rgba(0, 240, 255, 0.1) 0%, transparent 70%);
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .timeline-container {
+      position: relative;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .timeline-line {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(to bottom, var(--primary), var(--accent));
+      transform: translateX(-50%);
+      z-index: 1;
+    }
+    .timeline-node {
+      position: relative;
+      width: 48%;
+      margin: 2rem 0;
+      padding: 1.5rem;
+    }
+    .timeline-node.left {
+      left: 0;
+      text-align: right;
+    }
+    .timeline-node.right {
+      left: 52%;
+    }
+    .timeline-node::before {
+      content: '';
+      position: absolute;
+      top: 1.5rem;
+      width: 16px;
+      height: 16px;
+      background: var(--primary);
+      border-radius: 50%;
+      box-shadow: var(--glow-primary);
+      z-index: 2;
+    }
+    .timeline-node.left::before {
+      right: -8px;
+    }
+    .timeline-node.right::before {
+      left: -8px;
+    }
+    .nav-morph {
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    }
+    .theme-btn {
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      transition: all 0.3s ease;
+    }
+    .theme-btn:hover {
+      background: var(--primary);
+      color: #000;
+      box-shadow: var(--glow-primary);
+      transform: rotate(180deg);
+    }
+    .voice-btn {
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      transition: all 0.3s ease;
+    }
+    .voice-btn:hover {
+      background: var(--primary);
+      color: #000;
+      box-shadow: var(--glow-primary);
+    }
+    .contact-hub {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .contact-pod {
+      background: var(--card-bg);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      position: relative;
+    }
+    .contact-pod::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(45deg, transparent 30%, rgba(0, 240, 255, 0.1) 50%, transparent 70%);
       opacity: 0;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.5s;
+      pointer-events: none;
     }
-    .main-content {
-      min-height: calc(100vh - 4rem);
+    .contact-pod:hover::after {
+      opacity: 1;
+      animation: shimmer 0.5s ease;
     }
-    .glass:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-      background: rgba(255, 255, 255, 0.15);
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .contact-pod:hover {
+      transform: translateY(-5px) rotate(2deg);
+      box-shadow: var(--glow-primary);
+    }
+    .contact-icon {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+    .contact-pod:hover .contact-icon {
+      transform: scale(1.2) rotate(360deg);
+    }
+    .details-panel {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(0, 240, 255, 0.05);
+      border-radius: 12px;
+      border-left: 3px solid var(--primary);
+    }
+    .logo-pulse {
+      animation: pulseLogo 2s infinite;
+    }
+    @keyframes pulseLogo {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .search-bar {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid var(--primary);
+      color: var(--foreground);
+      padding: 6px 12px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 200px;
+    }
+    .voice-status {
+      position: fixed;
+      top: 80px;
+      right: 10px;
+      background: rgba(0,0,0,0.8);
+      color: var(--primary);
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: none;
+      z-index: 1000;
+    }
+    .gemini-popup {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card-bg);
+      color: var(--foreground);
+      padding: 15px;
+      border-radius: 16px;
+      width: 90vw;
+      max-width: 400px;
+      max-height: 60vh;
+      overflow-y: auto;
+      display: none;
+      z-index: 1000;
+      border: 1px solid var(--primary);
+      box-shadow: var(--glow-primary);
+    }
+    .close-popup {
+      cursor: pointer;
+      float: right;
+      font-size: 20px;
+      color: var(--primary);
+    }
+    .chat-message {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 12px;
+      background: rgba(0, 240, 255, 0.1);
+      word-wrap: break-word;
+      line-height: 1.5;
+    }
+    .chat-message.user {
+      background: rgba(255, 0, 122, 0.1);
+      text-align: right;
+    }
+    #voice-toggle.listening {
+      background: rgba(255, 0, 0, 0.5);
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    /* تحسينات الـ Navbar */
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      space-x-4;
+    }
+    .hamburger {
+      display: none;
+      font-size: 24px;
+      color: var(--primary);
+      cursor: pointer;
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
+      .nav-container {
+        flex-wrap: wrap;
+        padding: 0.5rem 1rem;
       }
-      .sidebar.active {
-        transform: translateX(0);
+      .nav-links {
+        flex-direction: column;
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background: var(--card-bg);
+        width: 100%;
+        padding: 1rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        z-index: 40;
+        display: flex; /* مفتوح افتراضيًا */
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+      .nav-links.active {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .hamburger {
+        display: block;
+      }
+      .search-container {
+        margin-top: 0.5rem;
+        width: 100%;
+        justify-content: flex-end;
+      }
+      .search-bar {
+        max-width: 150px;
+      }
+      .theme-btn, .voice-btn {
+        width: 32px;
+        height: 32px;
+      }
+      .timeline-node {
+        width: 100%;
+        left: 0 !important;
+        text-align: center;
+        padding: 1rem;
+      }
+      .timeline-line {
+        left: 20px;
+      }
+      .timeline-node::before {
+        left: 12px !important;
+        right: auto !important;
+      }
+      .hero-section {
+        min-height: 60vh;
+      }
+      .hero-section h1 {
+        font-size: 2.5rem;
+      }
+      .hero-section p {
+        font-size: 1rem;
+      }
+      .hero-section img {
+        width: 100px;
+        height: 100px;
+      }
+      .contact-hub {
+        grid-template-columns: 1fr;
+      }
+      .glass-morphism {
+        padding: 1rem;
+        border-radius: 12px;
       }
     }
   </style>
 </head>
-<body class="text-white flex flex-col min-h-screen">
-  <!-- Mobile toggle button -->
-  <button id="sidebarToggle" class="md:hidden fixed top-4 left-4 z-50 p-2 text-2xl text-white rounded bg-gray-800/60 hover:bg-gray-700/80 transition" aria-label="Toggle navigation">
-    <i class="bx bx-menu"></i>
-  </button>
-  <!-- Sidebar -->
-  <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-teal-800 to-emerald-900 p-6 flex flex-col overflow-y-auto z-40">
-    <button id="closeSidebar" class="md:hidden text-white text-2xl absolute top-4 right-4" aria-label="Close sidebar">✕</button>
-    <img src="/static/images/mg.svg" alt="MGZon Logo" class="logo w-20 h-20 mx-auto mb-8 animate-pulse">
-    <nav class="flex flex-col gap-3">
-      <a href="/" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Home</a>
-      <a href="/docs" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">API Documentation</a>
-      <a href="/about" class="px-4 py-2 rounded-lg bg-emerald-600">About MGZon</a>
-      <a href="/login" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Login</a>
-      <a href="/register" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Register</a>
-      <a href="https://hager-zon.vercel.app/community" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Community</a>
-      <a href="https://mark-elasfar.web.app/" target="_blank" class="px-4 py-2 rounded-lg hover:bg-emerald-600 transition">Mark Al-Asfar</a>
-    </nav>
-  </aside>
-  <!-- Main content -->
-  <main class="flex-1 md:ml-64 p-6 main-content">
-    <section class="container max-w-6xl mx-auto">
-      <div class="text-center py-12">
-        <img src="/static/images/mg.svg" alt="MGZon Logo" class="w-32 h-32 mx-auto mb-6 animate-bounce">
-        <h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-emerald-400">About MGZon AI</h1>
-        <p class="text-lg max-w-2xl mx-auto mb-8">Founded by Mark Al-Asfar in Alexandria, Egypt, MGZon AI is revolutionizing e-commerce and coding with AI-driven solutions.</p>
-      </div>
-      <!-- Story Section -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Our Story</h2>
-        <div class="glass p-6">
-<p class="mb-4">MGZon AI was founded in 2023 in Alexandria, Egypt, by Mark Al-Asfar with a vision to empower developers and businesses through AI-driven solutions like MGZon Chatbot. We leverage technologies like DeepSeek, FastAPI, and 5G/6G innovations to deliver cutting-edge e-commerce and code generation tools.</p>
-          <p>From a small startup to a global player, we now operate warehouses in the USA, Canada, and China, serving thousands of users worldwide.</p>
-        </div>
-      </section>
-      <!-- Founder Section -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Meet Our Founder</h2>
-        <div class="glass p-6 text-center">
-          <img src="/static/images/mg.svg" alt="Mark Al-Asfar" class="w-24 h-24 mx-auto mb-4 rounded-full">
-          <h3 class="text-xl font-semibold mb-2">Mark Al-Asfar</h3>
-          <p class="mb-4">A visionary developer from Alexandria, Mark Al-Asfar founded MGZon AI to bridge the gap between AI innovation and practical applications in coding and e-commerce.</p>
-          <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Learn More About Mark</a>
-        </div>
-      </section>
-      <!-- Team Section -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Our Team</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="glass p-6 text-center">
-            <img src="https://via.placeholder.com/96" alt="Team Member" class="w-24 h-24 mx-auto mb-4 rounded-full">
-            <h3 class="text-xl font-semibold mb-2">Hager Mohamed</h3>
-            <p class="mb-4">Lead AI Engineer, specializing in machine learning and chatbot development.</p>
-          </div>
-          <div class="glass p-6 text-center">
-            <img src="https://via.placeholder.com/96" alt="Team Member" class="w-24 h-24 mx-auto mb-4 rounded-full">
-            <h3 class="text-xl font-semibold mb-2">Ahmed Khaled</h3>
-            <p class="mb-4">E-commerce Specialist, driving innovative solutions for online businesses.</p>
-          </div>
-        </div>
-      </section>
-      <!-- Achievements Section -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Our Achievements</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="glass p-6">
-            <h3 class="text-xl font-semibold mb-2">Global Reach</h3>
-            <p>Serving over 10,000 users across 50 countries with our AI tools.</p>
-          </div>
-          <div class="glass p-6">
-            <h3 class="text-xl font-semibold mb-2">Award-Winning Innovation</h3>
-            <p>Recognized as a top AI startup in MENA by TechCrunch in 2024.</p>
-          </div>
-        </div>
-      </section>
-      <!-- Mission Section -->
-      <section class="my-12">
-        <h2 class="text-3xl font-bold text-center mb-8">Our Mission</h2>
-        <div class="glass p-6">
-          <p>At MGZon AI, we aim to make AI accessible to developers and businesses, simplifying coding and enhancing e-commerce with cutting-edge technology.</p>
-        </div>
-      </section>
-    </section>
-  </main>
-  <!-- Footer -->
-  <footer class="bg-gradient-to-r from-teal-900 to-emerald-900 py-12 mt-8">
-    <div class="container max-w-6xl mx-auto text-center">
-      <img src="/static/images/mg.svg" alt="MGZon Logo" class="w-24 h-24 mx-auto mb-6 animate-pulse">
-      <p class="mb-4">
-        Developed by <a href="https://mark-elasfar.web.app/" target="_blank" class="text-emerald-300 hover:underline">Mark Al-Asfar</a>
-        | Powered by <a href="https://hager-zon.vercel.app/" target="_blank" class="text-emerald-300 hover:underline">MGZon AI</a>
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('email')">
-          <i class="bx bx-mail-send text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Email Us</h4>
-          <p><a href="mailto:support@mgzon.com" class="text-emerald-300 hover:underline">support@mgzon.com</a></p>
-          <div id="email-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Reach out to our support team for any inquiries or assistance.</p>
-            <button onclick="closeCardDetails('email')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('phone')">
-          <i class="bx bx-phone text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Phone Support</h4>
-          <p>+1-800-123-4567</p>
-          <div id="phone-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Contact our support team via phone for immediate assistance.</p>
-            <button onclick="closeCardDetails('phone')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('community')">
-          <i class="bx bx-group text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Community</h4>
-          <p><a href="https://hager-zon.vercel.app/community" class="text-emerald-300 hover:underline">Join us</a></p>
-          <div id="community-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Join our vibrant community to share ideas and collaborate.</p>
-            <button onclick="closeCardDetails('community')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('api-docs')">
-          <i class="bx bx-code-alt text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">API Docs</h4>
-          <p><a href="/docs" class="text-emerald-300 hover:underline">Explore Docs</a></p>
-          <div id="api-docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Explore our API documentation for seamless integration.</p>
-            <button onclick="closeCardDetails('api-docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('faq')">
-          <i class="bx bx-help-circle text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">FAQ</h4>
-          <p><a href="https://hager-zon.vercel.app/faq" target="_blank" class="text-emerald-300 hover:underline">Read FAQ</a></p>
-          <div id="faq-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Find answers to common questions in our FAQ section.</p>
-            <button onclick="closeCardDetails('faq')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
-        </div>
-        <div class="glass p-4 cursor-pointer" onclick="showCardDetails('docs')">
-          <i class="bx bx-book text-3xl text-emerald-300 mb-2"></i>
-          <h4 class="font-semibold mb-1">Documentation</h4>
-          <p><a href="/docs" class="text-emerald-300 hover:underline">Full Docs</a></p>
-          <div id="docs-details" class="hidden mt-4 p-4 bg-gray-700/80 rounded-lg">
-            <p>Access comprehensive documentation for MGZon Chatbot.</p>
-            <button onclick="closeCardDetails('docs')" class="bg-emerald-500 text-white px-4 py-2 rounded-lg mt-2">Close</button>
-          </div>
+<body>
+  <!-- 3D Ambient -->
+  <canvas id="3d-canvas"></canvas>
+  <canvas id="hero-orb"></canvas>
+  <!-- Particles -->
+  <div id="particles-js"></div>
+  <!-- Voice Status -->
+  <div id="voice-status" class="voice-status" data-translate="voiceStatus">Listening...</div>
+  <!-- Gemini Chat Popup -->
+  <div id="gemini-popup" class="gemini-popup">
+    <span class="close-popup" onclick="closePopup()">&times;</span>
+    <div id="popup-content"></div>
+    <div class="mt-4">
+      <input type="text" id="chat-input" class="search-bar w-full" data-translate-placeholder="chatPlaceholder" placeholder="Type your message...">
+      <button id="send-chat" class="mt-2 bg-[var(--primary)] text-black px-4 py-2 rounded-full w-full" data-translate="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full nav-morph z-50 py-3">
+    <div class="container mx-auto px-4 nav-container">
+      <div class="flex items-center gap-4">
+        <a href="/" class="text-xl font-bold font-orbitron neon-gradient" data-translate="navLogo">
+          <img src="https://mgzon-mgzon-app.hf.space/static/images/mg.svg" alt="MGZon Logo" class="inline w-6 h-6 logo-pulse mr-2" loading="lazy">
+          MGZon AI
+        </a>
+        <div class="hamburger">
+          <i class='bx bx-menu'></i>
         </div>
       </div>
-      <div class="flex justify-center gap-6 mt-6">
-        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-github"></i></a>
-        <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-twitter"></i></a>
-        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-emerald-300 transition"><i class="bx bxl-facebook"></i></a>
+      <div class="nav-links flex items-center space-x-4">
+        <a href="/" class="text-white hover:text-[var(--primary)] transition-all duration-300 ease-out" data-translate="navHome">Home</a>
+        <a href="/download" download class="link-button text-white hover:text-[var(--primary)]">
+          Download APP <i class="bx bx-download ml-1"></i>
+        </a>
+        <a href="/chat" class="text-white hover:text-[var(--primary)] transition-all duration-300 ease-out" data-translate="navContact">Launch Chatbot</a>
+        <select id="lang-toggle" class="bg-transparent text-white border-[var(--primary)] rounded-md px-2 py-1">
+          <option value="en">English</option>
+          <option value="ar">العربية</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+        </select>
+        <button id="theme-toggle" class="theme-btn" data-title-translate="themeTitle">
+          <i class='bx bx-sun'></i>
+        </button>
       </div>
-      <p class="mt-6">© 2025 Mark Al-Asfar & MGZon AI. All rights reserved.</p>
+      <div class="search-container">
+        <input type="text" id="search-input" class="search-bar" data-translate-placeholder="searchPlaceholder" placeholder="Search...">
+        <button id="voice-toggle" class="voice-btn" data-title-translate="voiceTitle">
+          <i class='bx bx-microphone'></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section relative min-h-screen flex items-center justify-center text-center pt-16">
+    <div class="container mx-auto px-4">
+      <img src="https://mgzon-mgzon-app.hf.space/static/images/mg.svg" alt="MGZon Logo" class="w-48 h-48 mx-auto mb-6 logo-pulse" loading="lazy">
+      <h1 class="text-5xl md:text-7xl font-bold font-orbitron neon-gradient mb-6" data-translate="heroTitle">About MGZon AI</h1>
+      <p class="text-lg md:text-2xl max-w-3xl mx-auto opacity-80" data-translate="heroDesc">An AI-powered platform revolutionizing e-commerce and code generation – Empowering creators and businesses with adaptive intelligence.</p>
+      <div class="ar-hint mt-8" data-translate="arHint">
+        <i class='bx bx-vr' style="font-size: 1.5rem;"></i> Tap for AR View
+      </div>
+    </div>
+    <a-scene embedded arjs="trackingMethod: best;" style="display: none;" id="ar-scene">
+      <a-marker preset="hiro">
+        <a-box position="0 0.5 0" material="color: #00f0ff;"></a-box>
+      </a-marker>
+      <a-entity camera></a-entity>
+    </a-scene>
+  </section>
+
+  <!-- Our Story Section - Timeline Style -->
+  <section class="py-16 bg-[var(--card-bg)]" id="story-sec">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl md:text-4xl font-bold font-orbitron text-[var(--primary)] mb-8 text-center" data-translate="storyTitle">Our Journey</h2>
+      <div class="timeline-container">
+        <div class="timeline-line"></div>
+        <div class="timeline-node left glass-morphism">
+          <h3 class="text-2xl font-bold mb-3" data-translate="story1Title">2023: Ignition in Alexandria</h3>
+          <p data-translate="story1Desc">MGZon AI sparks to life in Alexandria, Egypt, leveraging DeepSeek & FastAPI to launch the core chatbot – Empowering developers and e-commerce innovators globally.</p>
+        </div>
+        <div class="timeline-node right glass-morphism">
+          <h3 class="text-2xl font-bold mb-3" data-translate="story2Title">2024: Global Expansion</h3>
+          <p data-translate="story2Desc">Seamless integrations with warehouses in USA, Canada, China; 5G/6G tech accelerates e-commerce automation and code generation for thousands.</p>
+        </div>
+        <div class="timeline-node left glass-morphism">
+          <h3 class="text-2xl font-bold mb-3" data-translate="story3Title">2025-2026: Quantum Evolution</h3>
+          <p data-translate="story3Desc">Recognized by TechCrunch as MENA's AI leader; Pushing ethical AI boundaries in commerce and coding for a smarter future.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Vision Section -->
+  <section class="py-16">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-4xl md:text-6xl font-bold font-orbitron mb-12 neon-gradient" data-translate="visionTitle">Our Vision</h2>
+      <div class="glass-morphism max-w-3xl mx-auto p-8">
+        <img src="https://mgzon-mgzon-app.hf.space/static/images/Mark_Al-Asfar.png" alt="MGZon Vision" class="w-32 h-32 mx-auto mb-6 rounded-full ring-4 ring-[var(--primary)]" loading="lazy">
+        <h3 class="text-3xl font-bold mb-4" data-translate="visionDesc">Adaptive Intelligence for Tomorrow</h3>
+        <p class="text-lg mb-8" data-translate="visionDetails">MGZon AI fuses cutting-edge tech with real-world utility, democratizing AI for seamless e-commerce and effortless code creation.</p>
+        <a href="/profile" target="_blank" class="inline-flex items-center bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-black px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:shadow-[var(--glow-primary)] hover:scale-105" data-translate="visionBtn">Explore Features <i class='bx bx-rocket ml-2'></i></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Project & AI Details Section -->
+  <section class="py-16 bg-[var(--card-bg)]">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl md:text-4xl font-bold font-orbitron text-[var(--primary)] mb-8 text-center" data-translate="projectTitle">Project & AI Insights</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div class="glass-morphism p-6">
+          <h3 class="text-xl font-bold mb-3" data-translate="aiTechTitle">Core AI Technologies</h3>
+          <ul class="text-base space-y-2">
+            <li>• DeepSeek for advanced NLP in chatbots</li>
+            <li>• FastAPI for scalable backend</li>
+            <li>• ML models for predictive e-commerce</li>
+          </ul>
+        </div>
+        <div class="glass-morphism p-6">
+          <h3 class="text-xl font-bold mb-3" data-translate="projectHowTitle">How It Works</h3>
+          <p class="text-base" data-translate="projectHowDesc">AI analyzes user queries to generate code snippets or optimize e-commerce flows – Ethical, adaptive, and future-proof.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Team Section -->
+  <section class="py-16 bg-[var(--card-bg)]">
+    <div class="container mx-auto px-4">
+      <h2 class="text-4xl md:text-6xl font-bold font-orbitron text-center mb-12 neon-gradient" data-translate="teamTitle">Core Constellation</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div class="glass-morphism p-6 text-center">
+          <img src="https://mgzon-mgzon-app.hf.space/static/images/Sarah_D.jpeg" alt="Sarah Dayan" class="w-32 h-32 mx-auto mb-4 rounded-full ring-4 ring-[var(--secondary)]" loading="lazy">
+          <h3 class="text-2xl font-bold mb-3" data-translate="team1Name">Sarah Dayan</h3>
+          <p class="text-base opacity-90" data-translate="team1Desc">Lead AI Architect – Sculpting ML & chatbot symphonies for MGZon.</p>
+        </div>
+        <div class="glass-morphism p-6 text-center">
+          <img src="https://mgzon-mgzon-app.hf.space/static/images/Leonardo.jpeg" alt="Leonardo Cuco" class="w-32 h-32 mx-auto mb-4 rounded-full ring-4 ring-[var(--accent)]" loading="lazy">
+          <h3 class="text-2xl font-bold mb-3" data-translate="team2Name">Leonardo Cuco</h3>
+          <p class="text-base opacity-90" data-translate="team2Desc">E-Commerce Oracle – Orchestrating digital commerce evolutions for MGZon.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Achievements Section -->
+  <section class="py-16">
+    <div class="container mx-auto px-4">
+      <h2 class="text-4xl md:text-6xl font-bold font-orbitron text-center mb-12 neon-gradient" data-translate="achievementsTitle">Milestones</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div class="glass-morphism p-6">
+          <h3 class="text-2xl font-bold mb-4" data-translate="ach1Title">Global Reach</h3>
+          <p class="text-base opacity-90" data-translate="ach1Desc">Serving 10K+ users across 50 countries, powered by AI-driven constellations.</p>
+        </div>
+        <div class="glass-morphism p-6">
+          <h3 class="text-2xl font-bold mb-4" data-translate="ach2Title">Industry Acclaim</h3>
+          <p class="text-base opacity-90" data-translate="ach2Desc">Featured as TechCrunch's top MENA AI innovator – Leading 2024's breakthroughs.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Mission Section -->
+  <section class="py-16 bg-[var(--card-bg)]">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-4xl md:text-6xl font-bold font-orbitron mb-8 neon-gradient" data-translate="missionTitle">Our North Star</h2>
+      <div class="glass-morphism p-8 max-w-3xl mx-auto">
+        <p class="text-lg opacity-90" data-translate="missionDesc">Democratizing AI for creators & enterprises – Streamlining codecraft and amplifying e-commerce realms with ethical innovation and ingenuity.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Nexus -->
+  <footer class="py-16 relative overflow-hidden">
+    <div class="container mx-auto px-4 text-center">
+      <img src="https://mgzon-mgzon-app.hf.space/static/images/mg.svg" alt="MGZon Core" class="w-24 h-24 mx-auto mb-8 logo-pulse" loading="lazy">
+      <p class="mb-8 text-lg opacity-80" data-translate="footerCrafted">Powered by MGZon AI | Innovating in the MENA region</p>
+      <div class="contact-hub mb-8">
+        <div class="contact-pod" onclick="togglePanel('email')">
+          <i class="bx bx-mail-send contact-icon"></i>
+          <h4 class="font-bold mt-2" data-translate="contact1Title">Nexus Mail</h4>
+          <p><a href="mailto:support@mgzon.com" class="hover:underline">support@mgzon.com</a></p>
+          <div id="email-panel" class="details-panel">
+            <p data-translate="contact1Details">Transmit queries into the void – Responses warp in swiftly.</p>
+            <button onclick="togglePanel('email')" class="text-[var(--primary)] mt-2 text-sm underline" data-translate="collapseBtn">Collapse</button>
+          </div>
+        </div>
+        <div class="contact-pod" onclick="togglePanel('phone')">
+          <i class="bx bx-phone contact-icon"></i>
+          <h4 class="font-bold mt-2" data-translate="contact2Title">Voice Link</h4>
+          <p>+20 1212444617</p>
+          <div id="phone-panel" class="details-panel">
+            <p data-translate="contact2Details">Instant quantum sync for urgent transmissions.</p>
+            <button onclick="togglePanel('phone')" class="text-[var(--primary)] mt-2 text-sm underline" data-translate="collapseBtn">Collapse</button>
+          </div>
+        </div>
+        <div class="contact-pod" onclick="togglePanel('community')">
+          <i class="bx bx-group contact-icon"></i>
+          <h4 class="font-bold mt-2" data-translate="contact3Title">Collective</h4>
+          <p><a href="https://mgzon-mgzon-app.hf.space/community" class="hover:underline" data-translate="contact3Btn">Assemble</a></p>
+          <div id="community-panel" class="details-panel">
+            <p data-translate="contact3Details">Converge in the hive – Ideas ignite, collaborations supernova.</p>
+            <button onclick="togglePanel('community')" class="text-[var(--primary)] mt-2 text-sm underline" data-translate="collapseBtn">Collapse</button>
+          </div>
+        </div>
+        <div class="contact-pod" onclick="togglePanel('docs')">
+          <i class="bx bx-code-alt contact-icon"></i>
+          <h4 class="font-bold mt-2" data-translate="contact4Title">Codex</h4>
+          <p><a href="/docs" class="hover:underline" data-translate="contact4Btn">Decrypt</a></p>
+          <div id="docs-panel" class="details-panel">
+            <p data-translate="contact4Details">Unlock the arcane APIs – Seamless fusion awaits.</p>
+            <button onclick="togglePanel('docs')" class="text-[var(--primary)] mt-2 text-sm underline" data-translate="collapseBtn">Collapse</button>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-center space-x-6 mb-8">
+        <a href="https://github.com/Mark-Lasfar/MGZon" class="text-2xl text-white hover:text-[var(--primary)] transition-all duration-300"><i class='bx bxl-github'></i></a>
+        <a href="https://x.com/MGZon" class="text-2xl text-white hover:text-[var(--primary)] transition-all duration-300"><i class='bx bxl-twitter'></i></a>
+        <a href="https://www.facebook.com/people/Mark-Al-Asfar/pfbid02GMisUQ8AqWkNZjoKtWFHH1tbdHuVscN1cjcFnZWy9HkRaAsmanBfT6mhySAyqpg4l/" class="text-2xl text-white hover:text-[var(--primary)] transition-all duration-300"><i class='bx bxl-facebook'></i></a>
+      </div>
+      <p class="opacity-70 text-sm" data-translate="copyright">© 2026 MGZon AI. Eternal in the codeverse.</p>
     </div>
   </footer>
+
+  <!-- JavaScript للـ Hamburger Menu -->
   <script>
-    const sidebar = document.getElementById('sidebar');
-    const toggleBtn = document.getElementById('sidebarToggle');
-    const closeSidebarBtn = document.getElementById('closeSidebar');
-    toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
-      sidebar.classList.toggle('-translate-x-full');
-      sidebar.classList.toggle('translate-x-0');
-    });
-    closeSidebarBtn.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-      sidebar.classList.add('-translate-x-full');
-      sidebar.classList.remove('translate-x-0');
-    });
-    document.addEventListener('click', (e) => {
-      if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target) && window.innerWidth < 768) {
-        sidebar.classList.remove('active');
-        sidebar.classList.add('-translate-x-full');
-        sidebar.classList.remove('translate-x-0');
+    document.addEventListener('DOMContentLoaded', () => {
+      const hamburger = document.querySelector('.hamburger');
+      const navLinks = document.querySelector('.nav-links');
+      // إضافة كلاس active افتراضيًا على الموبايل
+      if (window.innerWidth <= 768) {
+        navLinks.classList.add('active');
       }
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+      });
     });
-    function showCardDetails(cardId) {
-      document.getElementById(`${cardId}-details`).classList.remove('hidden');
-    }
-    function closeCardDetails(cardId) {
-      document.getElementById(`${cardId}-details`).classList.add('hidden');
+  </script>
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "About MGZon AI",
+      "url": "https://mgzon-mgzon-app.hf.space/about",
+      "description": "Learn about MGZon AI's mission, technologies, and achievements in AI-powered e-commerce and code generation.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "MGZon AI",
+        "logo": "https://mgzon-mgzon-app.hf.space/static/images/mg.svg"
+      },
+      "inLanguage": "en"
     }
   </script>
 </body>
